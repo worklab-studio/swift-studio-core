@@ -1714,7 +1714,7 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
 }
 
 /* ── Step 2 Viewport ── */
-function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelData, selectedTemplate, setSelectedTemplate, templateCategory }: {
+function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelData, selectedTemplate, setSelectedTemplate, templateCategory, modelImages, generatingPortraits, portraitProgress, portraitTotal, onGeneratePortraits }: {
   shootType: 'product' | 'model' | null;
   modelConfig: ModelConfig;
   setModelConfig: React.Dispatch<React.SetStateAction<ModelConfig>>;
@@ -1722,64 +1722,15 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
   selectedTemplate: string | null;
   setSelectedTemplate: React.Dispatch<React.SetStateAction<string | null>>;
   templateCategory: string;
+  modelImages: Record<string, string>;
+  generatingPortraits: boolean;
+  portraitProgress: number;
+  portraitTotal: number;
+  onGeneratePortraits: () => void;
 }) {
-  const [modelImages, setModelImages] = useState<Record<string, string>>({});
-  const [generatingPortraits, setGeneratingPortraits] = useState(false);
-  const [portraitProgress, setPortraitProgress] = useState(0);
-  const [portraitTotal, setPortraitTotal] = useState(0);
-
   const filteredTemplates = templateCategory === 'All'
     ? PRODUCT_SHOOT_TEMPLATES
     : PRODUCT_SHOOT_TEMPLATES.filter(t => t.category === templateCategory);
-
-  const handleGeneratePortraits = async () => {
-    setGeneratingPortraits(true);
-    setPortraitProgress(0);
-    setPortraitTotal(PLACEHOLDER_MODELS.length);
-
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      toast({ title: 'Error', description: 'Please log in first', variant: 'destructive' });
-      setGeneratingPortraits(false);
-      return;
-    }
-
-    const BATCH_SIZE = 2;
-    const models = [...PLACEHOLDER_MODELS];
-    let completed = 0;
-
-    for (let i = 0; i < models.length; i += BATCH_SIZE) {
-      const batch = models.slice(i, i + BATCH_SIZE);
-      const results = await Promise.allSettled(
-        batch.map(async (m) => {
-          try {
-            const { data, error } = await supabase.functions.invoke('generate-model-portraits', {
-              body: { model: m },
-            });
-            if (error) throw error;
-            return { modelId: data.modelId, imageUrl: data.imageUrl };
-          } catch (err) {
-            console.error(`Failed to generate portrait for ${m.name}:`, err);
-            return null;
-          }
-        })
-      );
-
-      results.forEach((r) => {
-        if (r.status === 'fulfilled' && r.value) {
-          setModelImages(prev => ({ ...prev, [r.value!.modelId]: r.value!.imageUrl }));
-        }
-        completed++;
-        setPortraitProgress(completed);
-      });
-
-      if (i + BATCH_SIZE < models.length) {
-        await new Promise(resolve => setTimeout(resolve, 1500));
-      }
-    }
-
-    setGeneratingPortraits(false);
-  };
 
   if (!shootType) {
     return (
