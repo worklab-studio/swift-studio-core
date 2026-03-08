@@ -1563,7 +1563,7 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
               : 'Choose a scene template for your product shoot.'}
           </p>
         </div>
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 bg-background relative z-10">
           <div className="grid grid-cols-4 gap-3 pb-4">
             {filteredTemplates.map((t) => {
               const isSelected = selectedTemplate === t.id;
@@ -1603,7 +1603,7 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
         <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Choose an AI Model</p>
         <p className="text-sm text-muted-foreground mt-1">Select a model for your shoot. {selectedModelData ? `Selected: ${selectedModelData.name}` : 'Click to select.'}</p>
       </div>
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 bg-background relative z-10">
         <div className="grid grid-cols-5 gap-3 pb-4">
           {PLACEHOLDER_MODELS.map((m) => {
             const isSelected = modelConfig.selectedModel === m.id;
