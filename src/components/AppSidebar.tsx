@@ -20,8 +20,8 @@ const accountNav = [
   { title: 'Settings', url: '/app/settings', icon: Settings },
 ];
 
-const navLinkClass = "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-accent text-muted-foreground border-l-2 border-transparent";
-const navLinkActive = "bg-accent text-foreground font-medium border-l-2 !border-primary";
+const navLinkClass = "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-muted hover:text-foreground text-muted-foreground";
+const navLinkActive = "bg-primary/10 text-primary font-medium";
 
 export const AppSidebar = () => {
   const { user, profile, signOut } = useAuth();
