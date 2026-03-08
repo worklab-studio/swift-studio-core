@@ -144,7 +144,7 @@ serve(async (req) => {
               },
               {
                 role: "user",
-                content: `Generate ${labels.length} image prompt(s) for a ${category} product. Style: ${preset}. Shot types: ${labels.join(", ")}. ${shotType === "model_shot" && modelConfig ? `Model: ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""} ${modelConfig.bodyType || ""}. Background: ${modelConfig.backgroundPrompt || modelConfig.background || "studio"}.` : "Product showcase, no model."} ${additionalContext ? `Additional direction: ${additionalContext}` : ""}`,
+                content: `Generate ${labels.length} image prompt(s) for a ${category} product. ${stylePrompt ? `Style direction: ${stylePrompt}.` : `Style: ${preset}.`} Shot types: ${labels.join(", ")}. ${shotType === "model_shot" && modelConfig ? `Model: ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""} ${modelConfig.bodyType || ""}. Background: ${modelConfig.backgroundPrompt || modelConfig.background || "studio"}.` : "Product showcase, no model."} ${additionalContext ? `Additional direction: ${additionalContext}` : ""}`,
               },
             ],
             tools: [
