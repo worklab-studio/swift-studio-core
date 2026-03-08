@@ -8,3 +8,12 @@ verify_jwt = false
 
 [functions.analyze-style-reference]
 verify_jwt = false
+
+[functions.generate-shots]
+verify_jwt = false
+
+[functions.edit-shot]
+verify_jwt = false
+
+[functions.generate-video]
+verify_jwt = false
