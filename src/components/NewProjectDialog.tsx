@@ -9,18 +9,18 @@ import { Card } from '@/components/ui/card';
 import { useNewProjectDialog } from '@/contexts/NewProjectContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Camera, Video } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const CATEGORIES = [
-  { id: 'apparel', emoji: '👗', name: 'Apparel' },
-  { id: 'jewellery', emoji: '💍', name: 'Jewellery' },
-  { id: 'bags', emoji: '👜', name: 'Bags' },
-  { id: 'beauty', emoji: '✨', name: 'Beauty' },
-  { id: 'skincare', emoji: '🧴', name: 'Skincare' },
-  { id: 'fmcg', emoji: '🥤', name: 'FMCG' },
-  { id: 'footwear', emoji: '👟', name: 'Footwear' },
-  { id: 'other', emoji: '📦', name: 'Other' },
+  { id: 'apparel', name: 'Apparel' },
+  { id: 'jewellery', name: 'Jewellery' },
+  { id: 'bags', name: 'Bags' },
+  { id: 'beauty', name: 'Beauty' },
+  { id: 'skincare', name: 'Skincare' },
+  { id: 'fmcg', name: 'FMCG' },
+  { id: 'footwear', name: 'Footwear' },
+  { id: 'other', name: 'Other' },
 ] as const;
 
 const NewProjectDialog = () => {
@@ -100,14 +100,13 @@ const NewProjectDialog = () => {
                   key={c.id}
                   onClick={() => setCategory(c.id)}
                   className={cn(
-                    'px-3 py-2.5 cursor-pointer transition-all hover:shadow-md flex flex-col items-center justify-center text-center',
+                    'px-3 py-2 cursor-pointer transition-all',
                     category === c.id
-                      ? 'border-2 border-primary bg-primary/5'
-                      : 'hover:border-muted-foreground/30'
+                      ? 'bg-muted/60 border-muted-foreground/30'
+                      : 'hover:border-muted-foreground/20'
                   )}
                 >
-                  <span className="text-lg">{c.emoji}</span>
-                  <p className="font-medium text-xs mt-1">{c.name}</p>
+                  <p className="font-medium text-sm">{c.name}</p>
                 </Card>
               ))}
             </div>
@@ -132,32 +131,24 @@ const NewProjectDialog = () => {
               <Card
                 onClick={() => setDefaultOutput('photos')}
                 className={cn(
-                  'p-4 cursor-pointer transition-all flex items-center gap-3',
+                  'px-4 py-3 cursor-pointer transition-all',
                   defaultOutput === 'photos'
-                    ? 'border-2 border-primary bg-primary/5'
-                    : 'hover:border-muted-foreground/30'
+                    ? 'bg-muted/60 border-muted-foreground/30'
+                    : 'hover:border-muted-foreground/20'
                 )}
               >
-                <Camera className="h-5 w-5 text-muted-foreground shrink-0" />
-                <div>
-                  <p className="font-medium text-sm">Photos</p>
-                  <p className="text-xs text-muted-foreground">Generate product images</p>
-                </div>
+                <p className="font-medium text-sm">Photos</p>
               </Card>
               <Card
                 onClick={() => setDefaultOutput('videos')}
                 className={cn(
-                  'p-4 cursor-pointer transition-all flex items-center gap-3',
+                  'px-4 py-3 cursor-pointer transition-all',
                   defaultOutput === 'videos'
-                    ? 'border-2 border-primary bg-primary/5'
-                    : 'hover:border-muted-foreground/30'
+                    ? 'bg-muted/60 border-muted-foreground/30'
+                    : 'hover:border-muted-foreground/20'
                 )}
               >
-                <Video className="h-5 w-5 text-muted-foreground shrink-0" />
-                <div>
-                  <p className="font-medium text-sm">Videos</p>
-                  <p className="text-xs text-muted-foreground">Generate product videos</p>
-                </div>
+                <p className="font-medium text-sm">Videos</p>
               </Card>
             </div>
           </div>
