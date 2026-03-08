@@ -106,48 +106,48 @@ const SHOT_LABEL_DISPLAY: Record<string, string> = {
   editorial: 'Editorial',
 };
 
-/* ── Placeholder models (40) ── */
+/* ── Placeholder models (40) with full metadata ── */
 const PLACEHOLDER_MODELS = [
-  { id: 'm1', name: 'Priya', attrs: 'F · South Asian · Slim', color: 'hsl(355 82% 56% / 0.2)' },
-  { id: 'm2', name: 'Amara', attrs: 'F · Black · Athletic', color: 'hsl(30 80% 55% / 0.2)' },
-  { id: 'm3', name: 'Mei', attrs: 'F · East Asian · Slim', color: 'hsl(200 60% 55% / 0.2)' },
-  { id: 'm4', name: 'Sofia', attrs: 'F · Latina · Curvy', color: 'hsl(340 60% 55% / 0.2)' },
-  { id: 'm5', name: 'Emma', attrs: 'F · Caucasian · Athletic', color: 'hsl(220 50% 55% / 0.2)' },
-  { id: 'm6', name: 'Fatima', attrs: 'F · Middle Eastern · Slim', color: 'hsl(160 50% 55% / 0.2)' },
-  { id: 'm7', name: 'Arjun', attrs: 'M · South Asian · Athletic', color: 'hsl(270 50% 55% / 0.2)' },
-  { id: 'm8', name: 'James', attrs: 'M · Caucasian · Average', color: 'hsl(100 40% 55% / 0.2)' },
-  { id: 'm9', name: 'Kenzo', attrs: 'M · East Asian · Slim', color: 'hsl(190 50% 55% / 0.2)' },
-  { id: 'm10', name: 'Nia', attrs: 'F · Black · Plus Size', color: 'hsl(20 70% 55% / 0.2)' },
-  { id: 'm11', name: 'Aisha', attrs: 'F · Middle Eastern · Athletic', color: 'hsl(45 70% 55% / 0.2)' },
-  { id: 'm12', name: 'Liam', attrs: 'M · Caucasian · Slim', color: 'hsl(210 55% 55% / 0.2)' },
-  { id: 'm13', name: 'Yuki', attrs: 'F · East Asian · Average', color: 'hsl(320 50% 55% / 0.2)' },
-  { id: 'm14', name: 'Carlos', attrs: 'M · Latino · Athletic', color: 'hsl(15 65% 55% / 0.2)' },
-  { id: 'm15', name: 'Zara', attrs: 'F · Mixed · Slim', color: 'hsl(280 55% 55% / 0.2)' },
-  { id: 'm16', name: 'Dev', attrs: 'M · South Asian · Average', color: 'hsl(170 50% 55% / 0.2)' },
-  { id: 'm17', name: 'Keiko', attrs: 'F · East Asian · Curvy', color: 'hsl(240 45% 55% / 0.2)' },
-  { id: 'm18', name: 'Marcus', attrs: 'M · Black · Athletic', color: 'hsl(10 75% 55% / 0.2)' },
-  { id: 'm19', name: 'Anya', attrs: 'F · Caucasian · Slim', color: 'hsl(300 50% 55% / 0.2)' },
-  { id: 'm20', name: 'Omar', attrs: 'M · Middle Eastern · Average', color: 'hsl(50 60% 55% / 0.2)' },
-  { id: 'm21', name: 'Luna', attrs: 'F · Latina · Slim', color: 'hsl(330 65% 55% / 0.2)' },
-  { id: 'm22', name: 'Ravi', attrs: 'M · South Asian · Slim', color: 'hsl(180 50% 55% / 0.2)' },
-  { id: 'm23', name: 'Hana', attrs: 'F · Southeast Asian · Average', color: 'hsl(140 45% 55% / 0.2)' },
-  { id: 'm24', name: 'Ethan', attrs: 'M · Caucasian · Athletic', color: 'hsl(230 50% 55% / 0.2)' },
-  { id: 'm25', name: 'Jasmine', attrs: 'F · Mixed · Athletic', color: 'hsl(60 55% 55% / 0.2)' },
-  { id: 'm26', name: 'Kofi', attrs: 'M · Black · Slim', color: 'hsl(25 70% 55% / 0.2)' },
-  { id: 'm27', name: 'Nina', attrs: 'F · Caucasian · Plus Size', color: 'hsl(310 50% 55% / 0.2)' },
-  { id: 'm28', name: 'Takeshi', attrs: 'M · East Asian · Athletic', color: 'hsl(195 55% 55% / 0.2)' },
-  { id: 'm29', name: 'Isla', attrs: 'F · Mixed · Curvy', color: 'hsl(350 60% 55% / 0.2)' },
-  { id: 'm30', name: 'Hassan', attrs: 'M · Middle Eastern · Slim', color: 'hsl(155 50% 55% / 0.2)' },
-  { id: 'm31', name: 'Valentina', attrs: 'F · Latina · Athletic', color: 'hsl(5 75% 55% / 0.2)' },
-  { id: 'm32', name: 'Jin', attrs: 'M · East Asian · Average', color: 'hsl(205 50% 55% / 0.2)' },
-  { id: 'm33', name: 'Adaeze', attrs: 'F · Black · Slim', color: 'hsl(35 65% 55% / 0.2)' },
-  { id: 'm34', name: 'Noah', attrs: 'M · Caucasian · Plus Size', color: 'hsl(120 40% 55% / 0.2)' },
-  { id: 'm35', name: 'Suki', attrs: 'F · Southeast Asian · Slim', color: 'hsl(260 50% 55% / 0.2)' },
-  { id: 'm36', name: 'Mateo', attrs: 'M · Latino · Slim', color: 'hsl(40 60% 55% / 0.2)' },
-  { id: 'm37', name: 'Leila', attrs: 'F · Middle Eastern · Curvy', color: 'hsl(175 50% 55% / 0.2)' },
-  { id: 'm38', name: 'Daniel', attrs: 'M · Mixed · Athletic', color: 'hsl(85 45% 55% / 0.2)' },
-  { id: 'm39', name: 'Chioma', attrs: 'F · Black · Athletic', color: 'hsl(15 80% 55% / 0.2)' },
-  { id: 'm40', name: 'Raj', attrs: 'M · South Asian · Curvy', color: 'hsl(290 50% 55% / 0.2)' },
+  { id: 'm1', name: 'Priya', attrs: 'F · South Asian · Slim', color: 'hsl(355 82% 56% / 0.2)', gender: 'female', ethnicity: 'South Asian', bodyType: 'slim', skinTone: 'warm brown', ageRange: '24-28', facialFeatures: 'high cheekbones, almond eyes, full lips' },
+  { id: 'm2', name: 'Amara', attrs: 'F · Black · Athletic', color: 'hsl(30 80% 55% / 0.2)', gender: 'female', ethnicity: 'Black African', bodyType: 'athletic', skinTone: 'deep brown', ageRange: '22-26', facialFeatures: 'strong jawline, wide-set eyes, defined brows' },
+  { id: 'm3', name: 'Mei', attrs: 'F · East Asian · Slim', color: 'hsl(200 60% 55% / 0.2)', gender: 'female', ethnicity: 'East Asian', bodyType: 'slim', skinTone: 'fair porcelain', ageRange: '23-27', facialFeatures: 'delicate features, monolid eyes, soft cheekbones' },
+  { id: 'm4', name: 'Sofia', attrs: 'F · Latina · Curvy', color: 'hsl(340 60% 55% / 0.2)', gender: 'female', ethnicity: 'Latina', bodyType: 'curvy', skinTone: 'olive tan', ageRange: '25-29', facialFeatures: 'expressive eyes, full lips, rounded face' },
+  { id: 'm5', name: 'Emma', attrs: 'F · Caucasian · Athletic', color: 'hsl(220 50% 55% / 0.2)', gender: 'female', ethnicity: 'Caucasian', bodyType: 'athletic', skinTone: 'fair with freckles', ageRange: '24-28', facialFeatures: 'angular jaw, blue-green eyes, defined cheekbones' },
+  { id: 'm6', name: 'Fatima', attrs: 'F · Middle Eastern · Slim', color: 'hsl(160 50% 55% / 0.2)', gender: 'female', ethnicity: 'Middle Eastern', bodyType: 'slim', skinTone: 'warm olive', ageRange: '23-27', facialFeatures: 'arched brows, large dark eyes, straight nose' },
+  { id: 'm7', name: 'Arjun', attrs: 'M · South Asian · Athletic', color: 'hsl(270 50% 55% / 0.2)', gender: 'male', ethnicity: 'South Asian', bodyType: 'athletic', skinTone: 'medium brown', ageRange: '26-30', facialFeatures: 'strong brow, defined jaw, dark intense eyes' },
+  { id: 'm8', name: 'James', attrs: 'M · Caucasian · Average', color: 'hsl(100 40% 55% / 0.2)', gender: 'male', ethnicity: 'Caucasian', bodyType: 'average', skinTone: 'light with warm undertones', ageRange: '28-32', facialFeatures: 'square jaw, light stubble, hazel eyes' },
+  { id: 'm9', name: 'Kenzo', attrs: 'M · East Asian · Slim', color: 'hsl(190 50% 55% / 0.2)', gender: 'male', ethnicity: 'East Asian Japanese', bodyType: 'slim', skinTone: 'light warm', ageRange: '24-28', facialFeatures: 'sharp features, narrow face, defined cheekbones' },
+  { id: 'm10', name: 'Nia', attrs: 'F · Black · Plus Size', color: 'hsl(20 70% 55% / 0.2)', gender: 'female', ethnicity: 'Black', bodyType: 'plus size', skinTone: 'rich dark brown', ageRange: '26-30', facialFeatures: 'round face, warm smile, full cheeks, bright eyes' },
+  { id: 'm11', name: 'Aisha', attrs: 'F · Middle Eastern · Athletic', color: 'hsl(45 70% 55% / 0.2)', gender: 'female', ethnicity: 'Middle Eastern', bodyType: 'athletic', skinTone: 'golden olive', ageRange: '25-29', facialFeatures: 'strong brows, angular face, piercing dark eyes' },
+  { id: 'm12', name: 'Liam', attrs: 'M · Caucasian · Slim', color: 'hsl(210 55% 55% / 0.2)', gender: 'male', ethnicity: 'Caucasian', bodyType: 'slim', skinTone: 'pale fair', ageRange: '22-26', facialFeatures: 'sharp cheekbones, green eyes, clean-shaven' },
+  { id: 'm13', name: 'Yuki', attrs: 'F · East Asian · Average', color: 'hsl(320 50% 55% / 0.2)', gender: 'female', ethnicity: 'East Asian Japanese', bodyType: 'average', skinTone: 'light porcelain', ageRange: '24-28', facialFeatures: 'oval face, gentle features, soft brows' },
+  { id: 'm14', name: 'Carlos', attrs: 'M · Latino · Athletic', color: 'hsl(15 65% 55% / 0.2)', gender: 'male', ethnicity: 'Latino', bodyType: 'athletic', skinTone: 'medium tan', ageRange: '27-31', facialFeatures: 'strong jaw, dark thick brows, warm brown eyes' },
+  { id: 'm15', name: 'Zara', attrs: 'F · Mixed · Slim', color: 'hsl(280 55% 55% / 0.2)', gender: 'female', ethnicity: 'Mixed race', bodyType: 'slim', skinTone: 'caramel', ageRange: '22-26', facialFeatures: 'unique mixed features, light hazel eyes, curly hair' },
+  { id: 'm16', name: 'Dev', attrs: 'M · South Asian · Average', color: 'hsl(170 50% 55% / 0.2)', gender: 'male', ethnicity: 'South Asian', bodyType: 'average', skinTone: 'warm brown', ageRange: '25-29', facialFeatures: 'gentle eyes, trimmed beard, friendly expression' },
+  { id: 'm17', name: 'Keiko', attrs: 'F · East Asian · Curvy', color: 'hsl(240 45% 55% / 0.2)', gender: 'female', ethnicity: 'East Asian', bodyType: 'curvy', skinTone: 'warm beige', ageRange: '26-30', facialFeatures: 'round face, bright eyes, dimpled cheeks' },
+  { id: 'm18', name: 'Marcus', attrs: 'M · Black · Athletic', color: 'hsl(10 75% 55% / 0.2)', gender: 'male', ethnicity: 'Black', bodyType: 'athletic muscular', skinTone: 'dark brown', ageRange: '25-29', facialFeatures: 'strong jaw, trimmed beard, intense gaze' },
+  { id: 'm19', name: 'Anya', attrs: 'F · Caucasian · Slim', color: 'hsl(300 50% 55% / 0.2)', gender: 'female', ethnicity: 'Caucasian Slavic', bodyType: 'slim', skinTone: 'fair cool', ageRange: '23-27', facialFeatures: 'high cheekbones, icy blue eyes, sharp features' },
+  { id: 'm20', name: 'Omar', attrs: 'M · Middle Eastern · Average', color: 'hsl(50 60% 55% / 0.2)', gender: 'male', ethnicity: 'Middle Eastern', bodyType: 'average', skinTone: 'warm olive', ageRange: '28-32', facialFeatures: 'dark eyes, well-groomed stubble, strong nose' },
+  { id: 'm21', name: 'Luna', attrs: 'F · Latina · Slim', color: 'hsl(330 65% 55% / 0.2)', gender: 'female', ethnicity: 'Latina', bodyType: 'slim', skinTone: 'warm honey', ageRange: '22-26', facialFeatures: 'wide eyes, soft jawline, subtle dimples' },
+  { id: 'm22', name: 'Ravi', attrs: 'M · South Asian · Slim', color: 'hsl(180 50% 55% / 0.2)', gender: 'male', ethnicity: 'South Asian', bodyType: 'slim', skinTone: 'light brown', ageRange: '23-27', facialFeatures: 'lean face, expressive dark eyes, clean-shaven' },
+  { id: 'm23', name: 'Hana', attrs: 'F · Southeast Asian · Average', color: 'hsl(140 45% 55% / 0.2)', gender: 'female', ethnicity: 'Southeast Asian Filipino', bodyType: 'average', skinTone: 'warm golden', ageRange: '24-28', facialFeatures: 'wide-set eyes, button nose, warm smile' },
+  { id: 'm24', name: 'Ethan', attrs: 'M · Caucasian · Athletic', color: 'hsl(230 50% 55% / 0.2)', gender: 'male', ethnicity: 'Caucasian', bodyType: 'athletic', skinTone: 'light tan', ageRange: '26-30', facialFeatures: 'defined jaw, brown eyes, short styled hair' },
+  { id: 'm25', name: 'Jasmine', attrs: 'F · Mixed · Athletic', color: 'hsl(60 55% 55% / 0.2)', gender: 'female', ethnicity: 'Mixed Black-Asian', bodyType: 'athletic', skinTone: 'medium warm', ageRange: '23-27', facialFeatures: 'striking eyes, sculpted brows, full lips' },
+  { id: 'm26', name: 'Kofi', attrs: 'M · Black · Slim', color: 'hsl(25 70% 55% / 0.2)', gender: 'male', ethnicity: 'Black West African', bodyType: 'slim', skinTone: 'deep ebony', ageRange: '24-28', facialFeatures: 'angular face, high cheekbones, bright smile' },
+  { id: 'm27', name: 'Nina', attrs: 'F · Caucasian · Plus Size', color: 'hsl(310 50% 55% / 0.2)', gender: 'female', ethnicity: 'Caucasian', bodyType: 'plus size', skinTone: 'fair pink', ageRange: '27-31', facialFeatures: 'soft rounded features, blue eyes, warm expression' },
+  { id: 'm28', name: 'Takeshi', attrs: 'M · East Asian · Athletic', color: 'hsl(195 55% 55% / 0.2)', gender: 'male', ethnicity: 'East Asian Japanese', bodyType: 'athletic', skinTone: 'light warm', ageRange: '26-30', facialFeatures: 'sharp jawline, narrow eyes, defined brows' },
+  { id: 'm29', name: 'Isla', attrs: 'F · Mixed · Curvy', color: 'hsl(350 60% 55% / 0.2)', gender: 'female', ethnicity: 'Mixed Caucasian-Latina', bodyType: 'curvy', skinTone: 'light olive', ageRange: '25-29', facialFeatures: 'green eyes, wavy hair, rounded cheekbones' },
+  { id: 'm30', name: 'Hassan', attrs: 'M · Middle Eastern · Slim', color: 'hsl(155 50% 55% / 0.2)', gender: 'male', ethnicity: 'Middle Eastern', bodyType: 'slim', skinTone: 'olive', ageRange: '24-28', facialFeatures: 'dark deep eyes, angular nose, light beard' },
+  { id: 'm31', name: 'Valentina', attrs: 'F · Latina · Athletic', color: 'hsl(5 75% 55% / 0.2)', gender: 'female', ethnicity: 'Latina Brazilian', bodyType: 'athletic', skinTone: 'golden tan', ageRange: '24-28', facialFeatures: 'bright eyes, sculpted face, radiant smile' },
+  { id: 'm32', name: 'Jin', attrs: 'M · East Asian · Average', color: 'hsl(205 50% 55% / 0.2)', gender: 'male', ethnicity: 'East Asian Korean', bodyType: 'average', skinTone: 'fair light', ageRange: '23-27', facialFeatures: 'soft features, straight brows, gentle expression' },
+  { id: 'm33', name: 'Adaeze', attrs: 'F · Black · Slim', color: 'hsl(35 65% 55% / 0.2)', gender: 'female', ethnicity: 'Black Nigerian', bodyType: 'slim', skinTone: 'deep warm brown', ageRange: '22-26', facialFeatures: 'symmetrical face, high forehead, graceful neck' },
+  { id: 'm34', name: 'Noah', attrs: 'M · Caucasian · Plus Size', color: 'hsl(120 40% 55% / 0.2)', gender: 'male', ethnicity: 'Caucasian', bodyType: 'plus size', skinTone: 'fair with warm undertones', ageRange: '29-33', facialFeatures: 'friendly round face, light beard, blue eyes' },
+  { id: 'm35', name: 'Suki', attrs: 'F · Southeast Asian · Slim', color: 'hsl(260 50% 55% / 0.2)', gender: 'female', ethnicity: 'Southeast Asian Thai', bodyType: 'slim', skinTone: 'warm golden', ageRange: '22-26', facialFeatures: 'delicate features, almond eyes, soft lips' },
+  { id: 'm36', name: 'Mateo', attrs: 'M · Latino · Slim', color: 'hsl(40 60% 55% / 0.2)', gender: 'male', ethnicity: 'Latino', bodyType: 'slim', skinTone: 'light olive', ageRange: '23-27', facialFeatures: 'lean face, warm brown eyes, tousled hair' },
+  { id: 'm37', name: 'Leila', attrs: 'F · Middle Eastern · Curvy', color: 'hsl(175 50% 55% / 0.2)', gender: 'female', ethnicity: 'Middle Eastern Persian', bodyType: 'curvy', skinTone: 'warm olive', ageRange: '25-29', facialFeatures: 'large dark eyes, arched brows, full lips' },
+  { id: 'm38', name: 'Daniel', attrs: 'M · Mixed · Athletic', color: 'hsl(85 45% 55% / 0.2)', gender: 'male', ethnicity: 'Mixed Black-Caucasian', bodyType: 'athletic', skinTone: 'medium caramel', ageRange: '25-29', facialFeatures: 'strong features, curly hair, warm hazel eyes' },
+  { id: 'm39', name: 'Chioma', attrs: 'F · Black · Athletic', color: 'hsl(15 80% 55% / 0.2)', gender: 'female', ethnicity: 'Black Nigerian', bodyType: 'athletic', skinTone: 'dark brown', ageRange: '23-27', facialFeatures: 'sculpted face, bright smile, defined cheekbones' },
+  { id: 'm40', name: 'Raj', attrs: 'M · South Asian · Curvy', color: 'hsl(290 50% 55% / 0.2)', gender: 'male', ethnicity: 'South Asian', bodyType: 'curvy stocky', skinTone: 'medium brown', ageRange: '28-32', facialFeatures: 'round friendly face, thick brows, warm eyes' },
 ];
 
 /* ── Product Shoot Templates ── */
@@ -1532,11 +1532,64 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
   setSelectedTemplate: React.Dispatch<React.SetStateAction<string | null>>;
   templateCategory: string;
 }) {
+  const [modelImages, setModelImages] = useState<Record<string, string>>({});
+  const [generatingPortraits, setGeneratingPortraits] = useState(false);
+  const [portraitProgress, setPortraitProgress] = useState(0);
+  const [portraitTotal, setPortraitTotal] = useState(0);
+
   const filteredTemplates = templateCategory === 'All'
     ? PRODUCT_SHOOT_TEMPLATES
     : PRODUCT_SHOOT_TEMPLATES.filter(t => t.category === templateCategory);
 
-  // No shoot type selected yet
+  const handleGeneratePortraits = async () => {
+    setGeneratingPortraits(true);
+    setPortraitProgress(0);
+    setPortraitTotal(PLACEHOLDER_MODELS.length);
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({ title: 'Error', description: 'Please log in first', variant: 'destructive' });
+      setGeneratingPortraits(false);
+      return;
+    }
+
+    const BATCH_SIZE = 2;
+    const models = [...PLACEHOLDER_MODELS];
+    let completed = 0;
+
+    for (let i = 0; i < models.length; i += BATCH_SIZE) {
+      const batch = models.slice(i, i + BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map(async (m) => {
+          try {
+            const { data, error } = await supabase.functions.invoke('generate-model-portraits', {
+              body: { model: m },
+            });
+            if (error) throw error;
+            return { modelId: data.modelId, imageUrl: data.imageUrl };
+          } catch (err) {
+            console.error(`Failed to generate portrait for ${m.name}:`, err);
+            return null;
+          }
+        })
+      );
+
+      results.forEach((r) => {
+        if (r.status === 'fulfilled' && r.value) {
+          setModelImages(prev => ({ ...prev, [r.value!.modelId]: r.value!.imageUrl }));
+        }
+        completed++;
+        setPortraitProgress(completed);
+      });
+
+      if (i + BATCH_SIZE < models.length) {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+    }
+
+    setGeneratingPortraits(false);
+  };
+
   if (!shootType) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-center animate-in fade-in duration-300">
@@ -1551,7 +1604,6 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
     );
   }
 
-  // Product shoot — template grid
   if (shootType === 'product') {
     return (
       <div className="h-full flex flex-col animate-in fade-in duration-300">
@@ -1596,17 +1648,47 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
     );
   }
 
-  // Model shoot — show 40-model grid
+  // Model shoot — grid with generate button
   return (
     <div className="h-full flex flex-col animate-in fade-in duration-300">
-      <div className="shrink-0 mb-4">
-        <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Choose an AI Model</p>
-        <p className="text-sm text-muted-foreground mt-1">Select a model for your shoot. {selectedModelData ? `Selected: ${selectedModelData.name}` : 'Click to select.'}</p>
+      <div className="shrink-0 mb-4 flex items-start justify-between">
+        <div>
+          <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Choose an AI Model</p>
+          <p className="text-sm text-muted-foreground mt-1">Select a model for your shoot. {selectedModelData ? `Selected: ${selectedModelData.name}` : 'Click to select.'}</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 shrink-0"
+          disabled={generatingPortraits}
+          onClick={handleGeneratePortraits}
+        >
+          {generatingPortraits ? (
+            <>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              {portraitProgress}/{portraitTotal}
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-3.5 w-3.5" />
+              Generate Portraits
+            </>
+          )}
+        </Button>
       </div>
+      {generatingPortraits && (
+        <div className="shrink-0 mb-3">
+          <Progress value={(portraitProgress / portraitTotal) * 100} className="h-1.5" />
+          <p className="text-[10px] text-muted-foreground mt-1 text-center">
+            Generating portrait {portraitProgress} of {portraitTotal}…
+          </p>
+        </div>
+      )}
       <ScrollArea className="flex-1 bg-background relative z-10">
         <div className="grid grid-cols-5 gap-3 pb-4">
           {PLACEHOLDER_MODELS.map((m) => {
             const isSelected = modelConfig.selectedModel === m.id;
+            const portraitUrl = modelImages[m.id];
             return (
               <button
                 key={m.id}
@@ -1615,9 +1697,12 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
                   isSelected ? 'ring-2 ring-primary ring-offset-2' : 'hover:border-primary/50 hover:shadow-md'
                 }`}
               >
-                <div className="aspect-[3/4]" style={{ background: m.color }}>
+                <div className="aspect-[3/4] relative" style={!portraitUrl ? { background: m.color } : undefined}>
+                  {portraitUrl ? (
+                    <img src={portraitUrl} alt={m.name} className="w-full h-full object-cover" loading="lazy" />
+                  ) : null}
                   {isSelected && (
-                    <div className="h-full flex items-center justify-center">
+                    <div className="absolute inset-0 flex items-center justify-center bg-primary/20">
                       <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
                         <Check className="h-4 w-4 text-primary-foreground" />
                       </div>
