@@ -89,6 +89,8 @@ export type Database = {
         Row: {
           category: string
           created_at: string
+          default_output: string
+          description: string | null
           id: string
           name: string
           shot_type: string
@@ -98,6 +100,8 @@ export type Database = {
         Insert: {
           category?: string
           created_at?: string
+          default_output?: string
+          description?: string | null
           id?: string
           name: string
           shot_type?: string
@@ -107,6 +111,8 @@ export type Database = {
         Update: {
           category?: string
           created_at?: string
+          default_output?: string
+          description?: string | null
           id?: string
           name?: string
           shot_type?: string
