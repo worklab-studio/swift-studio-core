@@ -85,7 +85,8 @@ Deno.serve(async (req) => {
     }
 
     const isApparel = APPAREL_REGEX.test(category || "") || APPAREL_REGEX.test(productName || "");
-    const constraints = isApparel ? APPAREL_CONSTRAINTS : GENERIC_CONSTRAINTS;
+    const isJewellery = JEWELLERY_REGEX.test(category || "") || JEWELLERY_REGEX.test(productName || "") || (category || "").toLowerCase() === "jewellery";
+    const constraints = isJewellery ? JEWELLERY_CONSTRAINTS : isApparel ? APPAREL_CONSTRAINTS : GENERIC_CONSTRAINTS;
 
     const imageGroundingInstruction = productImageUrl
       ? `
