@@ -796,6 +796,9 @@ const Studio = () => {
                 modelConfig={modelConfig}
                 setModelConfig={setModelConfig}
                 selectedModelData={selectedModelData}
+                selectedTemplate={selectedTemplate}
+                setSelectedTemplate={setSelectedTemplate}
+                templateCategory={templateCategory}
               />
             )}
             {activeStep === 3 && (
