@@ -2,3 +2,6 @@ project_id = "xxzaheqpiwxabiiaispx"
 
 [functions.analyze-product]
 verify_jwt = false
+
+[functions.generate-model-portraits]
+verify_jwt = false
