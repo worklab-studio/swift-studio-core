@@ -3,9 +3,9 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FolderOpen } from 'lucide-react';
+import { FolderOpen, ImageIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useNewProjectDialog } from '@/contexts/NewProjectContext';
 
@@ -62,37 +62,32 @@ const Projects = () => {
           <Button onClick={openDialog}>New Project</Button>
         </div>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Project Name</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Images</TableHead>
-              <TableHead>Videos</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {projects.map((p) => (
-              <TableRow key={p.id}>
-                <TableCell className="font-medium">{p.name}</TableCell>
-                <TableCell><Badge variant="outline" className="capitalize text-xs">{p.category}</Badge></TableCell>
-                <TableCell>0</TableCell>
-                <TableCell>0</TableCell>
-                <TableCell>{new Date(p.created_at).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  <div className="flex gap-1.5">
-                    <Badge variant="secondary">{p.status}</Badge>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {projects.map((p) => (
+            <Card
+              key={p.id}
+              className="hover:border-primary/50 transition-colors cursor-pointer overflow-hidden"
+              onClick={() => navigate(`/app/projects/${p.id}`)}
+            >
+              <div className="bg-muted h-36 flex items-center justify-center">
+                <ImageIcon className="h-10 w-10 text-muted-foreground" />
+              </div>
+              <CardContent className="p-4 space-y-3">
+                <div className="space-y-1.5">
+                  <p className="font-medium truncate">{p.name}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    <Badge variant="outline" className="capitalize text-xs">{p.category}</Badge>
                     {p.shot_type && <Badge variant="outline" className="text-xs">{SHOT_LABELS[p.shot_type] ?? p.shot_type}</Badge>}
                   </div>
-                </TableCell>
-                <TableCell><Button variant="outline" size="sm" onClick={() => navigate(`/app/projects/${p.id}`)}>Open</Button></TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</span>
+                  <Badge variant="secondary">{p.status}</Badge>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
     </div>
   );
