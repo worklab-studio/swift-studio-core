@@ -294,8 +294,64 @@ const Studio = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [templateCategory, setTemplateCategory] = useState<string>('All');
 
+  // Portrait generation (lifted from Step2Viewport)
+  const [modelImages, setModelImages] = useState<Record<string, string>>({});
+  const [generatingPortraits, setGeneratingPortraits] = useState(false);
+  const [portraitProgress, setPortraitProgress] = useState(0);
+  const [portraitTotal, setPortraitTotal] = useState(0);
+
   const referenceInputRef = useRef<HTMLInputElement>(null);
   const modelUploadRef = useRef<HTMLInputElement>(null);
+
+  /* ── Generate all model portraits ── */
+  const handleGeneratePortraits = useCallback(async () => {
+    setGeneratingPortraits(true);
+    setPortraitProgress(0);
+    setPortraitTotal(PLACEHOLDER_MODELS.length);
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({ title: 'Error', description: 'Please log in first', variant: 'destructive' });
+      setGeneratingPortraits(false);
+      return;
+    }
+
+    const BATCH_SIZE = 2;
+    const models = [...PLACEHOLDER_MODELS];
+    let completed = 0;
+
+    for (let i = 0; i < models.length; i += BATCH_SIZE) {
+      const batch = models.slice(i, i + BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map(async (m) => {
+          try {
+            const { data, error } = await supabase.functions.invoke('generate-model-portraits', {
+              body: { model: m },
+            });
+            if (error) throw error;
+            return { modelId: data.modelId, imageUrl: data.imageUrl };
+          } catch (err) {
+            console.error(`Failed to generate portrait for ${m.name}:`, err);
+            return null;
+          }
+        })
+      );
+
+      results.forEach((r) => {
+        if (r.status === 'fulfilled' && r.value) {
+          setModelImages(prev => ({ ...prev, [r.value!.modelId]: r.value!.imageUrl }));
+        }
+        completed++;
+        setPortraitProgress(completed);
+      });
+
+      if (i + BATCH_SIZE < models.length) {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+    }
+
+    setGeneratingPortraits(false);
+  }, []);
 
   /* ── Fetch project data ── */
   useEffect(() => {
