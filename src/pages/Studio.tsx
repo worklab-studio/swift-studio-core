@@ -297,6 +297,16 @@ const EDIT_SUGGESTIONS = [
   'warmer lighting',
 ];
 
+/* ── Asset with product_label for Products view ── */
+interface ProjectAsset {
+  id: string;
+  url: string;
+  asset_type: string;
+  product_label: string | null;
+  shot_label: string | null;
+  created_at: string;
+}
+
 const Studio = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
