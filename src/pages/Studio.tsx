@@ -251,12 +251,48 @@ const Studio = () => {
 
   const thumbnailUrl = productImages[0] ?? assets[0]?.url ?? null;
 
+  /* ── AI Product Analysis ── */
+  const analyzeProduct = useCallback(async (imageUrl: string) => {
+    setAnalyzingProduct(true);
+    try {
+      // Convert blob URL to base64
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+
+      const { data, error } = await supabase.functions.invoke('analyze-product', {
+        body: { image: base64 },
+      });
+
+      if (error || !data) {
+        console.error('Product analysis failed:', error);
+        setAnalyzingProduct(false);
+        return;
+      }
+      setProductInfo(data);
+    } catch (e) {
+      console.error('Product analysis error:', e);
+    }
+    setAnalyzingProduct(false);
+  }, []);
+
   /* ── Step 1 handlers ── */
   const handleProductImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
     const newUrls = Array.from(files).map(f => URL.createObjectURL(f));
-    setProductImages(prev => [...prev, ...newUrls]);
+    setProductImages(prev => {
+      const updated = [...prev, ...newUrls];
+      // Trigger analysis when first image is added
+      if (prev.length === 0 && updated.length > 0) {
+        analyzeProduct(updated[0]);
+      }
+      return updated;
+    });
     e.target.value = '';
   };
 
@@ -265,6 +301,12 @@ const Studio = () => {
       const next = [...prev];
       URL.revokeObjectURL(next[index]);
       next.splice(index, 1);
+      // Re-analyze if hero image changed
+      if (index === 0 && next.length > 0) {
+        analyzeProduct(next[0]);
+      } else if (next.length === 0) {
+        setProductInfo(null);
+      }
       return next;
     });
   };
