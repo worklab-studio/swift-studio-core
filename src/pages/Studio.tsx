@@ -702,6 +702,10 @@ const Studio = () => {
                 setModelConfig={setModelConfig}
                 modelUploadRef={modelUploadRef}
                 onModelUpload={handleModelUpload}
+                selectedTemplate={selectedTemplate}
+                setSelectedTemplate={setSelectedTemplate}
+                templateCategory={templateCategory}
+                setTemplateCategory={setTemplateCategory}
               />
             )}
             {activeStep === 3 && (
