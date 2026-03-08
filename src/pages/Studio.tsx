@@ -377,7 +377,7 @@ const Studio = () => {
 
   // Video state
   const [videoExpanded, setVideoExpanded] = useState(false);
-  const [videoConfig, setVideoConfig] = useState<VideoConfig>({ baseImageId: '', duration: 4, resolution: '720p', engine: 'veo' });
+  const [videoConfig, setVideoConfig] = useState<VideoConfig>({ baseImageId: '', duration: 4, resolution: '720p', engine: 'veo', aspectRatio: '9:16' });
   const [videoGenerating, setVideoGenerating] = useState(false);
   const [videoStage, setVideoStage] = useState('');
   const [generatedVideo, setGeneratedVideo] = useState<GeneratedVideo | null>(null);
@@ -565,7 +565,7 @@ const Studio = () => {
     setExportFormat('png');
     setSelectedExportShots(new Set());
     setVideoExpanded(false);
-    setVideoConfig({ baseImageId: '', duration: 4, resolution: '720p', engine: 'veo' });
+    setVideoConfig({ baseImageId: '', duration: 4, resolution: '720p', engine: 'veo', aspectRatio: '9:16' });
     setVideoGenerating(false);
     setVideoStage('');
     setGeneratedVideo(null);
