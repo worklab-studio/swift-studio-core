@@ -18,6 +18,7 @@ export function useSidebarCollapse() {
   }, [collapsed]);
 
   const toggle = useCallback(() => setCollapsed((c) => !c), []);
+  const forceCollapse = useCallback(() => setCollapsed(true), []);
 
-  return { collapsed, toggle } as const;
+  return { collapsed, toggle, forceCollapse } as const;
 }

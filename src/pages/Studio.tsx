@@ -521,7 +521,7 @@ const Studio = () => {
   }
 
   return (
-    <div className="flex h-full -m-8">
+    <div className="flex" style={{ height: 'calc(100vh - 48px)' }}>
       {/* ── Left Panel ── */}
       <div className="w-[280px] shrink-0 border-r border-border bg-card flex flex-col">
         <div className="p-4 space-y-4">
@@ -606,7 +606,7 @@ const Studio = () => {
       </div>
 
       {/* ── Main Content ── */}
-      <div className="flex-1 overflow-y-auto px-8 py-8">
+      <div className="flex-1 overflow-y-auto px-8 py-8 bg-muted/30">
         {activeStep === 2 && <Step2ModelSetup project={project} modelConfig={modelConfig} setModelConfig={setModelConfig} modelUploadRef={modelUploadRef} onModelUpload={handleModelUpload} onContinue={handleCompleteStep2} />}
         {activeStep === 3 && (
           <Step3StylePreset
