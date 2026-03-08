@@ -2577,7 +2577,7 @@ function Step4Viewport({ progress, stage, shotCount, aspectRatio }: {
 }
 
 /* ── Step 5 Viewport (Results) ── */
-function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, onCopyLink, updateShot, videoExpanded, setVideoExpanded, videoConfig, setVideoConfig, videoGenerating, videoStage, generatedVideo, onGenerateVideo, onCancelVideo, setGeneratedVideo, creditsRemaining, onGenerate }: {
+function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, onCopyLink, updateShot, videoExpanded, setVideoExpanded, videoConfig, setVideoConfig, videoGenerating, videoStage, generatedVideo, onGenerateVideo, onCancelVideo, setGeneratedVideo, creditsRemaining, onGenerate, videoPrompts, videoPromptsLoading, videoPromptStep, setVideoPromptStep, onGenerateVideoPrompts }: {
   shots: GeneratedShot[];
   shotCount: string;
   aspectRatio: string;
@@ -2597,6 +2597,11 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
   setGeneratedVideo: React.Dispatch<React.SetStateAction<GeneratedVideo | null>>;
   creditsRemaining: number;
   onGenerate: () => void;
+  videoPrompts: VideoPrompt[];
+  videoPromptsLoading: boolean;
+  videoPromptStep: 'config' | 'prompts' | 'generating' | 'done';
+  setVideoPromptStep: (step: 'config' | 'prompts' | 'generating' | 'done') => void;
+  onGenerateVideoPrompts: () => void;
 }) {
   const isCampaign = shots.length > 1;
   const videoCreditCost = calculateVideoCreditCost(videoConfig.duration, videoConfig.resolution);
