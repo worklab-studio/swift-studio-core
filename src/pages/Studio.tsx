@@ -10,7 +10,11 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Check, Package, User, Upload, X, Loader2, ArrowLeft } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from '@/hooks/use-toast';
+import { Check, Package, Upload, X, Loader2, ArrowLeft, Download, Link2, Pencil, RotateCcw, Undo2 } from 'lucide-react';
 
 /* ── Types ── */
 interface Project {
@@ -24,6 +28,9 @@ interface Asset {
   id: string;
   url: string;
   asset_type: string;
+  shot_label?: string | null;
+  preset_used?: string | null;
+  prompt_used?: string | null;
 }
 
 interface ModelConfig {
@@ -36,7 +43,26 @@ interface ModelConfig {
   aiEngine: string;
 }
 
+interface GeneratedShot {
+  id: string;
+  url: string;
+  shotLabel: string;
+  promptUsed: string;
+  isEditing: boolean;
+  editPrompt: string;
+  isRegenerating: boolean;
+  previousUrl: string | null;
+  showUndo: boolean;
+}
+
 const SHOT_LABELS: Record<string, string> = { model_shot: 'Model Shot', product_showcase: 'Product Showcase' };
+const SHOT_LABEL_DISPLAY: Record<string, string> = {
+  hero: 'Hero Shot',
+  detail: 'Close-up Detail',
+  lifestyle: 'Lifestyle',
+  alternate: 'Alternate Angle',
+  editorial: 'Editorial',
+};
 
 /* ── Placeholder models ── */
 const PLACEHOLDER_MODELS = [
@@ -73,6 +99,30 @@ const STEPS = [
   { id: 5, label: 'Export' },
 ];
 
+const GENERATION_STAGES = [
+  { threshold: 20, label: 'Preparing your product...' },
+  { threshold: 50, label: 'Building the scene...' },
+  { threshold: 80, label: 'Rendering your shots...' },
+  { threshold: 100, label: 'Finishing up...' },
+];
+
+const EXPORT_FORMATS = [
+  { id: 'original', label: 'Original resolution (PNG)', default: true },
+  { id: 'web', label: 'Web optimized (JPG, 80%)', default: true },
+  { id: 'amazon', label: 'Amazon listing (2000×2000, white bg)', default: false },
+  { id: 'shopify', label: 'Shopify product image', default: false },
+  { id: 'ig-square', label: 'Instagram 1:1', default: false },
+  { id: 'ig-portrait', label: 'Instagram 4:5', default: false },
+  { id: 'ig-story', label: 'Instagram 16:9', default: false },
+];
+
+const EDIT_SUGGESTIONS = [
+  'make the background darker',
+  'add more shadow under the product',
+  'change to outdoor setting',
+  'warmer lighting',
+];
+
 const Studio = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -102,22 +152,57 @@ const Studio = () => {
   const [shotCount, setShotCount] = useState<string>('campaign');
   const [additionalContext, setAdditionalContext] = useState('');
 
+  // Generation state
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [generationStage, setGenerationStage] = useState('');
+  const [generatedShots, setGeneratedShots] = useState<GeneratedShot[]>([]);
+  const [showExportPanel, setShowExportPanel] = useState(false);
+  const [exportFormats, setExportFormats] = useState<Set<string>>(new Set(EXPORT_FORMATS.filter(f => f.default).map(f => f.id)));
+  const [selectedExportShots, setSelectedExportShots] = useState<Set<string>>(new Set());
+  const generationAbortRef = useRef(false);
+
   const referenceInputRef = useRef<HTMLInputElement>(null);
   const modelUploadRef = useRef<HTMLInputElement>(null);
 
   /* ── Fetch project data ── */
   useEffect(() => {
     if (!user || !id) return;
-    const fetch = async () => {
+    const fetchData = async () => {
       const [{ data: proj }, { data: assetData }] = await Promise.all([
         supabase.from('projects').select('*').eq('id', id).eq('user_id', user.id).single(),
-        supabase.from('assets').select('*').eq('project_id', id).eq('asset_type', 'original'),
+        supabase.from('assets').select('*').eq('project_id', id),
       ]);
-      if (proj) setProject(proj);
-      if (assetData) setAssets(assetData);
+      if (proj) {
+        setProject(proj);
+        // If project already has generated assets, jump to results
+        const generated = assetData?.filter((a: Asset) => a.asset_type === 'ai_generated') ?? [];
+        const originals = assetData?.filter((a: Asset) => a.asset_type === 'original') ?? [];
+        setAssets(originals);
+        if (generated.length > 0) {
+          setGeneratedShots(generated.map((a: Asset) => ({
+            id: a.id,
+            url: a.url,
+            shotLabel: a.shot_label || 'hero',
+            promptUsed: a.prompt_used || '',
+            isEditing: false,
+            editPrompt: '',
+            isRegenerating: false,
+            previousUrl: null,
+            showUndo: false,
+          })));
+          setCompletedSteps(new Set([1, 2, 3, 4]));
+          setActiveStep(5);
+          setShowExportPanel(true);
+          setSelectedExportShots(new Set(generated.map((a: Asset) => a.id)));
+        }
+      }
+      if (assetData) {
+        const originals = assetData.filter((a: Asset) => a.asset_type === 'original');
+        if (originals.length > 0) setAssets(originals);
+      }
       setLoading(false);
     };
-    fetch();
+    fetchData();
   }, [user, id]);
 
   const thumbnailUrl = assets[0]?.url ?? null;
@@ -159,6 +244,167 @@ const Studio = () => {
       setReferenceImage(url);
       setSelectedPreset('custom');
     }
+  };
+
+  /* ── Generation ── */
+  const handleGenerate = async () => {
+    if (!project || !selectedPreset) return;
+
+    const presetName = STYLE_PRESETS.find(p => p.id === selectedPreset)?.name || selectedPreset;
+    completeStep(3, presetName, 4);
+    generationAbortRef.current = false;
+    setGenerationProgress(0);
+    setGenerationStage(GENERATION_STAGES[0].label);
+
+    // Animate progress bar
+    const progressInterval = setInterval(() => {
+      if (generationAbortRef.current) {
+        clearInterval(progressInterval);
+        return;
+      }
+      setGenerationProgress(prev => {
+        const next = Math.min(prev + 2, 90);
+        const stage = GENERATION_STAGES.find(s => next <= s.threshold);
+        if (stage) setGenerationStage(stage.label);
+        return next;
+      });
+    }, 200);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-shots', {
+        body: {
+          projectId: project.id,
+          preset: selectedPreset,
+          shotCount,
+          additionalContext,
+          category: project.category,
+          shotType: project.shot_type,
+          modelConfig: project.shot_type === 'model_shot' ? modelConfig : null,
+        },
+      });
+
+      clearInterval(progressInterval);
+
+      if (generationAbortRef.current) return;
+
+      if (error || !data?.assets) {
+        toast({ title: 'Generation failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
+        setActiveStep(3);
+        setCompletedSteps(prev => { const n = new Set(prev); n.delete(3); return n; });
+        return;
+      }
+
+      setGenerationProgress(100);
+      setGenerationStage('Done!');
+
+      // Small delay before showing results
+      await new Promise(r => setTimeout(r, 600));
+
+      const shots: GeneratedShot[] = data.assets.map((a: any) => ({
+        id: a.id,
+        url: a.url,
+        shotLabel: a.shot_label || 'hero',
+        promptUsed: a.prompt_used || '',
+        isEditing: false,
+        editPrompt: '',
+        isRegenerating: false,
+        previousUrl: null,
+        showUndo: false,
+      }));
+
+      setGeneratedShots(shots);
+      setSelectedExportShots(new Set(shots.map(s => s.id)));
+      completeStep(4, `${shots.length} shot${shots.length > 1 ? 's' : ''}`, 5);
+      setShowExportPanel(true);
+    } catch (e) {
+      clearInterval(progressInterval);
+      toast({ title: 'Generation failed', description: 'Network error', variant: 'destructive' });
+      setActiveStep(3);
+    }
+  };
+
+  const handleCancelGeneration = () => {
+    generationAbortRef.current = true;
+    setActiveStep(3);
+    setCompletedSteps(prev => { const n = new Set(prev); n.delete(3); return n; });
+  };
+
+  /* ── Per-shot editing ── */
+  const updateShot = (shotId: string, updates: Partial<GeneratedShot>) => {
+    setGeneratedShots(prev => prev.map(s => s.id === shotId ? { ...s, ...updates } : s));
+  };
+
+  const handleEditShot = async (shot: GeneratedShot) => {
+    if (!shot.editPrompt.trim()) return;
+    const previousUrl = shot.url;
+    updateShot(shot.id, { isRegenerating: true, isEditing: false });
+
+    try {
+      const { data, error } = await supabase.functions.invoke('edit-shot', {
+        body: { assetId: shot.id, editPrompt: shot.editPrompt },
+      });
+
+      if (error || !data?.asset) {
+        toast({ title: 'Edit failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
+        updateShot(shot.id, { isRegenerating: false, isEditing: true });
+        return;
+      }
+
+      updateShot(shot.id, {
+        url: data.asset.url,
+        promptUsed: data.asset.prompt_used,
+        isRegenerating: false,
+        editPrompt: '',
+        previousUrl,
+        showUndo: true,
+      });
+
+      // Hide undo after 5 seconds
+      setTimeout(() => updateShot(shot.id, { showUndo: false, previousUrl: null }), 5000);
+    } catch {
+      updateShot(shot.id, { isRegenerating: false, isEditing: true });
+      toast({ title: 'Edit failed', description: 'Network error', variant: 'destructive' });
+    }
+  };
+
+  const handleUndoEdit = async (shot: GeneratedShot) => {
+    if (!shot.previousUrl) return;
+    await supabase.from('assets').update({ url: shot.previousUrl }).eq('id', shot.id);
+    updateShot(shot.id, { url: shot.previousUrl, previousUrl: null, showUndo: false });
+  };
+
+  /* ── Regenerate all ── */
+  const handleRegenerateAll = () => {
+    toast({
+      title: `Regenerate all ${generatedShots.length} shots?`,
+      description: `This will replace all shots and cost ${generatedShots.length} credits.`,
+      action: (
+        <Button size="sm" onClick={() => {
+          // Delete existing generated assets and re-run generation
+          handleGenerate();
+        }}>
+          Confirm
+        </Button>
+      ),
+    });
+  };
+
+  /* ── Download ── */
+  const handleDownload = () => {
+    const selected = generatedShots.filter(s => selectedExportShots.has(s.id));
+    selected.forEach(shot => {
+      const link = document.createElement('a');
+      link.href = shot.url;
+      link.download = `${project?.name || 'shot'}-${shot.shotLabel}.jpg`;
+      link.target = '_blank';
+      link.click();
+    });
+    toast({ title: `Downloading ${selected.length} shot${selected.length > 1 ? 's' : ''}` });
+  };
+
+  const handleCopyLink = (url: string) => {
+    navigator.clipboard.writeText(url);
+    toast({ title: 'Link copied to clipboard' });
   };
 
   const credits = shotCount === 'campaign' ? 5 : 1;
@@ -209,44 +455,55 @@ const Studio = () => {
 
         <Separator />
 
-        {/* Step tracker */}
-        <div className="p-4 flex-1">
-          <div className="space-y-1">
-            {STEPS.map((step, i) => {
-              const isCompleted = completedSteps.has(step.id);
-              const isActive = activeStep === step.id;
-              const isClickable = isCompleted || isActive;
+        {/* Step tracker OR Export panel */}
+        {showExportPanel && activeStep === 5 ? (
+          <ExportPanel
+            shots={generatedShots}
+            exportFormats={exportFormats}
+            setExportFormats={setExportFormats}
+            selectedShots={selectedExportShots}
+            setSelectedShots={setSelectedExportShots}
+            onDownload={handleDownload}
+            onBackToSteps={() => setShowExportPanel(false)}
+          />
+        ) : (
+          <div className="p-4 flex-1">
+            <div className="space-y-1">
+              {STEPS.map((step) => {
+                const isCompleted = completedSteps.has(step.id);
+                const isActive = activeStep === step.id;
+                const isClickable = isCompleted || isActive;
 
-              return (
-                <button
-                  key={step.id}
-                  onClick={() => goToStep(step.id)}
-                  disabled={!isClickable}
-                  className={`w-full flex items-start gap-3 p-2 rounded-md text-left transition-colors ${
-                    isActive ? 'bg-accent' : isClickable ? 'hover:bg-accent/50' : ''
-                  } ${!isClickable ? 'opacity-50 cursor-default' : 'cursor-pointer'}`}
-                >
-                  {/* Circle indicator */}
-                  <div className={`mt-0.5 h-6 w-6 rounded-full flex items-center justify-center shrink-0 text-xs font-medium ${
-                    isCompleted
-                      ? 'bg-primary text-primary-foreground'
-                      : isActive
-                        ? 'border-2 border-primary text-primary'
-                        : 'border-2 border-border text-muted-foreground'
-                  }`}>
-                    {isCompleted ? <Check className="h-3.5 w-3.5" /> : step.id}
-                  </div>
-                  <div className="min-w-0">
-                    <p className={`text-sm ${isActive ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>{step.label}</p>
-                    {isCompleted && stepSummaries[step.id] && (
-                      <p className="text-xs text-muted-foreground truncate">{stepSummaries[step.id]}</p>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={step.id}
+                    onClick={() => goToStep(step.id)}
+                    disabled={!isClickable}
+                    className={`w-full flex items-start gap-3 p-2 rounded-md text-left transition-colors ${
+                      isActive ? 'bg-accent' : isClickable ? 'hover:bg-accent/50' : ''
+                    } ${!isClickable ? 'opacity-50 cursor-default' : 'cursor-pointer'}`}
+                  >
+                    <div className={`mt-0.5 h-6 w-6 rounded-full flex items-center justify-center shrink-0 text-xs font-medium ${
+                      isCompleted
+                        ? 'bg-primary text-primary-foreground'
+                        : isActive
+                          ? 'border-2 border-primary text-primary'
+                          : 'border-2 border-border text-muted-foreground'
+                    }`}>
+                      {isCompleted ? <Check className="h-3.5 w-3.5" /> : step.id}
+                    </div>
+                    <div className="min-w-0">
+                      <p className={`text-sm ${isActive ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>{step.label}</p>
+                      {isCompleted && stepSummaries[step.id] && (
+                        <p className="text-xs text-muted-foreground truncate">{stepSummaries[step.id]}</p>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         <Separator />
         <div className="p-4">
@@ -271,10 +528,29 @@ const Studio = () => {
             setAdditionalContext={setAdditionalContext}
             credits={credits}
             canGenerate={!!canGenerate}
+            onGenerate={handleGenerate}
           />
         )}
-        {activeStep === 4 && <PlaceholderStep title="Generate" description="AI generation coming in Phase 4." />}
-        {activeStep === 5 && <PlaceholderStep title="Export" description="Export & download coming in Phase 5." />}
+        {activeStep === 4 && (
+          <Step4Generating
+            progress={generationProgress}
+            stage={generationStage}
+            shotCount={shotCount}
+            onCancel={handleCancelGeneration}
+          />
+        )}
+        {activeStep === 5 && (
+          <Step5Results
+            shots={generatedShots}
+            shotCount={shotCount}
+            onEditShot={handleEditShot}
+            onUndoEdit={handleUndoEdit}
+            onCopyLink={handleCopyLink}
+            onRegenerateAll={handleRegenerateAll}
+            onGenerate={handleGenerate}
+            updateShot={updateShot}
+          />
+        )}
       </div>
     </div>
   );
@@ -312,7 +588,6 @@ function Step2ModelSetup({ project, modelConfig, setModelConfig, modelUploadRef,
     );
   }
 
-  // Model Shot flow
   return (
     <div className="space-y-6">
       <div>
@@ -321,7 +596,6 @@ function Step2ModelSetup({ project, modelConfig, setModelConfig, modelUploadRef,
       </div>
 
       <div className="grid grid-cols-5 gap-8">
-        {/* Left — Model selection (3 cols) */}
         <div className="col-span-3 space-y-6">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-3">Select from our models</p>
@@ -372,7 +646,6 @@ function Step2ModelSetup({ project, modelConfig, setModelConfig, modelUploadRef,
           <p className="text-xs text-muted-foreground">Your model photo is used as a style reference and is not stored after generation.</p>
         </div>
 
-        {/* Right — Attributes (2 cols) */}
         <div className="col-span-2 space-y-5">
           <div className="space-y-2">
             <label className="text-sm font-medium">Gender</label>
@@ -457,7 +730,7 @@ function Step2ModelSetup({ project, modelConfig, setModelConfig, modelUploadRef,
 /* ════════════════════════════════════════════════
    Step 3 — Style & Preset
    ════════════════════════════════════════════════ */
-function Step3StylePreset({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, additionalContext, setAdditionalContext, credits, canGenerate }: {
+function Step3StylePreset({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, additionalContext, setAdditionalContext, credits, canGenerate, onGenerate }: {
   selectedPreset: string | null;
   setSelectedPreset: (v: string | null) => void;
   referenceImage: string | null;
@@ -470,6 +743,7 @@ function Step3StylePreset({ selectedPreset, setSelectedPreset, referenceImage, s
   setAdditionalContext: (v: string) => void;
   credits: number;
   canGenerate: boolean;
+  onGenerate: () => void;
 }) {
   return (
     <div className="space-y-8">
@@ -478,7 +752,6 @@ function Step3StylePreset({ selectedPreset, setSelectedPreset, referenceImage, s
         <p className="text-sm text-muted-foreground mt-1">This sets the overall mood for all your shots.</p>
       </div>
 
-      {/* Preset grid */}
       <div className="grid grid-cols-3 gap-4">
         {STYLE_PRESETS.map(p => (
           <button
@@ -498,7 +771,6 @@ function Step3StylePreset({ selectedPreset, setSelectedPreset, referenceImage, s
           </button>
         ))}
 
-        {/* Upload reference card */}
         <input ref={referenceInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onReferenceUpload} />
         {referenceImage ? (
           <button
@@ -533,7 +805,6 @@ function Step3StylePreset({ selectedPreset, setSelectedPreset, referenceImage, s
         )}
       </div>
 
-      {/* Shot count — shows after preset selection */}
       {selectedPreset && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <div>
@@ -579,7 +850,6 @@ function Step3StylePreset({ selectedPreset, setSelectedPreset, referenceImage, s
         </div>
       )}
 
-      {/* Additional context */}
       {selectedPreset && (
         <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <label className="text-sm font-medium">Any specific direction? (optional)</label>
@@ -594,9 +864,8 @@ function Step3StylePreset({ selectedPreset, setSelectedPreset, referenceImage, s
         </div>
       )}
 
-      {/* Generate button */}
       {selectedPreset && (
-        <Button className="w-full" size="lg" disabled={!canGenerate}>
+        <Button className="w-full" size="lg" disabled={!canGenerate} onClick={onGenerate}>
           Generate — {credits} credit{credits > 1 ? 's' : ''}
         </Button>
       )}
@@ -605,17 +874,307 @@ function Step3StylePreset({ selectedPreset, setSelectedPreset, referenceImage, s
 }
 
 /* ════════════════════════════════════════════════
-   Placeholder Step
+   Step 4 — Generating (Processing State)
    ════════════════════════════════════════════════ */
-function PlaceholderStep({ title, description }: { title: string; description: string }) {
+function Step4Generating({ progress, stage, shotCount, onCancel }: {
+  progress: number;
+  stage: string;
+  shotCount: string;
+  onCancel: () => void;
+}) {
+  const isCampaign = shotCount === 'campaign';
+
   return (
-    <div className="max-w-lg mx-auto space-y-4">
-      <h2 className="text-xl font-medium" style={{ fontFamily: "'Instrument Serif', serif" }}>{title}</h2>
-      <Card>
-        <CardContent className="p-6 text-center">
-          <p className="text-muted-foreground">{description}</p>
-        </CardContent>
-      </Card>
+    <div className="space-y-8">
+      <div className="max-w-md mx-auto text-center space-y-4 pt-8">
+        <h2 className="text-xl font-medium" style={{ fontFamily: "'Instrument Serif', serif" }}>Generating your shots</h2>
+        <Progress value={progress} className="h-2" />
+        <p className="text-sm text-muted-foreground">{stage}</p>
+      </div>
+
+      {/* Skeleton preview grid */}
+      <div className="mt-8">
+        {isCampaign ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Skeleton className="aspect-[4/5] rounded-xl" />
+              <Skeleton className="aspect-[4/5] rounded-xl" />
+              <Skeleton className="aspect-[4/5] rounded-xl" />
+              <Skeleton className="aspect-[4/5] rounded-xl" />
+            </div>
+            <Skeleton className="aspect-[16/9] rounded-xl w-full" />
+          </div>
+        ) : (
+          <div className="max-w-lg mx-auto">
+            <Skeleton className="aspect-[4/5] rounded-xl" />
+          </div>
+        )}
+      </div>
+
+      <div className="text-center">
+        <button onClick={onCancel} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+          Cancel generation
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════
+   Step 5 — Results View
+   ════════════════════════════════════════════════ */
+function Step5Results({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, onRegenerateAll, onGenerate, updateShot }: {
+  shots: GeneratedShot[];
+  shotCount: string;
+  onEditShot: (shot: GeneratedShot) => void;
+  onUndoEdit: (shot: GeneratedShot) => void;
+  onCopyLink: (url: string) => void;
+  onRegenerateAll: () => void;
+  onGenerate: () => void;
+  updateShot: (id: string, updates: Partial<GeneratedShot>) => void;
+}) {
+  const isCampaign = shots.length > 1;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-medium" style={{ fontFamily: "'Instrument Serif', serif" }}>Your shots are ready</h2>
+        <p className="text-sm text-muted-foreground mt-1">Click any shot to edit with a prompt, or download from the export panel.</p>
+      </div>
+
+      {isCampaign ? (
+        <div className="space-y-4">
+          {/* Hero shot spans full width */}
+          {shots[0] && (
+            <ShotCard shot={shots[0]} index={0} wide onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />
+          )}
+          {/* Remaining shots in 2-col grid */}
+          <div className="grid grid-cols-2 gap-4">
+            {shots.slice(1).map((shot, i) => (
+              <ShotCard key={shot.id} shot={shot} index={i + 1} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="max-w-lg mx-auto">
+          {shots[0] && (
+            <ShotCard shot={shots[0]} index={0} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />
+          )}
+        </div>
+      )}
+
+      {/* Bottom actions */}
+      <div className="space-y-3">
+        {isCampaign && (
+          <Button variant="outline" className="w-full" onClick={onRegenerateAll}>
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Regenerate all shots — {shots.length} credits
+          </Button>
+        )}
+
+        {!isCampaign && (
+          <div className="max-w-lg mx-auto space-y-3">
+            <Button variant="outline" className="w-full" onClick={onGenerate}>
+              Generate another variation — 1 credit
+            </Button>
+            <Button className="w-full" onClick={onGenerate}>
+              Add 4 more shots to make a Campaign Set — 4 credits
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════
+   ShotCard Component
+   ════════════════════════════════════════════════ */
+function ShotCard({ shot, index, wide, onEdit, onUndo, onCopyLink, updateShot }: {
+  shot: GeneratedShot;
+  index: number;
+  wide?: boolean;
+  onEdit: (shot: GeneratedShot) => void;
+  onUndo: (shot: GeneratedShot) => void;
+  onCopyLink: (url: string) => void;
+  updateShot: (id: string, updates: Partial<GeneratedShot>) => void;
+}) {
+  return (
+    <div
+      className="rounded-xl overflow-hidden border bg-card animate-in fade-in duration-300"
+      style={{ animationDelay: `${index * 100}ms` }}
+    >
+      {/* Image */}
+      <div className={`relative ${wide ? 'aspect-[16/9]' : 'aspect-[4/5]'} overflow-hidden bg-muted`}>
+        <img
+          src={shot.url}
+          alt={SHOT_LABEL_DISPLAY[shot.shotLabel] || shot.shotLabel}
+          className={`w-full h-full object-cover transition-opacity duration-300 ${shot.isRegenerating ? 'opacity-40' : 'opacity-100'}`}
+        />
+        {shot.isRegenerating && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {SHOT_LABEL_DISPLAY[shot.shotLabel] || shot.shotLabel}
+          </p>
+          <div className="flex items-center gap-1">
+            <a href={shot.url} download target="_blank" rel="noopener noreferrer">
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Download className="h-4 w-4" />
+              </Button>
+            </a>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onCopyLink(shot.url)}>
+              <Link2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => updateShot(shot.id, { isEditing: !shot.isEditing })}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Edit with prompt
+            </Button>
+          </div>
+        </div>
+
+        {/* Undo link */}
+        {shot.showUndo && (
+          <button
+            onClick={() => onUndo(shot)}
+            className="flex items-center gap-1 text-xs text-primary hover:underline animate-in fade-in duration-200"
+          >
+            <Undo2 className="h-3 w-3" /> Undo last edit
+          </button>
+        )}
+
+        {/* Inline edit panel */}
+        {shot.isEditing && (
+          <div className="space-y-3 animate-in slide-in-from-bottom-2 duration-200 border-t pt-3">
+            <Textarea
+              rows={2}
+              placeholder="Describe the change..."
+              value={shot.editPrompt}
+              onChange={e => updateShot(shot.id, { editPrompt: e.target.value })}
+            />
+            <div className="flex flex-wrap gap-1.5">
+              {EDIT_SUGGESTIONS.map(s => (
+                <button
+                  key={s}
+                  onClick={() => updateShot(shot.id, { editPrompt: s })}
+                  className="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => onEdit(shot)} disabled={!shot.editPrompt.trim()}>
+                Apply — 1 credit
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => updateShot(shot.id, { isEditing: false, editPrompt: '' })}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════
+   Export Panel (Left sidebar replacement)
+   ════════════════════════════════════════════════ */
+function ExportPanel({ shots, exportFormats, setExportFormats, selectedShots, setSelectedShots, onDownload, onBackToSteps }: {
+  shots: GeneratedShot[];
+  exportFormats: Set<string>;
+  setExportFormats: React.Dispatch<React.SetStateAction<Set<string>>>;
+  selectedShots: Set<string>;
+  setSelectedShots: React.Dispatch<React.SetStateAction<Set<string>>>;
+  onDownload: () => void;
+  onBackToSteps: () => void;
+}) {
+  const toggleFormat = (id: string) => {
+    setExportFormats(prev => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  };
+
+  const toggleShot = (id: string) => {
+    setSelectedShots(prev => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  };
+
+  return (
+    <div className="p-4 flex-1 overflow-y-auto space-y-4">
+      <button
+        onClick={onBackToSteps}
+        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="h-3 w-3" /> Back to steps
+      </button>
+
+      <p className="font-medium">Export</p>
+
+      <div className="space-y-2">
+        {EXPORT_FORMATS.map(f => (
+          <label key={f.id} className="flex items-center gap-2 text-sm cursor-pointer">
+            <Checkbox
+              checked={exportFormats.has(f.id)}
+              onCheckedChange={() => toggleFormat(f.id)}
+            />
+            {f.label}
+          </label>
+        ))}
+      </div>
+
+      {shots.length > 1 && (
+        <>
+          <Separator />
+          <p className="text-xs font-medium text-muted-foreground">Select shots to export</p>
+          <div className="grid grid-cols-3 gap-1.5">
+            {shots.map(shot => (
+              <button
+                key={shot.id}
+                onClick={() => toggleShot(shot.id)}
+                className={`relative rounded-md overflow-hidden aspect-square ${
+                  selectedShots.has(shot.id) ? 'ring-2 ring-primary' : 'opacity-50'
+                }`}
+              >
+                <img src={shot.url} alt={shot.shotLabel} className="w-full h-full object-cover" />
+                {selectedShots.has(shot.id) && (
+                  <div className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-primary flex items-center justify-center">
+                    <Check className="h-2.5 w-2.5 text-primary-foreground" />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      <Button className="w-full" onClick={onDownload} disabled={selectedShots.size === 0}>
+        Download selected
+      </Button>
+
+      <Separator />
+
+      <p className="text-xs text-muted-foreground">
+        Connect Shopify in Settings →
+      </p>
     </div>
   );
 }
