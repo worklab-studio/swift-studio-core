@@ -11,6 +11,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -341,7 +342,7 @@ const Studio = () => {
   const [generationStage, setGenerationStage] = useState('');
   const [generatedShots, setGeneratedShots] = useState<GeneratedShot[]>([]);
   const [showExportPanel, setShowExportPanel] = useState(false);
-  const [exportFormats, setExportFormats] = useState<Set<string>>(new Set(EXPORT_FORMATS.filter(f => f.default).map(f => f.id)));
+  const [exportFormat, setExportFormat] = useState<string>('png');
   const [selectedExportShots, setSelectedExportShots] = useState<Set<string>>(new Set());
   const generationAbortRef = useRef(false);
 
@@ -527,7 +528,7 @@ const Studio = () => {
     setGenerationStage('');
     setGeneratedShots([]);
     setShowExportPanel(false);
-    setExportFormats(new Set(EXPORT_FORMATS.filter(f => f.default).map(f => f.id)));
+    setExportFormat('png');
     setSelectedExportShots(new Set());
     setVideoExpanded(false);
     setVideoConfig({ baseImageId: '', duration: 4, resolution: '720p', engine: 'veo' });
@@ -887,7 +888,7 @@ const Studio = () => {
     selected.forEach(shot => {
       const link = document.createElement('a');
       link.href = shot.url;
-      link.download = `${project?.name || 'shot'}-${shot.shotLabel}.jpg`;
+      link.download = `${project?.name || 'shot'}-${shot.shotLabel}.${exportFormat}`;
       link.target = '_blank';
       link.click();
     });
@@ -1081,8 +1082,8 @@ const Studio = () => {
             {activeStep === 5 && (
               <Step5Config
                 shots={generatedShots}
-                exportFormats={exportFormats}
-                setExportFormats={setExportFormats}
+                exportFormat={exportFormat}
+                setExportFormat={setExportFormat}
                 selectedShots={selectedExportShots}
                 setSelectedShots={setSelectedExportShots}
                 generatedVideo={generatedVideo}
@@ -1857,18 +1858,15 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
 }
 
 /* ── Step 5 Config (Left — Export Panel) ── */
-function Step5Config({ shots, exportFormats, setExportFormats, selectedShots, setSelectedShots, generatedVideo, onRegenerateAll }: {
+function Step5Config({ shots, exportFormat, setExportFormat, selectedShots, setSelectedShots, generatedVideo, onRegenerateAll }: {
   shots: GeneratedShot[];
-  exportFormats: Set<string>;
-  setExportFormats: React.Dispatch<React.SetStateAction<Set<string>>>;
+  exportFormat: string;
+  setExportFormat: React.Dispatch<React.SetStateAction<string>>;
   selectedShots: Set<string>;
   setSelectedShots: React.Dispatch<React.SetStateAction<Set<string>>>;
   generatedVideo: GeneratedVideo | null;
   onRegenerateAll: () => void;
 }) {
-  const toggleFormat = (id: string) => {
-    setExportFormats(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  };
   const toggleShot = (id: string) => {
     setSelectedShots(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   };
@@ -1876,14 +1874,14 @@ function Step5Config({ shots, exportFormats, setExportFormats, selectedShots, se
   return (
     <div className="space-y-4">
       <p className="text-sm font-semibold text-foreground">File format</p>
-      <div className="space-y-1.5">
+      <RadioGroup value={exportFormat} onValueChange={setExportFormat} className="space-y-1.5">
         {EXPORT_FORMATS.map(f => (
           <label key={f.id} className="flex items-center gap-2 text-xs cursor-pointer">
-            <Checkbox checked={exportFormats.has(f.id)} onCheckedChange={() => toggleFormat(f.id)} />
+            <RadioGroupItem value={f.id} />
             {f.label}
           </label>
         ))}
-      </div>
+      </RadioGroup>
 
       {shots.length > 1 && (
         <>
