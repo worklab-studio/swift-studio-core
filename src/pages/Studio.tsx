@@ -928,6 +928,8 @@ const Studio = () => {
                 setShotCount={setShotCount}
                 additionalContext={additionalContext}
                 setAdditionalContext={setAdditionalContext}
+                styleSettings={styleSettings}
+                analyzingStyle={analyzingStyle}
               />
             )}
             {activeStep === 4 && (
