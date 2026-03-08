@@ -303,11 +303,37 @@ const Studio = () => {
   const referenceInputRef = useRef<HTMLInputElement>(null);
   const modelUploadRef = useRef<HTMLInputElement>(null);
 
-  /* ── Generate all model portraits ── */
+  /* ── Load persisted model portraits from DB ── */
+  useEffect(() => {
+    const loadPortraits = async () => {
+      const { data, error } = await supabase
+        .from('model_portraits')
+        .select('model_key, image_url');
+      if (error) {
+        console.error('Failed to load model portraits:', error);
+        return;
+      }
+      if (data && data.length > 0) {
+        const map: Record<string, string> = {};
+        data.forEach(row => { map[row.model_key] = row.image_url; });
+        setModelImages(map);
+      }
+    };
+    loadPortraits();
+  }, []);
+
+  /* ── Generate all model portraits (skip existing) ── */
   const handleGeneratePortraits = useCallback(async () => {
+    // Filter out models that already have portraits
+    const missingModels = PLACEHOLDER_MODELS.filter(m => !modelImages[m.id]);
+    if (missingModels.length === 0) {
+      toast({ title: 'All portraits already generated', description: 'All 40 model portraits are ready.' });
+      return;
+    }
+
     setGeneratingPortraits(true);
     setPortraitProgress(0);
-    setPortraitTotal(PLACEHOLDER_MODELS.length);
+    setPortraitTotal(missingModels.length);
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
@@ -317,11 +343,10 @@ const Studio = () => {
     }
 
     const BATCH_SIZE = 2;
-    const models = [...PLACEHOLDER_MODELS];
     let completed = 0;
 
-    for (let i = 0; i < models.length; i += BATCH_SIZE) {
-      const batch = models.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < missingModels.length; i += BATCH_SIZE) {
+      const batch = missingModels.slice(i, i + BATCH_SIZE);
       const results = await Promise.allSettled(
         batch.map(async (m) => {
           try {
@@ -329,6 +354,11 @@ const Studio = () => {
               body: { model: m },
             });
             if (error) throw error;
+            // Save to database
+            await supabase.from('model_portraits').upsert(
+              { model_key: data.modelId, image_url: data.imageUrl },
+              { onConflict: 'model_key' }
+            );
             return { modelId: data.modelId, imageUrl: data.imageUrl };
           } catch (err) {
             console.error(`Failed to generate portrait for ${m.name}:`, err);
@@ -345,13 +375,13 @@ const Studio = () => {
         setPortraitProgress(completed);
       });
 
-      if (i + BATCH_SIZE < models.length) {
+      if (i + BATCH_SIZE < missingModels.length) {
         await new Promise(resolve => setTimeout(resolve, 1500));
       }
     }
 
     setGeneratingPortraits(false);
-  }, []);
+  }, [modelImages]);
 
   /* ── Fetch project data ── */
   useEffect(() => {
