@@ -743,30 +743,27 @@ function Step1Config({ productImages, productUploadRef, onUpload, onRemove }: {
 }
 
 /* ── Step 2 Config (Left) ── */
-function Step2Config({ project, modelConfig, setModelConfig, modelUploadRef, onModelUpload, onContinue }: {
+function Step2Config({ project, modelConfig, setModelConfig, modelUploadRef, onModelUpload }: {
   project: Project;
   modelConfig: ModelConfig;
   setModelConfig: React.Dispatch<React.SetStateAction<ModelConfig>>;
   modelUploadRef: React.RefObject<HTMLInputElement>;
   onModelUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onContinue: () => void;
 }) {
   if (project.shot_type === 'product_showcase') {
     return (
-      <div className="space-y-3">
-        <div className="rounded-lg border bg-muted/50 p-3 flex items-center gap-3">
+      <div className="space-y-4">
+        <div className="rounded-lg border bg-muted/50 p-4 flex items-center gap-3">
           <Package className="h-5 w-5 text-muted-foreground shrink-0" />
-          <p className="text-xs text-muted-foreground">Product Showcase — no model needed.</p>
+          <p className="text-sm text-muted-foreground">Product Showcase — no model needed.</p>
         </div>
-        <Button className="w-full" size="sm" onClick={onContinue}>Continue to Style →</Button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      {/* Model grid — compact 2-col */}
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Select model</p>
+    <div className="space-y-4">
+      <p className="text-sm font-semibold text-foreground">Select model</p>
       <div className="grid grid-cols-2 gap-1.5 max-h-[200px] overflow-y-auto pr-1">
         {PLACEHOLDER_MODELS.map((m) => (
           <button
@@ -873,9 +870,6 @@ function Step2Config({ project, modelConfig, setModelConfig, modelUploadRef, onM
           <ToggleGroupItem value="runway" className="px-3 h-7 text-xs">Runway</ToggleGroupItem>
         </ToggleGroup>
         <p className="text-[10px] text-muted-foreground">Gemini is faster. Runway has better lighting.</p>
-      </div>
-
-      <Button className="w-full" size="sm" onClick={onContinue}>Continue to Style →</Button>
     </div>
   );
 }
