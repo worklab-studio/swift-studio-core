@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 interface Transaction {
   created_at: string;
@@ -12,7 +11,6 @@ interface CreditHeatmapProps {
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const DAYS = ['Mon', '', 'Wed', '', 'Fri', '', ''];
 
 function getIntensityClass(count: number): string {
   if (count === 0) return 'bg-muted';
@@ -29,16 +27,14 @@ export const CreditHeatmap = ({ transactions }: CreditHeatmapProps) => {
     oneYearAgo.setFullYear(now.getFullYear() - 1);
     oneYearAgo.setDate(oneYearAgo.getDate() - oneYearAgo.getDay()); // align to Sunday
 
-    // Aggregate amounts by date string
     const dayMap = new Map<string, number>();
     for (const t of transactions) {
       const key = t.created_at.slice(0, 10);
       dayMap.set(key, (dayMap.get(key) ?? 0) + Math.abs(t.amount));
     }
 
-    // Build 53 weeks × 7 days grid
     const weeks: { date: Date; count: number }[][] = [];
-    const labels: { label: string; col: number }[] = [];
+    const labels: { label: string; weekIndex: number }[] = [];
     let currentDate = new Date(oneYearAgo);
     let lastMonth = -1;
 
@@ -53,7 +49,7 @@ export const CreditHeatmap = ({ transactions }: CreditHeatmapProps) => {
       }
 
       if (month !== lastMonth) {
-        labels.push({ label: MONTHS[month], col: weeks.length });
+        labels.push({ label: MONTHS[month], weekIndex: weeks.length });
         lastMonth = month;
       }
 
@@ -70,56 +66,40 @@ export const CreditHeatmap = ({ transactions }: CreditHeatmapProps) => {
     return { grid: weeks, monthLabels: labels, total: totalSpent };
   }, [transactions]);
 
+  const totalWeeks = grid.length;
+
   return (
     <Card>
       <CardContent className="p-6 space-y-3">
         <p className="text-lg font-medium">Credit Usage</p>
-        <ScrollArea className="w-full">
-          <div className="min-w-[720px]">
-            {/* Month labels */}
-            <div className="flex ml-8 mb-1 gap-0">
-              {monthLabels.map((m, i) => (
-                <span
-                  key={i}
-                  className="text-xs text-muted-foreground"
-                  style={{
-                    position: 'absolute',
-                    left: `${m.col * 14 + 32}px`,
-                  }}
-                >
-                  {m.label}
-                </span>
+
+        {/* Month labels */}
+        <div className="relative h-4">
+          {monthLabels.map((m, i) => (
+            <span
+              key={i}
+              className="absolute text-xs text-muted-foreground"
+              style={{ left: `${(m.weekIndex / totalWeeks) * 100}%` }}
+            >
+              {m.label}
+            </span>
+          ))}
+        </div>
+
+        {/* Grid */}
+        <div className="flex w-full gap-[2px]">
+          {grid.map((week, wi) => (
+            <div key={wi} className="flex-1 flex flex-col gap-[2px]">
+              {week.map((day, di) => (
+                <div
+                  key={di}
+                  className={`w-full aspect-square rounded-[2px] ${getIntensityClass(day.count)}`}
+                  title={`${day.date.toLocaleDateString()}: ${day.count} credits`}
+                />
               ))}
             </div>
-
-            <div className="flex gap-0 mt-5 relative">
-              {/* Day labels */}
-              <div className="flex flex-col gap-[3px] mr-2 shrink-0">
-                {DAYS.map((d, i) => (
-                  <span key={i} className="text-[10px] text-muted-foreground h-[11px] flex items-center">
-                    {d}
-                  </span>
-                ))}
-              </div>
-
-              {/* Grid */}
-              <div className="flex gap-[3px]">
-                {grid.map((week, wi) => (
-                  <div key={wi} className="flex flex-col gap-[3px]">
-                    {week.map((day, di) => (
-                      <div
-                        key={di}
-                        className={`w-[11px] h-[11px] rounded-[2px] ${getIntensityClass(day.count)}`}
-                        title={`${day.date.toLocaleDateString()}: ${day.count} credits`}
-                      />
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+          ))}
+        </div>
 
         {/* Footer */}
         <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
