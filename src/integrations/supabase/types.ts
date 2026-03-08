@@ -19,21 +19,30 @@ export type Database = {
           asset_type: string
           created_at: string
           id: string
+          preset_used: string | null
           project_id: string
+          prompt_used: string | null
+          shot_label: string | null
           url: string
         }
         Insert: {
           asset_type?: string
           created_at?: string
           id?: string
+          preset_used?: string | null
           project_id: string
+          prompt_used?: string | null
+          shot_label?: string | null
           url: string
         }
         Update: {
           asset_type?: string
           created_at?: string
           id?: string
+          preset_used?: string | null
           project_id?: string
+          prompt_used?: string | null
+          shot_label?: string | null
           url?: string
         }
         Relationships: [
