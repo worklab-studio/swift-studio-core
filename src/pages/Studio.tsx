@@ -486,6 +486,11 @@ const Studio = () => {
       ]);
       if (proj) {
         setProject(proj);
+        // Store all assets for Assets/Products views
+        setProjectAssets((assetData ?? []).map((a: any) => ({
+          id: a.id, url: a.url, asset_type: a.asset_type,
+          product_label: a.product_label, shot_label: a.shot_label, created_at: a.created_at,
+        })));
         // Extract distinct product labels for toolbar dropdown
         const generated = assetData?.filter((a: any) => a.asset_type === 'ai_generated') ?? [];
         const labels = [...new Set(generated.map((a: any) => a.product_label).filter(Boolean))] as string[];
