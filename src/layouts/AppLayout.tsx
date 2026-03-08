@@ -17,7 +17,7 @@ export const AppLayout = () => {
         <div className={isMobile ? '' : 'ml-60'}>
           <AppTopbar />
           <main className="px-4 sm:px-8 py-8 pb-24 sm:pb-8">
-            <div className="max-w-6xl" key={location.pathname}>
+            <div key={location.pathname}>
               <div className="animate-fade-in">
                 <Outlet />
               </div>
