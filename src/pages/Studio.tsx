@@ -69,6 +69,7 @@ interface ProductInfo {
   material: string;
   suggestedShots: string[];
   description: string;
+  productName: string;
 }
 
 interface GeneratedVideo {
