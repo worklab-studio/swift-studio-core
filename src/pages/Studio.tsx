@@ -1504,7 +1504,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
 }
 
 /* ── Step 3 Config (Left) ── */
-function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, additionalContext, setAdditionalContext }: {
+function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, additionalContext, setAdditionalContext, styleSettings, analyzingStyle }: {
   selectedPreset: string | null;
   setSelectedPreset: (v: string | null) => void;
   referenceImage: string | null;
@@ -1515,6 +1515,8 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
   setShotCount: (v: string) => void;
   additionalContext: string;
   setAdditionalContext: (v: string) => void;
+  styleSettings: StyleSettings | null;
+  analyzingStyle: boolean;
 }) {
   return (
     <div className="space-y-4">
@@ -1552,6 +1554,12 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
           </button>
           <div className="p-1.5">
             <p className="text-[11px] font-semibold">Custom Reference</p>
+            {analyzingStyle && (
+              <div className="flex items-center gap-1 mt-0.5">
+                <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                <p className="text-[10px] text-primary">Extracting style...</p>
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -1562,6 +1570,32 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
           <Upload className="h-4 w-4 text-muted-foreground" />
           <p className="text-xs text-muted-foreground">Upload reference image</p>
         </button>
+      )}
+
+      {/* Style settings badges */}
+      {styleSettings && (
+        <>
+          <Separator />
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-foreground flex items-center gap-1.5">
+              <Sparkles className="h-3 w-3 text-primary" />
+              Auto-detected settings
+            </p>
+            <div className="space-y-1.5">
+              {[
+                { label: 'Pose', value: styleSettings.pose, icon: '🎯' },
+                { label: 'Angle', value: styleSettings.angle, icon: '📐' },
+                { label: 'Lighting', value: styleSettings.lighting, icon: '💡' },
+                { label: 'Composition', value: styleSettings.composition, icon: '🖼' },
+              ].map(item => (
+                <div key={item.label} className="rounded-md border bg-muted/50 p-2">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{item.icon} {item.label}</p>
+                  <p className="text-[11px] text-foreground mt-0.5 leading-snug">{item.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
       )}
 
       {selectedPreset && (
