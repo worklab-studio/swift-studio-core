@@ -1117,6 +1117,7 @@ const Studio = () => {
                     setSelectedShots={setSelectedExportShots}
                     generatedVideo={generatedVideo}
                     onRegenerateAll={handleRegenerateAll}
+                    aspectRatio={aspectRatio}
                   />
                 )}
               </div>
@@ -1939,7 +1940,7 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
 }
 
 /* ── Step 5 Config (Left — Export Panel) ── */
-function Step5Config({ shots, exportFormat, setExportFormat, selectedShots, setSelectedShots, generatedVideo, onRegenerateAll }: {
+function Step5Config({ shots, exportFormat, setExportFormat, selectedShots, setSelectedShots, generatedVideo, onRegenerateAll, aspectRatio }: {
   shots: GeneratedShot[];
   exportFormat: string;
   setExportFormat: React.Dispatch<React.SetStateAction<string>>;
@@ -1947,6 +1948,7 @@ function Step5Config({ shots, exportFormat, setExportFormat, selectedShots, setS
   setSelectedShots: React.Dispatch<React.SetStateAction<Set<string>>>;
   generatedVideo: GeneratedVideo | null;
   onRegenerateAll: () => void;
+  aspectRatio: string;
 }) {
   const toggleShot = (id: string) => {
     setSelectedShots(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -2485,10 +2487,11 @@ function Step3Viewport({ selectedPreset, selectedPresetData, referenceImage }: {
 }
 
 /* ── Step 4 Viewport (Generating) ── */
-function Step4Viewport({ progress, stage, shotCount }: {
+function Step4Viewport({ progress, stage, shotCount, aspectRatio }: {
   progress: number;
   stage: string;
   shotCount: string;
+  aspectRatio: string;
 }) {
   const isCampaign = shotCount === 'campaign';
 
