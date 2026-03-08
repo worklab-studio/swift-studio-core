@@ -1230,7 +1230,7 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
             <img
               src={productImages[0]}
               alt="Analyzing product"
-              className="max-w-md w-full rounded-2xl shadow-2xl object-cover aspect-[4/3] animate-in zoom-in-95 duration-500"
+              className="max-w-md w-full max-h-[60vh] rounded-2xl shadow-2xl object-contain animate-in zoom-in-95 duration-500"
             />
             <div className="absolute inset-0 rounded-2xl bg-foreground/40 backdrop-blur-[2px] flex items-center justify-center">
               <div className="flex flex-col items-center gap-3">
@@ -1254,91 +1254,90 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
     );
   }
 
-  // Phase 2: Done — image top-left, info on right and bottom
+  // Phase 2: Done — image left + thumbnails right, info below. No scroll.
   return (
-    <div className="h-full w-full overflow-y-auto p-6">
-      <div className="flex gap-6 items-start animate-in fade-in duration-500">
-        {/* Left column — product image + angle thumbnails */}
-        <div className="w-[45%] shrink-0 space-y-3">
+    <div className="h-full w-full overflow-hidden p-6 flex flex-col">
+      {/* Top row: main image + angle thumbnails */}
+      <div className="flex gap-4 flex-1 min-h-0">
+        {/* Main image — natural ratio, fits within available space */}
+        <div className="flex-1 min-w-0 flex items-start justify-start animate-in slide-in-from-bottom-4 duration-500">
           <img
             src={productImages[0]}
             alt="Product main"
-            className="w-full rounded-2xl shadow-lg object-cover aspect-[4/3] animate-in slide-in-from-bottom-4 duration-500"
+            className="max-h-full max-w-full rounded-2xl shadow-lg object-contain"
           />
-          {productImages.length > 1 && (
-            <div className="flex gap-2 flex-wrap animate-stagger-in" style={{ animationDelay: '0.6s' }}>
-              {productImages.slice(1).map((url, i) => (
-                <img
-                  key={i}
-                  src={url}
-                  alt={`Angle ${i + 2}`}
-                  className="h-16 w-16 rounded-lg object-cover border border-border shadow-sm"
-                />
-              ))}
-            </div>
-          )}
         </div>
 
-        {/* Right column — AI recognition info */}
-        <div className="flex-1 min-w-0 space-y-5">
-          <div className="flex items-center gap-2 animate-stagger-in" style={{ animationDelay: '0.15s' }}>
-            <Sparkles className="h-4 w-4 text-primary" />
-            <p className="text-sm font-semibold text-foreground">AI Product Recognition</p>
-            {analyzingProduct && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground ml-auto" />}
+        {/* Right column — angle thumbnails */}
+        {productImages.length > 1 && (
+          <div className="shrink-0 flex flex-col gap-2 animate-stagger-in" style={{ animationDelay: '0.3s' }}>
+            {productImages.slice(1).map((url, i) => (
+              <img
+                key={i}
+                src={url}
+                alt={`Angle ${i + 2}`}
+                className="h-16 w-16 rounded-lg object-cover border border-border shadow-sm hover:ring-2 hover:ring-primary/30 transition-all cursor-pointer"
+              />
+            ))}
           </div>
+        )}
+      </div>
 
-          {productInfo ? (
-            <>
-              {/* Category & Material */}
-              <div className="grid grid-cols-2 gap-4 animate-stagger-in" style={{ animationDelay: '0.25s' }}>
-                <div className="rounded-xl border border-border bg-card p-4 space-y-1">
-                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Category</p>
-                  <p className="text-sm font-semibold text-foreground">{productInfo.category}</p>
-                </div>
-                <div className="rounded-xl border border-border bg-card p-4 space-y-1">
-                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Material</p>
-                  <p className="text-sm font-semibold text-foreground">{productInfo.material}</p>
-                </div>
-              </div>
-
-              {/* Colors */}
-              <div className="rounded-xl border border-border bg-card p-4 space-y-2.5 animate-stagger-in" style={{ animationDelay: '0.35s' }}>
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Detected Colors</p>
-                <div className="flex flex-wrap gap-2">
-                  {productInfo.colors.map((color, i) => (
-                    <Badge key={i} variant="secondary" className="text-xs gap-1.5">
-                      <Palette className="h-3 w-3" />
-                      {color}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              {/* Suggested Shots */}
-              <div className="rounded-xl border border-border bg-card p-4 space-y-2.5 animate-stagger-in" style={{ animationDelay: '0.45s' }}>
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Suggested Shots</p>
-                <div className="flex flex-wrap gap-2">
-                  {productInfo.suggestedShots.map((shot, i) => (
-                    <Badge key={i} variant="outline" className="text-xs gap-1.5">
-                      <Camera className="h-3 w-3" />
-                      {shot}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="rounded-xl border border-border bg-card p-4 space-y-2 animate-stagger-in" style={{ animationDelay: '0.55s' }}>
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Description</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">{productInfo.description}</p>
-              </div>
-            </>
-          ) : !analyzingProduct ? (
-            <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-xs text-muted-foreground">Analysis could not be completed. Try uploading a clearer image.</p>
-            </div>
-          ) : null}
+      {/* Bottom section — AI recognition info, compact horizontal */}
+      <div className="shrink-0 mt-4">
+        <div className="flex items-center gap-2 mb-3 animate-stagger-in" style={{ animationDelay: '0.15s' }}>
+          <Sparkles className="h-4 w-4 text-primary" />
+          <p className="text-sm font-semibold text-foreground">AI Product Recognition</p>
+          {analyzingProduct && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground ml-auto" />}
         </div>
+
+        {productInfo ? (
+          <div className="flex flex-wrap gap-3 animate-stagger-in" style={{ animationDelay: '0.25s' }}>
+            {/* Category */}
+            <div className="rounded-xl border border-border bg-card px-4 py-2.5 space-y-0.5">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Category</p>
+              <p className="text-sm font-semibold text-foreground">{productInfo.category}</p>
+            </div>
+            {/* Material */}
+            <div className="rounded-xl border border-border bg-card px-4 py-2.5 space-y-0.5">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Material</p>
+              <p className="text-sm font-semibold text-foreground">{productInfo.material}</p>
+            </div>
+            {/* Colors */}
+            <div className="rounded-xl border border-border bg-card px-4 py-2.5 space-y-1">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Colors</p>
+              <div className="flex flex-wrap gap-1.5">
+                {productInfo.colors.map((color, i) => (
+                  <Badge key={i} variant="secondary" className="text-[10px] gap-1 px-2 py-0">
+                    <Palette className="h-2.5 w-2.5" />
+                    {color}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            {/* Suggested Shots */}
+            <div className="rounded-xl border border-border bg-card px-4 py-2.5 space-y-1">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Suggested Shots</p>
+              <div className="flex flex-wrap gap-1.5">
+                {productInfo.suggestedShots.map((shot, i) => (
+                  <Badge key={i} variant="outline" className="text-[10px] gap-1 px-2 py-0">
+                    <Camera className="h-2.5 w-2.5" />
+                    {shot}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            {/* Description */}
+            <div className="rounded-xl border border-border bg-card px-4 py-2.5 space-y-0.5 max-w-md">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Description</p>
+              <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{productInfo.description}</p>
+            </div>
+          </div>
+        ) : !analyzingProduct ? (
+          <div className="rounded-xl border border-border bg-card px-4 py-2.5">
+            <p className="text-xs text-muted-foreground">Analysis could not be completed. Try uploading a clearer image.</p>
+          </div>
+        ) : null}
       </div>
     </div>
   );
