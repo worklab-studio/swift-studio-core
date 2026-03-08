@@ -55,6 +55,27 @@ export type Database = {
           },
         ]
       }
+      model_portraits: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          model_key: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          model_key: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          model_key?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
