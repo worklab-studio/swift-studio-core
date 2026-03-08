@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           id: string
           preset_used: string | null
+          product_label: string | null
           project_id: string
           prompt_used: string | null
           shot_label: string | null
@@ -30,6 +31,7 @@ export type Database = {
           created_at?: string
           id?: string
           preset_used?: string | null
+          product_label?: string | null
           project_id: string
           prompt_used?: string | null
           shot_label?: string | null
@@ -40,6 +42,7 @@ export type Database = {
           created_at?: string
           id?: string
           preset_used?: string | null
+          product_label?: string | null
           project_id?: string
           prompt_used?: string | null
           shot_label?: string | null
