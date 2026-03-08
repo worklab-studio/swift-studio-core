@@ -212,6 +212,7 @@ const Studio = () => {
   // AI Product Recognition
   const [productInfo, setProductInfo] = useState<ProductInfo | null>(null);
   const [analyzingProduct, setAnalyzingProduct] = useState(false);
+  const [analysisPhase, setAnalysisPhase] = useState<'idle' | 'analyzing' | 'done'>('idle');
 
   const referenceInputRef = useRef<HTMLInputElement>(null);
   const modelUploadRef = useRef<HTMLInputElement>(null);
