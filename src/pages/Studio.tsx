@@ -362,6 +362,10 @@ const Studio = () => {
   const [analysisPhase, setAnalysisPhase] = useState<'idle' | 'analyzing' | 'done'>('idle');
   const [productName, setProductName] = useState('');
 
+  // Model detection choice
+  const [modelChoice, setModelChoice] = useState<'remove' | 'keep' | null>(null);
+  const [removingBackground, setRemovingBackground] = useState(false);
+
   // Shoot type selection (Step 2)
   const [shootType, setShootType] = useState<'product' | 'model' | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
@@ -573,7 +577,58 @@ const Studio = () => {
 
   const handleCompleteStep1 = () => {
     if (productImages.length === 0) return;
-    completeStep(1, `${productImages.length} image${productImages.length > 1 ? 's' : ''}`, 2);
+    // If model detected and no choice made, don't proceed
+    if (productInfo?.hasModel && !modelChoice) {
+      toast({ title: 'Choose an option', description: 'Please select "Remove Background" or "Keep Model" before continuing.', variant: 'destructive' });
+      return;
+    }
+    completeStep(1, `${productImages.length} image${productImages.length > 1 ? 's' : ''}${modelChoice === 'keep' ? ' · Keep Model' : ''}`, 2);
+  };
+
+  /* ── Remove background handler ── */
+  const handleRemoveBackground = async () => {
+    if (!productImages[0] || !id) return;
+    setRemovingBackground(true);
+    try {
+      const response = await fetch(productImages[0]);
+      const blob = await response.blob();
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+
+      const { data, error } = await supabase.functions.invoke('remove-background', {
+        body: { image: base64, projectId: id },
+      });
+
+      if (error || !data?.url) {
+        toast({ title: 'Background removal failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
+        setRemovingBackground(false);
+        return;
+      }
+
+      // Replace primary image with cleaned version
+      setProductImages(prev => {
+        const updated = [...prev];
+        updated[0] = data.url;
+        return updated;
+      });
+      setModelChoice('remove');
+      // Re-analyze the cleaned image
+      analyzeProduct(data.url);
+      toast({ title: 'Background removed', description: 'Product image cleaned successfully.' });
+    } catch (e) {
+      console.error('Remove background error:', e);
+      toast({ title: 'Background removal failed', description: 'Network error', variant: 'destructive' });
+    }
+    setRemovingBackground(false);
+  };
+
+  const handleKeepModel = () => {
+    setModelChoice('keep');
+    setShootType('model');
+    toast({ title: 'Model kept', description: 'Shots will be generated with the same model.' });
   };
 
   /* ── Step navigation ── */
