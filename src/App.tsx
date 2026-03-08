@@ -30,7 +30,7 @@ const App = () => (
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="projects" element={<Projects />} />
               <Route path="assets" element={<Assets />} />
-              <Route path="new-project" element={<Placeholder />} />
+              {/* new-project route removed — handled by dialog */}
               <Route path="billing" element={<Placeholder />} />
               <Route path="integrations" element={<Placeholder />} />
               <Route path="settings" element={<Placeholder />} />
