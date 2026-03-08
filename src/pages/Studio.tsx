@@ -1532,11 +1532,64 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
   setSelectedTemplate: React.Dispatch<React.SetStateAction<string | null>>;
   templateCategory: string;
 }) {
+  const [modelImages, setModelImages] = useState<Record<string, string>>({});
+  const [generatingPortraits, setGeneratingPortraits] = useState(false);
+  const [portraitProgress, setPortraitProgress] = useState(0);
+  const [portraitTotal, setPortraitTotal] = useState(0);
+
   const filteredTemplates = templateCategory === 'All'
     ? PRODUCT_SHOOT_TEMPLATES
     : PRODUCT_SHOOT_TEMPLATES.filter(t => t.category === templateCategory);
 
-  // No shoot type selected yet
+  const handleGeneratePortraits = async () => {
+    setGeneratingPortraits(true);
+    setPortraitProgress(0);
+    setPortraitTotal(PLACEHOLDER_MODELS.length);
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({ title: 'Error', description: 'Please log in first', variant: 'destructive' });
+      setGeneratingPortraits(false);
+      return;
+    }
+
+    const BATCH_SIZE = 2;
+    const models = [...PLACEHOLDER_MODELS];
+    let completed = 0;
+
+    for (let i = 0; i < models.length; i += BATCH_SIZE) {
+      const batch = models.slice(i, i + BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map(async (m) => {
+          try {
+            const { data, error } = await supabase.functions.invoke('generate-model-portraits', {
+              body: { model: m },
+            });
+            if (error) throw error;
+            return { modelId: data.modelId, imageUrl: data.imageUrl };
+          } catch (err) {
+            console.error(`Failed to generate portrait for ${m.name}:`, err);
+            return null;
+          }
+        })
+      );
+
+      results.forEach((r) => {
+        if (r.status === 'fulfilled' && r.value) {
+          setModelImages(prev => ({ ...prev, [r.value!.modelId]: r.value!.imageUrl }));
+        }
+        completed++;
+        setPortraitProgress(completed);
+      });
+
+      if (i + BATCH_SIZE < models.length) {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+    }
+
+    setGeneratingPortraits(false);
+  };
+
   if (!shootType) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-center animate-in fade-in duration-300">
@@ -1551,7 +1604,6 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
     );
   }
 
-  // Product shoot — template grid
   if (shootType === 'product') {
     return (
       <div className="h-full flex flex-col animate-in fade-in duration-300">
@@ -1596,17 +1648,47 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
     );
   }
 
-  // Model shoot — show 40-model grid
+  // Model shoot — grid with generate button
   return (
     <div className="h-full flex flex-col animate-in fade-in duration-300">
-      <div className="shrink-0 mb-4">
-        <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Choose an AI Model</p>
-        <p className="text-sm text-muted-foreground mt-1">Select a model for your shoot. {selectedModelData ? `Selected: ${selectedModelData.name}` : 'Click to select.'}</p>
+      <div className="shrink-0 mb-4 flex items-start justify-between">
+        <div>
+          <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Choose an AI Model</p>
+          <p className="text-sm text-muted-foreground mt-1">Select a model for your shoot. {selectedModelData ? `Selected: ${selectedModelData.name}` : 'Click to select.'}</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 shrink-0"
+          disabled={generatingPortraits}
+          onClick={handleGeneratePortraits}
+        >
+          {generatingPortraits ? (
+            <>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              {portraitProgress}/{portraitTotal}
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-3.5 w-3.5" />
+              Generate Portraits
+            </>
+          )}
+        </Button>
       </div>
+      {generatingPortraits && (
+        <div className="shrink-0 mb-3">
+          <Progress value={(portraitProgress / portraitTotal) * 100} className="h-1.5" />
+          <p className="text-[10px] text-muted-foreground mt-1 text-center">
+            Generating portrait {portraitProgress} of {portraitTotal}…
+          </p>
+        </div>
+      )}
       <ScrollArea className="flex-1 bg-background relative z-10">
         <div className="grid grid-cols-5 gap-3 pb-4">
           {PLACEHOLDER_MODELS.map((m) => {
             const isSelected = modelConfig.selectedModel === m.id;
+            const portraitUrl = modelImages[m.id];
             return (
               <button
                 key={m.id}
@@ -1615,9 +1697,12 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
                   isSelected ? 'ring-2 ring-primary ring-offset-2' : 'hover:border-primary/50 hover:shadow-md'
                 }`}
               >
-                <div className="aspect-[3/4]" style={{ background: m.color }}>
+                <div className="aspect-[3/4] relative" style={!portraitUrl ? { background: m.color } : undefined}>
+                  {portraitUrl ? (
+                    <img src={portraitUrl} alt={m.name} className="w-full h-full object-cover" loading="lazy" />
+                  ) : null}
                   {isSelected && (
-                    <div className="h-full flex items-center justify-center">
+                    <div className="absolute inset-0 flex items-center justify-center bg-primary/20">
                       <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
                         <Check className="h-4 w-4 text-primary-foreground" />
                       </div>
