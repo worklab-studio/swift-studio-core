@@ -1,4 +1,5 @@
 import { LayoutDashboard, Plus, FolderOpen, Images, CreditCard, Plug, Settings, LogOut, MoreHorizontal } from 'lucide-react';
+import logo from '@/assets/Logo.png';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { useNewProjectDialog } from '@/contexts/NewProjectContext';
@@ -42,9 +43,12 @@ export const AppSidebar = () => {
   return (
     <aside className="fixed left-0 top-0 z-30 flex h-screen w-60 flex-col border-r bg-background py-6">
       {/* Logo */}
-      <div className="px-6 mb-6">
-        <span className="font-['Instrument_Serif'] italic text-xl text-primary">Swift</span>
-        <span className="text-xl font-light ml-1">Studio</span>
+      <div className="px-6 mb-6 flex items-center gap-2">
+        <img src={logo} alt="Swift Studio" className="h-6 w-6" />
+        <div>
+          <span className="font-['Instrument_Serif'] italic text-xl text-primary">Swift</span>
+          <span className="text-xl font-light ml-1">Studio</span>
+        </div>
       </div>
 
       {/* New Project */}

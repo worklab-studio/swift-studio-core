@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { PricingGrid } from '@/components/PricingGrid';
 import { Camera, Film, Sparkles } from 'lucide-react';
+import logo from '@/assets/Logo.png';
 
 const FEATURES = [
   {
@@ -35,9 +36,12 @@ const Landing = () => {
       {/* Navbar */}
       <nav className="fixed top-0 inset-x-0 z-50 bg-background/80 backdrop-blur border-b">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
-          <div>
-            <span className="font-['Instrument_Serif'] italic text-xl">Swift</span>
-            <span className="text-xl font-light ml-1">Studio</span>
+          <div className="flex items-center gap-2">
+            <img src={logo} alt="Swift Studio" className="h-6 w-6" />
+            <div>
+              <span className="font-['Instrument_Serif'] italic text-xl">Swift</span>
+              <span className="text-xl font-light ml-1">Studio</span>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
@@ -123,9 +127,12 @@ const Landing = () => {
       {/* Footer */}
       <footer className="border-t py-8">
         <div className="mx-auto max-w-6xl px-6 flex items-center justify-between text-sm text-muted-foreground">
-          <div>
-            <span className="font-['Instrument_Serif'] italic">Swift</span>
-            <span className="font-light ml-1">Studio</span>
+          <div className="flex items-center gap-1.5">
+            <img src={logo} alt="Swift Studio" className="h-5 w-5" />
+            <div>
+              <span className="font-['Instrument_Serif'] italic">Swift</span>
+              <span className="font-light ml-1">Studio</span>
+            </div>
           </div>
           <p>© {new Date().getFullYear()} Swift Studio. All rights reserved.</p>
         </div>
