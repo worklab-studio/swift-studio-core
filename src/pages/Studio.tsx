@@ -2883,8 +2883,9 @@ function ProductsViewport({ assets, productLabels, selectedLabel, onSelectLabel,
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-4 gap-4">
         {productLabels.map((label) => {
-          const productAssets = assets.filter(a => a.product_label === label && a.asset_type === 'ai_generated');
-          const thumbnail = productAssets[0]?.url;
+          const originalAssets = assets.filter(a => a.product_label === label && a.asset_type === 'original');
+          const generatedCount = assets.filter(a => a.product_label === label && a.asset_type === 'ai_generated').length;
+          const thumbnail = originalAssets[0]?.url;
           return (
             <button
               key={label}
