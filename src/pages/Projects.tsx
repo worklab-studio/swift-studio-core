@@ -13,6 +13,14 @@ const categories = ['All', 'Jewellery', 'Apparel', 'Beauty', 'FMCG', 'Footwear',
 
 const SHOT_LABELS: Record<string, string> = { model_shot: 'Model Shot', product_showcase: 'Product Showcase' };
 
+const statusBadgeClass = (status: string) => {
+  switch (status) {
+    case 'draft': return 'bg-amber-100 text-amber-700 border-0';
+    case 'completed': return 'bg-green-100 text-green-700 border-0';
+    default: return '';
+  }
+};
+
 interface Project {
   id: string;
   name: string;
@@ -62,27 +70,27 @@ const Projects = () => {
           <Button onClick={openDialog}>New Project</Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((p) => (
             <Card
               key={p.id}
-              className="hover:border-primary/50 transition-colors cursor-pointer overflow-hidden"
+              className="border-0 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer overflow-hidden"
               onClick={() => navigate(`/app/projects/${p.id}`)}
             >
-              <div className="bg-muted h-36 flex items-center justify-center">
-                <ImageIcon className="h-10 w-10 text-muted-foreground" />
+              <div className="bg-gradient-to-br from-muted to-muted/50 h-40 flex items-center justify-center">
+                <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
               </div>
-              <CardContent className="p-4 space-y-3">
+              <CardContent className="p-5 space-y-3">
                 <div className="space-y-1.5">
-                  <p className="font-medium truncate">{p.name}</p>
+                  <p className="font-semibold text-base truncate">{p.name}</p>
                   <div className="flex flex-wrap gap-1.5">
-                    <Badge variant="outline" className="capitalize text-xs">{p.category}</Badge>
+                    <Badge className="capitalize text-xs bg-primary/10 text-primary border-0">{p.category}</Badge>
                     {p.shot_type && <Badge variant="outline" className="text-xs">{SHOT_LABELS[p.shot_type] ?? p.shot_type}</Badge>}
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</span>
-                  <Badge variant="secondary">{p.status}</Badge>
+                  <Badge variant="secondary" className={statusBadgeClass(p.status)}>{p.status}</Badge>
                 </div>
               </CardContent>
             </Card>
