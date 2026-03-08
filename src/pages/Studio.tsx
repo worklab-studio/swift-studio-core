@@ -1803,7 +1803,7 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
           size="sm"
           className="gap-1.5 shrink-0"
           disabled={generatingPortraits}
-          onClick={handleGeneratePortraits}
+          onClick={onGeneratePortraits}
         >
           {generatingPortraits ? (
             <>
