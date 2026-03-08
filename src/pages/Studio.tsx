@@ -937,10 +937,38 @@ const Studio = () => {
     toast({ title: 'Link copied to clipboard' });
   };
 
+  /* ── Generate video prompts ── */
+  const handleGenerateVideoPrompts = async () => {
+    if (!project) return;
+    setVideoPromptsLoading(true);
+    setVideoPrompts([]);
+    try {
+      const selectedShot = generatedShots.find(s => s.id === videoConfig.baseImageId);
+      const { data, error } = await supabase.functions.invoke('generate-video-prompts', {
+        body: {
+          category: project.category || productInfo?.category || '',
+          productName: productName || productInfo?.productName || project.name,
+          productImageUrl: selectedShot?.url || null,
+        },
+      });
+      if (error || !data?.prompts) {
+        toast({ title: 'Failed to generate prompts', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
+        setVideoPromptsLoading(false);
+        return;
+      }
+      setVideoPrompts(data.prompts);
+      setVideoPromptStep('prompts');
+    } catch {
+      toast({ title: 'Failed to generate prompts', description: 'Network error', variant: 'destructive' });
+    }
+    setVideoPromptsLoading(false);
+  };
+
   /* ── Video generation ── */
   const handleGenerateVideo = async () => {
     if (!project || !videoConfig.baseImageId) return;
     setVideoGenerating(true);
+    setVideoPromptStep('generating');
     videoAbortRef.current = false;
     setVideoStage(VIDEO_STAGES[0]);
     let stageIdx = 0;
@@ -954,7 +982,9 @@ const Studio = () => {
       const { data, error } = await supabase.functions.invoke('generate-video', {
         body: {
           assetId: videoConfig.baseImageId, duration: videoConfig.duration,
-          resolution: videoConfig.resolution, engine: videoConfig.engine, projectId: project.id,
+          resolution: videoConfig.resolution, engine: videoConfig.engine,
+          projectId: project.id, aspectRatio: videoConfig.aspectRatio,
+          prompt: videoConfig.selectedPrompt?.text || null,
         },
       });
       clearInterval(stageInterval);
@@ -962,6 +992,7 @@ const Studio = () => {
       if (error || !data?.asset) {
         toast({ title: 'Video generation failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
         setVideoGenerating(false);
+        setVideoPromptStep('prompts');
         return;
       }
       setGeneratedVideo({
@@ -969,9 +1000,11 @@ const Studio = () => {
         resolution: videoConfig.resolution, engine: videoConfig.engine,
       });
       setVideoGenerating(false);
+      setVideoPromptStep('done');
     } catch {
       clearInterval(stageInterval);
       setVideoGenerating(false);
+      setVideoPromptStep('prompts');
       toast({ title: 'Video generation failed', description: 'Network error', variant: 'destructive' });
     }
   };
@@ -979,6 +1012,7 @@ const Studio = () => {
   const handleCancelVideo = () => {
     videoAbortRef.current = true;
     setVideoGenerating(false);
+    setVideoPromptStep('config');
   };
 
   const credits = shotCount === 'campaign' ? 6 : 1;
