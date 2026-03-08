@@ -424,8 +424,8 @@ const Studio = () => {
       const { data, error } = await supabase.functions.invoke('generate-shots', {
         body: {
           projectId: project.id, preset: selectedPreset, shotCount, additionalContext,
-          category: project.category, shotType: project.shot_type,
-          modelConfig: project.shot_type === 'model_shot' ? modelConfig : null,
+          category: project.category, shotType: shootType === 'model' ? 'model_shot' : 'product_showcase',
+          modelConfig: shootType === 'model' ? modelConfig : null,
         },
       });
       clearInterval(progressInterval);
