@@ -9,6 +9,9 @@ const corsHeaders = {
 const APPAREL_REGEX =
   /shirt|t-shirt|tee|dress|kurta|jacket|blazer|jeans|trousers|shorts|skirt|lehenga|saree|suit|hoodie|polo|cardigan|sweater|coat|pant|chino|jogger|dungaree|romper|jumpsuit|cape|shawl|dupatta|kurti|top|blouse|tank|vest|tunic|gown|frock|pullover|crop.top|bodysuit|overcoat|windbreaker|anorak|poncho|stole|lehnga|salwar|kameez|dhoti|lungi|nehru.jacket|sherwani|bandhgala|jodhpuri/i;
 
+const JEWELLERY_REGEX =
+  /ring|necklace|bracelet|bangle|earring|pendant|chain|choker|anklet|brooch|cufflink|tiara|maang.tikka|jhumka|kundan|polki|temple.jewellery|mangalsutra|nose.ring|toe.ring|armlet|kamarbandh|haathphool|studs|hoops|solitaire|charm|locket/i;
+
 const APPAREL_CONSTRAINTS = `
 HARD CONSTRAINTS FOR APPAREL VIDEO — you MUST follow ALL of these:
 - Movement: ONLY subtle motion — gentle fabric sway, light material motion, slow walk, soft pose transitions. Nothing more.
@@ -19,6 +22,19 @@ HARD CONSTRAINTS FOR APPAREL VIDEO — you MUST follow ALL of these:
 - Detail shots: include close-up moments highlighting fabric texture, collar, cuffs, stitching, or print details.
 - Posing style: professional e-commerce catalog — controlled, elegant, and refined.
 - Overall feel: premium fashion e-commerce, subtle and sophisticated. Think luxury brand lookbook.
+`;
+
+const JEWELLERY_CONSTRAINTS = `
+HARD CONSTRAINTS FOR JEWELLERY VIDEO — you MUST follow ALL of these:
+- Movement: ONLY ultra-slow rotation, gentle shimmer catch, light tilt to show sparkle. Nothing more.
+- BANNED motion: absolutely NO fast spins, NO tossing, NO dropping, NO hand waving, NO dramatic gestures.
+- Camera: extreme macro close-ups, smooth slow dolly, gentle orbit. Use focus pulls between piece and skin.
+- Lighting: MUST highlight reflections, facets, metallic sheen, gemstone brilliance. Use dramatic light raking across surfaces.
+- Detail shots: MANDATORY close-ups on clasp, stone setting, engraving, texture, hallmark, and prong detail.
+- Model action (if worn): still pose, slow hand/wrist raise, gentle neck turn ONLY. No other movement.
+- Background: clean, minimal — dark velvet, marble, or soft gradient. Absolutely NO clutter.
+- Angles: show the piece from multiple angles to reveal dimension and craftsmanship — NO full 360 spin.
+- Overall feel: ultra-premium, editorial luxury. Think Cartier / Tiffany campaign. Every frame must feel like fine art.
 `;
 
 const GENERIC_CONSTRAINTS = `
