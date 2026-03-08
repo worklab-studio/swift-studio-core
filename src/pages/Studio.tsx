@@ -442,6 +442,64 @@ const Studio = () => {
     toast({ title: 'Link copied to clipboard' });
   };
 
+  /* ── Video generation ── */
+  const handleGenerateVideo = async () => {
+    if (!project || !videoConfig.baseImageId) return;
+    const creditCost = calculateVideoCreditCost(videoConfig.duration, videoConfig.resolution);
+    
+    setVideoGenerating(true);
+    videoAbortRef.current = false;
+    setVideoStage(VIDEO_STAGES[0]);
+
+    // Cycle through stages
+    let stageIdx = 0;
+    const stageInterval = setInterval(() => {
+      if (videoAbortRef.current) { clearInterval(stageInterval); return; }
+      stageIdx = (stageIdx + 1) % VIDEO_STAGES.length;
+      setVideoStage(VIDEO_STAGES[stageIdx]);
+    }, 5000);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-video', {
+        body: {
+          assetId: videoConfig.baseImageId,
+          duration: videoConfig.duration,
+          resolution: videoConfig.resolution,
+          engine: videoConfig.engine,
+          projectId: project.id,
+        },
+      });
+
+      clearInterval(stageInterval);
+
+      if (videoAbortRef.current) return;
+
+      if (error || !data?.asset) {
+        toast({ title: 'Video generation failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
+        setVideoGenerating(false);
+        return;
+      }
+
+      setGeneratedVideo({
+        id: data.asset.id,
+        url: data.asset.url,
+        duration: videoConfig.duration,
+        resolution: videoConfig.resolution,
+        engine: videoConfig.engine,
+      });
+      setVideoGenerating(false);
+    } catch {
+      clearInterval(stageInterval);
+      setVideoGenerating(false);
+      toast({ title: 'Video generation failed', description: 'Network error', variant: 'destructive' });
+    }
+  };
+
+  const handleCancelVideo = () => {
+    videoAbortRef.current = true;
+    setVideoGenerating(false);
+  };
+
   const credits = shotCount === 'campaign' ? 5 : 1;
   const canGenerate = (selectedPreset || referenceImage) && shotCount;
 
