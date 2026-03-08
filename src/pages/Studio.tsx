@@ -991,7 +991,7 @@ const Studio = () => {
   return (
     <div className="flex h-screen">
       {/* ════════════════════════════════════════════
-          LEFT PANEL — Config
+          LEFT PANEL — Config (only shown for Studio view)
          ════════════════════════════════════════════ */}
       <div className="w-[340px] shrink-0 border-r border-border bg-card flex flex-col h-screen overflow-hidden">
         {/* ── Fixed Header ── */}
@@ -1003,147 +1003,167 @@ const Studio = () => {
             <p className="font-medium text-sm truncate flex-1">{project.name}</p>
           </div>
 
-          {/* Horizontal step indicator */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-1">
-              {STEPS.map((step, i) => {
-                const isCompleted = completedSteps.has(step.id);
-                const isActive = activeStep === step.id;
-                const isClickable = isCompleted || isActive;
-                return (
-                  <button
-                    key={step.id}
-                    onClick={() => goToStep(step.id)}
-                    disabled={!isClickable}
-                    className="flex-1 group"
-                  >
-                    <div className={`h-1.5 rounded-full transition-all ${
-                      isCompleted
-                        ? 'bg-primary'
-                        : isActive
-                          ? 'bg-primary/60'
-                          : 'bg-border'
-                    } ${isClickable ? 'cursor-pointer group-hover:opacity-80' : 'cursor-default'}`} />
-                  </button>
-                );
-              })}
+          {toolbarView === 'studio' && (
+            /* Horizontal step indicator */
+            <div className="space-y-2">
+              <div className="flex items-center gap-1">
+                {STEPS.map((step, i) => {
+                  const isCompleted = completedSteps.has(step.id);
+                  const isActive = activeStep === step.id;
+                  const isClickable = isCompleted || isActive;
+                  return (
+                    <button
+                      key={step.id}
+                      onClick={() => goToStep(step.id)}
+                      disabled={!isClickable}
+                      className="flex-1 group"
+                    >
+                      <div className={`h-1.5 rounded-full transition-all ${
+                        isCompleted
+                          ? 'bg-primary'
+                          : isActive
+                            ? 'bg-primary/60'
+                            : 'bg-border'
+                      } ${isClickable ? 'cursor-pointer group-hover:opacity-80' : 'cursor-default'}`} />
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-foreground">
+                  {STEPS.find(s => s.id === activeStep)?.label}
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  Step {activeStep} of {STEPS.length}
+                </p>
+              </div>
             </div>
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-foreground">
-                {STEPS.find(s => s.id === activeStep)?.label}
-              </p>
-              <p className="text-[10px] text-muted-foreground">
-                Step {activeStep} of {STEPS.length}
-              </p>
-            </div>
-          </div>
+          )}
         </div>
 
         <Separator />
 
-        {/* ── Scrollable active-step content ── */}
-        <ScrollArea className="flex-1">
-          <div className="p-4 animate-in fade-in slide-in-from-top-2 duration-200">
-            {activeStep === 1 && (
-              <Step1Config
-                productImages={productImages}
-                productUploadRef={productUploadRef}
-                onUpload={handleProductImageUpload}
-                onRemove={handleRemoveProductImage}
-              />
-            )}
-            {activeStep === 2 && (
-              <Step2Config
-                shootType={shootType}
-                setShootType={setShootType}
-                modelConfig={modelConfig}
-                setModelConfig={setModelConfig}
-                modelUploadRef={modelUploadRef}
-                onModelUpload={handleModelUpload}
-                selectedTemplate={selectedTemplate}
-                setSelectedTemplate={setSelectedTemplate}
-                templateCategory={templateCategory}
-                setTemplateCategory={setTemplateCategory}
-                selectedModelData={selectedModelData}
-                modelImages={modelImages}
-                productInfo={productInfo}
-              />
-            )}
-            {activeStep === 3 && (
-              <Step3Config
-                selectedPreset={selectedPreset}
-                setSelectedPreset={setSelectedPreset}
-                referenceImage={referenceImage}
-                setReferenceImage={setReferenceImage}
-                referenceInputRef={referenceInputRef}
-                onReferenceUpload={handleReferenceUpload}
-                shotCount={shotCount}
-                setShotCount={setShotCount}
-                aspectRatio={aspectRatio}
-                setAspectRatio={setAspectRatio}
-                additionalContext={additionalContext}
-                setAdditionalContext={setAdditionalContext}
-                styleSettings={styleSettings}
-                analyzingStyle={analyzingStyle}
-              />
-            )}
-            {activeStep === 4 && (
-              <div className="space-y-4 py-8">
-                <div className="flex flex-col items-center text-center gap-3">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  <div>
-                    <p className="text-sm font-medium">{generationStage || 'Processing...'}</p>
-                    <p className="text-xs text-muted-foreground mt-1">This may take a moment</p>
+        {/* ── Scrollable content ── */}
+        {toolbarView === 'studio' ? (
+          <>
+            <ScrollArea className="flex-1">
+              <div className="p-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                {activeStep === 1 && (
+                  <Step1Config
+                    productImages={productImages}
+                    productUploadRef={productUploadRef}
+                    onUpload={handleProductImageUpload}
+                    onRemove={handleRemoveProductImage}
+                  />
+                )}
+                {activeStep === 2 && (
+                  <Step2Config
+                    shootType={shootType}
+                    setShootType={setShootType}
+                    modelConfig={modelConfig}
+                    setModelConfig={setModelConfig}
+                    modelUploadRef={modelUploadRef}
+                    onModelUpload={handleModelUpload}
+                    selectedTemplate={selectedTemplate}
+                    setSelectedTemplate={setSelectedTemplate}
+                    templateCategory={templateCategory}
+                    setTemplateCategory={setTemplateCategory}
+                    selectedModelData={selectedModelData}
+                    modelImages={modelImages}
+                    productInfo={productInfo}
+                  />
+                )}
+                {activeStep === 3 && (
+                  <Step3Config
+                    selectedPreset={selectedPreset}
+                    setSelectedPreset={setSelectedPreset}
+                    referenceImage={referenceImage}
+                    setReferenceImage={setReferenceImage}
+                    referenceInputRef={referenceInputRef}
+                    onReferenceUpload={handleReferenceUpload}
+                    shotCount={shotCount}
+                    setShotCount={setShotCount}
+                    aspectRatio={aspectRatio}
+                    setAspectRatio={setAspectRatio}
+                    additionalContext={additionalContext}
+                    setAdditionalContext={setAdditionalContext}
+                    styleSettings={styleSettings}
+                    analyzingStyle={analyzingStyle}
+                  />
+                )}
+                {activeStep === 4 && (
+                  <div className="space-y-4 py-8">
+                    <div className="flex flex-col items-center text-center gap-3">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      <div>
+                        <p className="text-sm font-medium">{generationStage || 'Processing...'}</p>
+                        <p className="text-xs text-muted-foreground mt-1">This may take a moment</p>
+                      </div>
+                      <Progress value={generationProgress} className="h-1.5 w-full max-w-[200px]" />
+                    </div>
                   </div>
-                  <Progress value={generationProgress} className="h-1.5 w-full max-w-[200px]" />
-                </div>
+                )}
+                {activeStep === 5 && (
+                  <Step5Config
+                    shots={generatedShots}
+                    exportFormat={exportFormat}
+                    setExportFormat={setExportFormat}
+                    selectedShots={selectedExportShots}
+                    setSelectedShots={setSelectedExportShots}
+                    generatedVideo={generatedVideo}
+                    onRegenerateAll={handleRegenerateAll}
+                  />
+                )}
               </div>
-            )}
-            {activeStep === 5 && (
-              <Step5Config
-                shots={generatedShots}
-                exportFormat={exportFormat}
-                setExportFormat={setExportFormat}
-                selectedShots={selectedExportShots}
-                setSelectedShots={setSelectedExportShots}
-                generatedVideo={generatedVideo}
-                onRegenerateAll={handleRegenerateAll}
-              />
-            )}
-          </div>
-        </ScrollArea>
+            </ScrollArea>
 
-        {/* ── Fixed Footer CTA ── */}
-        <div className="shrink-0 border-t border-border p-4 space-y-2 bg-card">
-          {activeStep === 1 && (
-            <Button className="w-full" disabled={productImages.length === 0} onClick={handleCompleteStep1}>
-              Continue
+            {/* ── Fixed Footer CTA ── */}
+            <div className="shrink-0 border-t border-border p-4 space-y-2 bg-card">
+              {activeStep === 1 && (
+                <Button className="w-full" disabled={productImages.length === 0} onClick={handleCompleteStep1}>
+                  Continue
+                </Button>
+              )}
+              {activeStep === 2 && (
+                <Button className="w-full" disabled={!shootType || (shootType === 'product' && !selectedTemplate)} onClick={handleCompleteStep2}>
+                  Continue to Style
+                </Button>
+              )}
+              {activeStep === 3 && (
+                <Button className="w-full" disabled={!canGenerate} onClick={handleGenerate}>
+                  Generate — {credits} credit{credits > 1 ? 's' : ''}
+                </Button>
+              )}
+              {activeStep === 4 && (
+                <Button variant="outline" className="w-full" onClick={handleCancelGeneration}>
+                  Cancel
+                </Button>
+              )}
+              {activeStep === 5 && (
+                <Button className="w-full" onClick={handleDownload} disabled={selectedExportShots.size === 0}>
+                  <Download className="h-4 w-4 mr-2" /> Download {selectedExportShots.size} shot{selectedExportShots.size !== 1 ? 's' : ''}
+                </Button>
+              )}
+              <p className="text-[10px] text-muted-foreground text-center">
+                {profile?.credits_remaining ?? 0} credits remaining
+              </p>
+            </div>
+          </>
+        ) : (
+          /* Empty panel for Assets / Products views */
+          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+            <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center mb-3">
+              {toolbarView === 'assets' ? <LayoutGrid className="h-6 w-6 text-muted-foreground" /> : <Tag className="h-6 w-6 text-muted-foreground" />}
+            </div>
+            <p className="text-sm font-medium text-foreground">{toolbarView === 'assets' ? 'Asset Library' : 'Products'}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {toolbarView === 'assets' ? 'All uploaded and generated images for this project.' : 'Your products grouped by name.'}
+            </p>
+            <Button variant="outline" size="sm" className="mt-4" onClick={() => setToolbarView('studio')}>
+              <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> Back to Studio
             </Button>
-          )}
-          {activeStep === 2 && (
-            <Button className="w-full" disabled={!shootType || (shootType === 'product' && !selectedTemplate)} onClick={handleCompleteStep2}>
-              Continue to Style
-            </Button>
-          )}
-          {activeStep === 3 && (
-            <Button className="w-full" disabled={!canGenerate} onClick={handleGenerate}>
-              Generate — {credits} credit{credits > 1 ? 's' : ''}
-            </Button>
-          )}
-          {activeStep === 4 && (
-            <Button variant="outline" className="w-full" onClick={handleCancelGeneration}>
-              Cancel
-            </Button>
-          )}
-          {activeStep === 5 && (
-            <Button className="w-full" onClick={handleDownload} disabled={selectedExportShots.size === 0}>
-              <Download className="h-4 w-4 mr-2" /> Download {selectedExportShots.size} shot{selectedExportShots.size !== 1 ? 's' : ''}
-            </Button>
-          )}
-          <p className="text-[10px] text-muted-foreground text-center">
-            {profile?.credits_remaining ?? 0} credits remaining
-          </p>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* ════════════════════════════════════════════
@@ -1153,113 +1173,147 @@ const Studio = () => {
         {/* ── Floating Studio Toolbar ── */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30 p-[30px] group/toolbar pointer-events-auto">
           <div className="flex items-center gap-1 px-2 py-1.5 rounded-full border bg-background/80 backdrop-blur-md shadow-lg opacity-40 group-hover/toolbar:opacity-100 transition-opacity duration-300">
-          <button
-            onClick={() => {
-              if (generatedShots.length > 0) { setActiveStep(5); }
-              else { toast({ title: 'No assets yet', description: 'Generate shots first.' }); }
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-          >
-            <LayoutGrid className="h-3.5 w-3.5" />
-            Assets
-            {generatedShots.length > 0 && (
-              <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold">{generatedShots.length}</span>
-            )}
-          </button>
-          <div className="w-px h-5 bg-border" />
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors max-w-[180px]"
-              >
-                <Tag className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">{productInfo?.productName || productName || 'Products'}</span>
-                <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-52 p-1" align="center">
-              {projectProducts.length === 0 ? (
-                <p className="text-xs text-muted-foreground px-3 py-2">No products yet</p>
-              ) : (
-                projectProducts.map((label) => (
-                  <button
-                    key={label}
-                    onClick={() => loadProductAssets(label)}
-                    className="w-full text-left px-3 py-1.5 text-xs rounded-sm hover:bg-accent transition-colors truncate"
-                  >
-                    {label}
-                  </button>
-                ))
+            {/* Studio tab */}
+            <button
+              onClick={() => setToolbarView('studio')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                toolbarView === 'studio'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              }`}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Studio
+            </button>
+            <div className="w-px h-5 bg-border" />
+            {/* Assets tab */}
+            <button
+              onClick={() => setToolbarView('assets')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                toolbarView === 'assets'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              }`}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+              Assets
+              {projectAssets.length > 0 && (
+                <span className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                  toolbarView === 'assets' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary'
+                }`}>{projectAssets.length}</span>
               )}
-            </PopoverContent>
-          </Popover>
-          <div className="w-px h-5 bg-border" />
-          <button
-            onClick={resetWorkspace}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            New Product
-          </button>
+            </button>
+            <div className="w-px h-5 bg-border" />
+            {/* Products tab */}
+            <button
+              onClick={() => { setToolbarView('products'); setSelectedProductLabel(null); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                toolbarView === 'products'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              }`}
+            >
+              <Tag className="h-3.5 w-3.5" />
+              Products
+              {projectProducts.length > 0 && (
+                <span className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                  toolbarView === 'products' ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary'
+                }`}>{projectProducts.length}</span>
+              )}
+            </button>
+            <div className="w-px h-5 bg-border" />
+            {/* New Product */}
+            <button
+              onClick={() => { resetWorkspace(); setToolbarView('studio'); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-colors"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              New Product
+            </button>
           </div>
         </div>
-        {activeStep === 1 && (
-          <Step1Viewport productImages={productImages} productInfo={productInfo} analyzingProduct={analyzingProduct} analysisPhase={analysisPhase} productName={productName} setProductName={setProductName} modelChoice={modelChoice} removingBackground={removingBackground} onRemoveBackground={handleRemoveBackground} onKeepModel={handleKeepModel} />
+
+        {/* ── Viewport content ── */}
+        {toolbarView === 'studio' && (
+          <>
+            {activeStep === 1 && (
+              <Step1Viewport productImages={productImages} productInfo={productInfo} analyzingProduct={analyzingProduct} analysisPhase={analysisPhase} productName={productName} setProductName={setProductName} modelChoice={modelChoice} removingBackground={removingBackground} onRemoveBackground={handleRemoveBackground} onKeepModel={handleKeepModel} />
+            )}
+            {activeStep !== 1 && (
+              <div className="p-8 min-h-full overflow-y-auto h-full">
+                {activeStep === 2 && (
+                  <Step2Viewport
+                    shootType={shootType}
+                    modelConfig={modelConfig}
+                    setModelConfig={setModelConfig}
+                    selectedModelData={selectedModelData}
+                    selectedTemplate={selectedTemplate}
+                    setSelectedTemplate={setSelectedTemplate}
+                    templateCategory={templateCategory}
+                    modelImages={modelImages}
+                    generatingPortraits={generatingPortraits}
+                    portraitProgress={portraitProgress}
+                    portraitTotal={portraitTotal}
+                    onGeneratePortraits={handleGeneratePortraits}
+                  />
+                )}
+                {activeStep === 3 && (
+                  <Step3Viewport
+                    selectedPreset={selectedPreset}
+                    selectedPresetData={selectedPresetData}
+                    referenceImage={referenceImage}
+                  />
+                )}
+                {activeStep === 4 && (
+                  <Step4Viewport
+                    progress={generationProgress}
+                    stage={generationStage}
+                    shotCount={shotCount}
+                  />
+                )}
+                {activeStep === 5 && (
+                  <Step5Viewport
+                    shots={generatedShots}
+                    shotCount={shotCount}
+                    onEditShot={handleEditShot}
+                    onUndoEdit={handleUndoEdit}
+                    onCopyLink={handleCopyLink}
+                    updateShot={updateShot}
+                    videoExpanded={videoExpanded}
+                    setVideoExpanded={setVideoExpanded}
+                    videoConfig={videoConfig}
+                    setVideoConfig={setVideoConfig}
+                    videoGenerating={videoGenerating}
+                    videoStage={videoStage}
+                    generatedVideo={generatedVideo}
+                    onGenerateVideo={handleGenerateVideo}
+                    onCancelVideo={handleCancelVideo}
+                    setGeneratedVideo={setGeneratedVideo}
+                    creditsRemaining={profile?.credits_remaining ?? 0}
+                    onGenerate={handleGenerate}
+                  />
+                )}
+              </div>
+            )}
+          </>
         )}
-        {activeStep !== 1 && (
-          <div className="p-8 min-h-full overflow-y-auto h-full">
-            {activeStep === 2 && (
-              <Step2Viewport
-                shootType={shootType}
-                modelConfig={modelConfig}
-                setModelConfig={setModelConfig}
-                selectedModelData={selectedModelData}
-                selectedTemplate={selectedTemplate}
-                setSelectedTemplate={setSelectedTemplate}
-                templateCategory={templateCategory}
-                modelImages={modelImages}
-                generatingPortraits={generatingPortraits}
-                portraitProgress={portraitProgress}
-                portraitTotal={portraitTotal}
-                onGeneratePortraits={handleGeneratePortraits}
-              />
-            )}
-            {activeStep === 3 && (
-              <Step3Viewport
-                selectedPreset={selectedPreset}
-                selectedPresetData={selectedPresetData}
-                referenceImage={referenceImage}
-              />
-            )}
-            {activeStep === 4 && (
-              <Step4Viewport
-                progress={generationProgress}
-                stage={generationStage}
-                shotCount={shotCount}
-              />
-            )}
-            {activeStep === 5 && (
-              <Step5Viewport
-                shots={generatedShots}
-                shotCount={shotCount}
-                onEditShot={handleEditShot}
-                onUndoEdit={handleUndoEdit}
-                onCopyLink={handleCopyLink}
-                updateShot={updateShot}
-                videoExpanded={videoExpanded}
-                setVideoExpanded={setVideoExpanded}
-                videoConfig={videoConfig}
-                setVideoConfig={setVideoConfig}
-                videoGenerating={videoGenerating}
-                videoStage={videoStage}
-                generatedVideo={generatedVideo}
-                onGenerateVideo={handleGenerateVideo}
-                onCancelVideo={handleCancelVideo}
-                setGeneratedVideo={setGeneratedVideo}
-                creditsRemaining={profile?.credits_remaining ?? 0}
-                onGenerate={handleGenerate}
-              />
-            )}
+
+        {toolbarView === 'assets' && (
+          <div className="p-8 min-h-full overflow-y-auto h-full pt-24">
+            <AssetsViewport assets={projectAssets} onCopyLink={handleCopyLink} />
+          </div>
+        )}
+
+        {toolbarView === 'products' && (
+          <div className="p-8 min-h-full overflow-y-auto h-full pt-24">
+            <ProductsViewport
+              assets={projectAssets}
+              productLabels={projectProducts}
+              selectedLabel={selectedProductLabel}
+              onSelectLabel={setSelectedProductLabel}
+              onCopyLink={handleCopyLink}
+              onLoadProduct={(label) => { loadProductAssets(label); setToolbarView('studio'); }}
+            />
           </div>
         )}
       </div>
