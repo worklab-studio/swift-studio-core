@@ -188,6 +188,14 @@ const Studio = () => {
   const [selectedExportShots, setSelectedExportShots] = useState<Set<string>>(new Set());
   const generationAbortRef = useRef(false);
 
+  // Video state
+  const [videoExpanded, setVideoExpanded] = useState(false);
+  const [videoConfig, setVideoConfig] = useState<VideoConfig>({ baseImageId: '', duration: 4, resolution: '720p', engine: 'veo' });
+  const [videoGenerating, setVideoGenerating] = useState(false);
+  const [videoStage, setVideoStage] = useState('');
+  const [generatedVideo, setGeneratedVideo] = useState<GeneratedVideo | null>(null);
+  const videoAbortRef = useRef(false);
+
   const referenceInputRef = useRef<HTMLInputElement>(null);
   const modelUploadRef = useRef<HTMLInputElement>(null);
 
