@@ -762,6 +762,9 @@ const Studio = () => {
                 setSelectedTemplate={setSelectedTemplate}
                 templateCategory={templateCategory}
                 setTemplateCategory={setTemplateCategory}
+                selectedModelData={selectedModelData}
+                modelImages={modelImages}
+                productInfo={productInfo}
               />
             )}
             {activeStep === 3 && (
@@ -855,6 +858,11 @@ const Studio = () => {
                 selectedTemplate={selectedTemplate}
                 setSelectedTemplate={setSelectedTemplate}
                 templateCategory={templateCategory}
+                modelImages={modelImages}
+                generatingPortraits={generatingPortraits}
+                portraitProgress={portraitProgress}
+                portraitTotal={portraitTotal}
+                onGeneratePortraits={handleGeneratePortraits}
               />
             )}
             {activeStep === 3 && (
