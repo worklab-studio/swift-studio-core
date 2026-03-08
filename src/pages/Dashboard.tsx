@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
+import { useNewProjectDialog } from '@/contexts/NewProjectContext';
 
 interface Project {
   id: string;
@@ -16,9 +17,12 @@ interface Project {
   created_at: string;
 }
 
+const SHOT_LABELS: Record<string, string> = { model_shot: 'Model Shot', product_showcase: 'Product Showcase' };
+
 const Dashboard = () => {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const { openDialog } = useNewProjectDialog();
   const [projects, setProjects] = useState<Project[]>([]);
   const [stats, setStats] = useState({ projects: 0, images: 0, videos: 0, credits: 0 });
 
@@ -75,7 +79,7 @@ const Dashboard = () => {
             <p className="font-medium">Start a new project</p>
             <p className="text-sm text-muted-foreground">Upload a product photo to begin</p>
           </div>
-          <Button onClick={() => navigate('/app/new-project')}>New Project</Button>
+          <Button onClick={openDialog}>New Project</Button>
         </CardContent>
       </Card>
 
@@ -114,12 +118,15 @@ const Dashboard = () => {
                 {projects.map((p) => (
                   <TableRow key={p.id}>
                     <TableCell className="font-medium">{p.name}</TableCell>
-                    <TableCell>{p.category}</TableCell>
+                    <TableCell><Badge variant="outline" className="capitalize text-xs">{p.category}</Badge></TableCell>
                     <TableCell>0</TableCell>
                     <TableCell>0</TableCell>
                     <TableCell>{new Date(p.created_at).toLocaleDateString()}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{p.status}</Badge>
+                      <div className="flex gap-1.5">
+                        <Badge variant="secondary">{p.status}</Badge>
+                        {(p as any).shot_type && <Badge variant="outline" className="text-xs">{SHOT_LABELS[(p as any).shot_type] ?? (p as any).shot_type}</Badge>}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Button variant="outline" size="sm">Open</Button>

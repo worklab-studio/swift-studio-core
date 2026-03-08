@@ -82,6 +82,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          shot_type: string
           status: string
           user_id: string
         }
@@ -90,6 +91,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          shot_type?: string
           status?: string
           user_id: string
         }
@@ -98,6 +100,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          shot_type?: string
           status?: string
           user_id?: string
         }
