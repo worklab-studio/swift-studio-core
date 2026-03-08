@@ -606,7 +606,7 @@ const Studio = () => {
       </div>
 
       {/* ── Main Content ── */}
-      <div className="flex-1 overflow-y-auto px-8 py-8">
+      <div className="flex-1 overflow-y-auto px-8 py-8 bg-muted/30">
         {activeStep === 2 && <Step2ModelSetup project={project} modelConfig={modelConfig} setModelConfig={setModelConfig} modelUploadRef={modelUploadRef} onModelUpload={handleModelUpload} onContinue={handleCompleteStep2} />}
         {activeStep === 3 && (
           <Step3StylePreset
