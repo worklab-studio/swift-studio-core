@@ -105,7 +105,16 @@ const SHOT_LABEL_DISPLAY: Record<string, string> = {
   lifestyle: 'Lifestyle',
   alternate: 'Alternate Angle',
   editorial: 'Editorial',
+  flat_lay: 'Flat Lay',
 };
+
+const ASPECT_RATIOS = [
+  { value: '1:1', label: 'Square' },
+  { value: '4:3', label: 'Landscape' },
+  { value: '3:4', label: 'Portrait' },
+  { value: '16:9', label: 'Wide' },
+  { value: '9:16', label: 'Vertical' },
+];
 
 /* ── Placeholder models (40) with full metadata ── */
 const PLACEHOLDER_MODELS = [
@@ -327,6 +336,7 @@ const Studio = () => {
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [shotCount, setShotCount] = useState<string>('campaign');
+  const [aspectRatio, setAspectRatio] = useState<string>('1:1');
   const [additionalContext, setAdditionalContext] = useState('');
 
   // Generation state
@@ -689,6 +699,7 @@ const Studio = () => {
           modelConfig: shootType === 'model' ? modelConfig : null,
           stylePrompt: stylePrompt || undefined,
           productImageUrl,
+          aspectRatio,
         },
       });
       clearInterval(progressInterval);
@@ -828,7 +839,7 @@ const Studio = () => {
     setVideoGenerating(false);
   };
 
-  const credits = shotCount === 'campaign' ? 5 : 1;
+  const credits = shotCount === 'campaign' ? 6 : 1;
   const canGenerate = (selectedPreset || referenceImage) && shotCount;
 
   if (loading) {
@@ -943,6 +954,8 @@ const Studio = () => {
                 onReferenceUpload={handleReferenceUpload}
                 shotCount={shotCount}
                 setShotCount={setShotCount}
+                aspectRatio={aspectRatio}
+                setAspectRatio={setAspectRatio}
                 additionalContext={additionalContext}
                 setAdditionalContext={setAdditionalContext}
                 styleSettings={styleSettings}
@@ -1523,7 +1536,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
 }
 
 /* ── Step 3 Config (Left) ── */
-function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, additionalContext, setAdditionalContext, styleSettings, analyzingStyle }: {
+function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, aspectRatio, setAspectRatio, additionalContext, setAdditionalContext, styleSettings, analyzingStyle }: {
   selectedPreset: string | null;
   setSelectedPreset: (v: string | null) => void;
   referenceImage: string | null;
@@ -1532,6 +1545,8 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
   onReferenceUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   shotCount: string;
   setShotCount: (v: string) => void;
+  aspectRatio: string;
+  setAspectRatio: (v: string) => void;
   additionalContext: string;
   setAdditionalContext: (v: string) => void;
   styleSettings: StyleSettings | null;
@@ -1631,7 +1646,7 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
                 }`}
               >
                 <p className="text-xs font-semibold">Campaign Set</p>
-                <p className="text-[10px] text-muted-foreground">5 shots · 5 credits</p>
+                <p className="text-[10px] text-muted-foreground">6 shots · 6 credits</p>
               </button>
               <button
                 onClick={() => setShotCount('single')}
@@ -1642,6 +1657,25 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
                 <p className="text-xs font-semibold">Single Shot</p>
                 <p className="text-[10px] text-muted-foreground">1 shot · 1 credit</p>
               </button>
+            </div>
+          </div>
+
+          {/* Aspect Ratio */}
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium">Image Ratio</p>
+            <div className="grid grid-cols-5 gap-1">
+              {ASPECT_RATIOS.map(r => (
+                <button
+                  key={r.value}
+                  onClick={() => setAspectRatio(r.value)}
+                  className={`rounded-lg border p-2 text-center transition-all ${
+                    aspectRatio === r.value ? 'ring-2 ring-primary ring-offset-1' : 'hover:border-primary/50'
+                  }`}
+                >
+                  <p className="text-[10px] font-semibold">{r.value}</p>
+                  <p className="text-[8px] text-muted-foreground">{r.label}</p>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -2187,11 +2221,13 @@ function Step4Viewport({ progress, stage, shotCount }: {
       {/* Skeleton preview */}
       <div className="w-full max-w-2xl mt-4">
         {isCampaign ? (
-          <div className="grid grid-cols-2 gap-3">
-            <Skeleton className="aspect-[4/5] rounded-xl" />
-            <Skeleton className="aspect-[4/5] rounded-xl" />
-            <Skeleton className="aspect-[4/5] rounded-xl" />
-            <Skeleton className="aspect-[4/5] rounded-xl" />
+          <div className="grid grid-cols-3 gap-3">
+            <Skeleton className="aspect-square rounded-xl" />
+            <Skeleton className="aspect-square rounded-xl" />
+            <Skeleton className="aspect-square rounded-xl" />
+            <Skeleton className="aspect-square rounded-xl" />
+            <Skeleton className="aspect-square rounded-xl" />
+            <Skeleton className="aspect-square rounded-xl" />
           </div>
         ) : (
           <div className="max-w-xs mx-auto">
@@ -2236,13 +2272,10 @@ function Step5Viewport({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, u
 
       {/* Shot grid */}
       {isCampaign ? (
-        <div className="space-y-4">
-          {shots[0] && <ShotCard shot={shots[0]} index={0} wide onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />}
-          <div className="grid grid-cols-2 gap-4">
-            {shots.slice(1).map((shot, i) => (
-              <ShotCard key={shot.id} shot={shot} index={i + 1} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />
-            ))}
-          </div>
+        <div className="grid grid-cols-3 gap-4">
+          {shots.map((shot, i) => (
+            <ShotCard key={shot.id} shot={shot} index={i} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />
+          ))}
         </div>
       ) : (
         <div className="max-w-lg">
@@ -2257,7 +2290,7 @@ function Step5Viewport({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, u
             Generate another variation — 1 credit
           </Button>
           <Button className="w-full" onClick={onGenerate}>
-            Add 4 more for a Campaign Set — 4 credits
+            Add 5 more for a Campaign Set — 5 credits
           </Button>
         </div>
       )}
@@ -2373,10 +2406,9 @@ function Step5Viewport({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, u
 /* ════════════════════════════════════════════════
    ShotCard Component
    ════════════════════════════════════════════════ */
-function ShotCard({ shot, index, wide, onEdit, onUndo, onCopyLink, updateShot }: {
+function ShotCard({ shot, index, onEdit, onUndo, onCopyLink, updateShot }: {
   shot: GeneratedShot;
   index: number;
-  wide?: boolean;
   onEdit: (shot: GeneratedShot) => void;
   onUndo: (shot: GeneratedShot) => void;
   onCopyLink: (url: string) => void;
@@ -2384,7 +2416,7 @@ function ShotCard({ shot, index, wide, onEdit, onUndo, onCopyLink, updateShot }:
 }) {
   return (
     <div className="rounded-xl overflow-hidden border bg-card animate-in fade-in duration-300" style={{ animationDelay: `${index * 100}ms` }}>
-      <div className={`relative ${wide ? 'aspect-[16/9]' : 'aspect-[4/5]'} overflow-hidden bg-muted`}>
+      <div className="relative aspect-square overflow-hidden bg-muted">
         <img
           src={shot.url}
           alt={SHOT_LABEL_DISPLAY[shot.shotLabel] || shot.shotLabel}
