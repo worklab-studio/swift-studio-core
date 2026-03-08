@@ -2656,11 +2656,11 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
             </div>
           )}
 
-          {videoExpanded && !videoGenerating && !generatedVideo && (
+          {videoExpanded && videoPromptStep === 'config' && !videoGenerating && !generatedVideo && (
             <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="flex items-center justify-between">
                 <p className="font-medium">Create a product video</p>
-                <Button variant="ghost" size="sm" onClick={() => setVideoExpanded(false)}><X className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="sm" onClick={() => { setVideoExpanded(false); setVideoPromptStep('config'); }}><X className="h-4 w-4" /></Button>
               </div>
               <div className="space-y-2">
                 <p className="text-sm font-medium">Which shot should we animate?</p>
@@ -2678,7 +2678,7 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
                   ))}
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Duration</label>
                   <ToggleGroup type="single" value={String(videoConfig.duration)} onValueChange={v => v && setVideoConfig(prev => ({ ...prev, duration: Number(v) }))} className="justify-start">
@@ -2687,6 +2687,16 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
                     <ToggleGroupItem value="8" className="px-3">8s</ToggleGroupItem>
                   </ToggleGroup>
                 </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Aspect Ratio</label>
+                  <ToggleGroup type="single" value={videoConfig.aspectRatio} onValueChange={v => v && setVideoConfig(prev => ({ ...prev, aspectRatio: v }))} className="justify-start">
+                    <ToggleGroupItem value="9:16" className="px-3">9:16</ToggleGroupItem>
+                    <ToggleGroupItem value="16:9" className="px-3">16:9</ToggleGroupItem>
+                    <ToggleGroupItem value="1:1" className="px-3">1:1</ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Resolution</label>
                   <ToggleGroup type="single" value={videoConfig.resolution} onValueChange={v => v && setVideoConfig(prev => ({ ...prev, resolution: v }))} className="justify-start">
@@ -2700,10 +2710,46 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
                     <ToggleGroupItem value="veo" className="px-3">Veo 3.1</ToggleGroupItem>
                     <ToggleGroupItem value="runway" className="px-3">Runway 4.5</ToggleGroupItem>
                   </ToggleGroup>
-                  <p className="text-xs text-muted-foreground">Veo: cinematic quality. Runway: faster.</p>
                 </div>
               </div>
-              <Button className="w-full" onClick={onGenerateVideo} disabled={!videoConfig.baseImageId}>
+              <Button className="w-full" onClick={onGenerateVideoPrompts} disabled={!videoConfig.baseImageId || videoPromptsLoading}>
+                {videoPromptsLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Generating prompts...</> : 'Generate video prompts'}
+              </Button>
+            </div>
+          )}
+
+          {videoExpanded && videoPromptStep === 'prompts' && !videoGenerating && !generatedVideo && (
+            <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Choose a video direction</p>
+                  <p className="text-sm text-muted-foreground">Select the style that best fits your product</p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setVideoPromptStep('config')}><ArrowLeft className="h-4 w-4" /></Button>
+              </div>
+              <div className="space-y-3">
+                {videoPrompts.map((prompt, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setVideoConfig(prev => ({ ...prev, selectedPrompt: prompt }))}
+                    className={`w-full text-left p-4 rounded-xl border transition-all ${
+                      videoConfig.selectedPrompt?.text === prompt.text
+                        ? 'ring-2 ring-accent border-accent bg-accent/5'
+                        : 'hover:border-accent/50 bg-card'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="outline" className="text-[10px] px-2 py-0">{prompt.style}</Badge>
+                      {videoConfig.selectedPrompt?.text === prompt.text && (
+                        <Check className="h-3.5 w-3.5 text-accent" />
+                      )}
+                    </div>
+                    <p className="text-sm leading-relaxed">{prompt.text}</p>
+                    <p className="text-xs text-muted-foreground mt-2 italic">{prompt.reason}</p>
+                  </button>
+                ))}
+              </div>
+              <Button className="w-full" onClick={onGenerateVideo} disabled={!videoConfig.selectedPrompt}>
                 Generate video — {videoCreditCost} credits
               </Button>
             </div>
@@ -2731,7 +2777,7 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { navigator.clipboard.writeText(generatedVideo.url); toast({ title: 'Link copied' }); }}>
                   <Share2 className="h-3.5 w-3.5" /> Share link
                 </Button>
-                <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => { setGeneratedVideo(null); setVideoExpanded(true); }}>
+                <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => { setGeneratedVideo(null); setVideoPromptStep('config'); setVideoExpanded(true); }}>
                   <RefreshCw className="h-3.5 w-3.5" /> Regenerate
                 </Button>
               </div>
