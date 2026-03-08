@@ -1345,6 +1345,11 @@ const Studio = () => {
                     setGeneratedVideo={setGeneratedVideo}
                     creditsRemaining={profile?.credits_remaining ?? 0}
                     onGenerate={handleGenerate}
+                    videoPrompts={videoPrompts}
+                    videoPromptsLoading={videoPromptsLoading}
+                    videoPromptStep={videoPromptStep}
+                    setVideoPromptStep={setVideoPromptStep}
+                    onGenerateVideoPrompts={handleGenerateVideoPrompts}
                   />
                 )}
               </div>
