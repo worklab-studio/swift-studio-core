@@ -88,15 +88,23 @@ Deno.serve(async (req) => {
     const isJewellery = JEWELLERY_REGEX.test(category || "") || JEWELLERY_REGEX.test(productName || "") || (category || "").toLowerCase() === "jewellery";
     const constraints = isJewellery ? JEWELLERY_CONSTRAINTS : isApparel ? APPAREL_CONSTRAINTS : GENERIC_CONSTRAINTS;
 
+    const jewelleryGroundingCues = isJewellery
+      ? `
+- The metal type (gold, silver, rose gold, platinum) and its finish (polished, matte, hammered)
+- Gemstone colors, cut, clarity, and how light interacts with facets
+- The setting style (prong, bezel, pavé, channel)
+- Surface reflections and sparkle patterns`
+      : "";
+
     const imageGroundingInstruction = productImageUrl
       ? `
 IMPORTANT — IMAGE GROUNDING:
 You are provided with the actual generated model/product image. Analyze it carefully:
 - The model's exact pose, body position, and stance
-- The outfit details: fit, drape, color, pattern, styling
+- The outfit/product details: fit, drape, color, pattern, styling
 - The expression and gaze direction
 - The background setting, lighting, and mood
-- Any props or accessories visible
+- Any props or accessories visible${jewelleryGroundingCues}
 
 Write your video prompts as a NATURAL CONTINUATION of this exact image. The video should feel like this still photo came to life. Do NOT write generic prompts — every prompt must reference what you see in the image.
 `
@@ -252,6 +260,7 @@ Include a short reason (1 sentence) explaining why this prompt suits the product
       JSON.stringify({
         prompts: parsed.prompts,
         isApparel,
+        isJewellery,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
