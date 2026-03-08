@@ -50,7 +50,7 @@ serve(async (req) => {
               },
               {
                 type: "text",
-                text: "Analyze this product image. Identify the product category, colors, material, suggest ideal photography shot types, and write a brief description.",
+                text: "Analyze this product image. Identify the product category, colors, material, suggest ideal photography shot types, suggest a product name, and write a brief description.",
               },
             ],
           },
@@ -86,8 +86,12 @@ serve(async (req) => {
                     type: "string",
                     description: "Brief product description (1-2 sentences)",
                   },
+                  productName: {
+                    type: "string",
+                    description: "Suggested product name (e.g., 'Classic Leather Tote', 'Minimalist Gold Watch')",
+                  },
                 },
-                required: ["category", "colors", "material", "suggestedShots", "description"],
+                required: ["category", "colors", "material", "suggestedShots", "description", "productName"],
                 additionalProperties: false,
               },
             },

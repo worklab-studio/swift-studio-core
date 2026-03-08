@@ -69,6 +69,7 @@ interface ProductInfo {
   material: string;
   suggestedShots: string[];
   description: string;
+  productName: string;
 }
 
 interface GeneratedVideo {
@@ -213,6 +214,7 @@ const Studio = () => {
   const [productInfo, setProductInfo] = useState<ProductInfo | null>(null);
   const [analyzingProduct, setAnalyzingProduct] = useState(false);
   const [analysisPhase, setAnalysisPhase] = useState<'idle' | 'analyzing' | 'done'>('idle');
+  const [productName, setProductName] = useState('');
 
   const referenceInputRef = useRef<HTMLInputElement>(null);
   const modelUploadRef = useRef<HTMLInputElement>(null);
@@ -277,6 +279,7 @@ const Studio = () => {
         return;
       }
       setProductInfo(data);
+      setProductName(data.productName || '');
       setAnalysisPhase('done');
     } catch (e) {
       console.error('Product analysis error:', e);
@@ -699,7 +702,7 @@ const Studio = () => {
          ════════════════════════════════════════════ */}
       <div className="flex-1 overflow-hidden bg-muted/30 h-screen relative canvas-dots">
         {activeStep === 1 && (
-          <Step1Viewport productImages={productImages} productInfo={productInfo} analyzingProduct={analyzingProduct} analysisPhase={analysisPhase} />
+          <Step1Viewport productImages={productImages} productInfo={productInfo} analyzingProduct={analyzingProduct} analysisPhase={analysisPhase} productName={productName} setProductName={setProductName} />
         )}
         {activeStep !== 1 && (
           <div className="p-8 min-h-full overflow-y-auto h-full">
@@ -1182,11 +1185,13 @@ function Step5Config({ shots, exportFormats, setExportFormats, selectedShots, se
    ════════════════════════════════════════════════════════════════ */
 
 /* ── Step 1 Viewport ── */
-function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisPhase }: { 
+function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisPhase, productName, setProductName }: { 
   productImages: string[]; 
   productInfo: ProductInfo | null;
   analyzingProduct: boolean;
   analysisPhase: 'idle' | 'analyzing' | 'done';
+  productName: string;
+  setProductName: (name: string) => void;
 }) {
   const ANALYSIS_TEXTS = [
     'Analyzing image...',
@@ -1221,7 +1226,7 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
     );
   }
 
-  // Phase 1: Analyzing — image centered with cycling text overlay
+  // Phase 1: Analyzing
   if (analysisPhase === 'analyzing') {
     return (
       <div className="flex items-center justify-center h-full w-full">
@@ -1230,7 +1235,7 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
             <img
               src={productImages[0]}
               alt="Analyzing product"
-              className="max-w-md w-full max-h-[60vh] rounded-2xl shadow-2xl object-contain animate-in zoom-in-95 duration-500"
+              className="max-w-md w-full max-h-[50vh] rounded-2xl shadow-2xl object-contain animate-in zoom-in-95 duration-500"
             />
             <div className="absolute inset-0 rounded-2xl bg-foreground/40 backdrop-blur-[2px] flex items-center justify-center">
               <div className="flex flex-col items-center gap-3">
@@ -1254,21 +1259,19 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
     );
   }
 
-  // Phase 2: Done — image left + thumbnails right, info below. No scroll.
+  // Phase 2: Done — smaller image, editable name, no suggested shots
   return (
     <div className="h-full w-full overflow-hidden p-6 flex flex-col">
       {/* Top row: main image + angle thumbnails */}
       <div className="flex gap-4 flex-1 min-h-0">
-        {/* Main image — natural ratio, fits within available space */}
-        <div className="flex-1 min-w-0 flex items-start justify-start animate-in slide-in-from-bottom-4 duration-500">
+        <div className="flex-1 min-w-0 flex items-center justify-center animate-in slide-in-from-bottom-4 duration-500">
           <img
             src={productImages[0]}
             alt="Product main"
-            className="max-h-full max-w-full rounded-2xl shadow-lg object-contain"
+            className="max-h-[50vh] max-w-full rounded-2xl shadow-lg object-contain"
           />
         </div>
 
-        {/* Right column — angle thumbnails */}
         {productImages.length > 1 && (
           <div className="shrink-0 flex flex-col gap-2 animate-stagger-in" style={{ animationDelay: '0.3s' }}>
             {productImages.slice(1).map((url, i) => (
@@ -1283,55 +1286,53 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
         )}
       </div>
 
-      {/* Bottom section — AI recognition info, compact horizontal */}
-      <div className="shrink-0 mt-4">
-        <div className="flex items-center gap-2 mb-3 animate-stagger-in" style={{ animationDelay: '0.15s' }}>
+      {/* Bottom section — AI recognition info */}
+      <div className="shrink-0 mt-4 space-y-3">
+        <div className="flex items-center gap-2 animate-stagger-in" style={{ animationDelay: '0.15s' }}>
           <Sparkles className="h-4 w-4 text-primary" />
           <p className="text-sm font-semibold text-foreground">AI Product Recognition</p>
           {analyzingProduct && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground ml-auto" />}
         </div>
 
         {productInfo ? (
-          <div className="flex flex-wrap gap-3 animate-stagger-in" style={{ animationDelay: '0.25s' }}>
-            {/* Category */}
-            <div className="rounded-xl border border-border bg-card px-4 py-2.5 space-y-0.5">
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Category</p>
-              <p className="text-sm font-semibold text-foreground">{productInfo.category}</p>
+          <div className="space-y-2.5 animate-stagger-in" style={{ animationDelay: '0.25s' }}>
+            {/* Editable Product Name */}
+            <div>
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-0.5">Product Name</p>
+              <input
+                type="text"
+                value={productName}
+                onChange={(e) => setProductName(e.target.value)}
+                className="w-full max-w-md text-lg font-bold text-foreground bg-transparent border-none outline-none focus:ring-0 placeholder:text-muted-foreground/50 p-0"
+                placeholder="Enter product name..."
+              />
             </div>
-            {/* Material */}
-            <div className="rounded-xl border border-border bg-card px-4 py-2.5 space-y-0.5">
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Material</p>
-              <p className="text-sm font-semibold text-foreground">{productInfo.material}</p>
-            </div>
-            {/* Colors */}
-            <div className="rounded-xl border border-border bg-card px-4 py-2.5 space-y-1">
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Colors</p>
-              <div className="flex flex-wrap gap-1.5">
-                {productInfo.colors.map((color, i) => (
-                  <Badge key={i} variant="secondary" className="text-[10px] gap-1 px-2 py-0">
-                    <Palette className="h-2.5 w-2.5" />
-                    {color}
-                  </Badge>
-                ))}
+
+            {/* Category + Material + Colors inline */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="rounded-xl border border-border bg-card px-3 py-1.5 space-y-0.5">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Category</p>
+                <p className="text-xs font-semibold text-foreground">{productInfo.category}</p>
+              </div>
+              <div className="rounded-xl border border-border bg-card px-3 py-1.5 space-y-0.5">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Material</p>
+                <p className="text-xs font-semibold text-foreground">{productInfo.material}</p>
+              </div>
+              <div className="rounded-xl border border-border bg-card px-3 py-1.5 space-y-1">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Colors</p>
+                <div className="flex flex-wrap gap-1">
+                  {productInfo.colors.map((color, i) => (
+                    <Badge key={i} variant="secondary" className="text-[10px] gap-1 px-2 py-0">
+                      <Palette className="h-2.5 w-2.5" />
+                      {color}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </div>
-            {/* Suggested Shots */}
-            <div className="rounded-xl border border-border bg-card px-4 py-2.5 space-y-1">
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Suggested Shots</p>
-              <div className="flex flex-wrap gap-1.5">
-                {productInfo.suggestedShots.map((shot, i) => (
-                  <Badge key={i} variant="outline" className="text-[10px] gap-1 px-2 py-0">
-                    <Camera className="h-2.5 w-2.5" />
-                    {shot}
-                  </Badge>
-                ))}
-              </div>
-            </div>
+
             {/* Description */}
-            <div className="rounded-xl border border-border bg-card px-4 py-2.5 space-y-0.5 max-w-md">
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Description</p>
-              <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{productInfo.description}</p>
-            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed max-w-lg line-clamp-2">{productInfo.description}</p>
           </div>
         ) : !analyzingProduct ? (
           <div className="rounded-xl border border-border bg-card px-4 py-2.5">
