@@ -2025,8 +2025,53 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
               </Badge>
             </div>
 
+            {/* Model choice action cards */}
+            {productInfo.hasModel && !modelChoice && (
+              <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <p className="text-[11px] font-semibold text-foreground">What would you like to do?</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={onRemoveBackground}
+                    disabled={removingBackground}
+                    className="rounded-xl border border-border bg-card p-3 text-left transition-all hover:border-primary/50 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {removingBackground ? (
+                      <Loader2 className="h-5 w-5 animate-spin text-primary mb-1.5" />
+                    ) : (
+                      <ImageIcon className="h-5 w-5 text-muted-foreground mb-1.5" />
+                    )}
+                    <p className="text-xs font-semibold">{removingBackground ? 'Removing...' : 'Remove Background'}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">Extract product only, remove model & background</p>
+                  </button>
+                  <button
+                    onClick={onKeepModel}
+                    disabled={removingBackground}
+                    className="rounded-xl border border-border bg-card p-3 text-left transition-all hover:border-primary/50 hover:shadow-md disabled:opacity-50"
+                  >
+                    <Eye className="h-5 w-5 text-muted-foreground mb-1.5" />
+                    <p className="text-xs font-semibold">Keep Model</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">Generate all shots with the same model</p>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Model choice confirmation */}
+            {modelChoice === 'keep' && (
+              <div className="rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 flex items-center gap-2">
+                <Check className="h-4 w-4 text-primary shrink-0" />
+                <p className="text-xs text-foreground">Will generate with detected model across all shots</p>
+              </div>
+            )}
+            {modelChoice === 'remove' && (
+              <div className="rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 flex items-center gap-2">
+                <Check className="h-4 w-4 text-primary shrink-0" />
+                <p className="text-xs text-foreground">Background removed — product-only image ready</p>
+              </div>
+            )}
+
             {/* Model note */}
-            {productInfo.modelNote && (
+            {productInfo.modelNote && !modelChoice && (
               <p className="text-[10px] text-muted-foreground italic">{productInfo.modelNote}</p>
             )}
 
