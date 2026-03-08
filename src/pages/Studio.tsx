@@ -516,27 +516,42 @@ const Studio = () => {
   }, []);
 
   /* ── Step 1 handlers ── */
-  const handleProductImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProductImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
-    const newUrls = Array.from(files).map(f => URL.createObjectURL(f));
-    setProductImages(prev => {
-      const updated = [...prev, ...newUrls];
-      // Trigger analysis when first image is added
-      if (prev.length === 0 && updated.length > 0) {
-        analyzeProduct(updated[0]);
+    if (!files || !id) return;
+
+    const uploadedUrls: string[] = [];
+    for (const file of Array.from(files)) {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const filePath = `${id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: uploadErr } = await supabase.storage
+        .from('originals')
+        .upload(filePath, file, { contentType: file.type, upsert: false });
+      if (uploadErr) {
+        console.error('Upload error:', uploadErr);
+        toast({ title: 'Upload failed', description: uploadErr.message, variant: 'destructive' });
+        continue;
       }
-      return updated;
-    });
+      const { data: publicUrlData } = supabase.storage.from('originals').getPublicUrl(filePath);
+      uploadedUrls.push(publicUrlData.publicUrl);
+    }
+
+    if (uploadedUrls.length > 0) {
+      setProductImages(prev => {
+        const updated = [...prev, ...uploadedUrls];
+        if (prev.length === 0 && updated.length > 0) {
+          analyzeProduct(updated[0]);
+        }
+        return updated;
+      });
+    }
     e.target.value = '';
   };
 
   const handleRemoveProductImage = (index: number) => {
     setProductImages(prev => {
       const next = [...prev];
-      URL.revokeObjectURL(next[index]);
       next.splice(index, 1);
-      // Re-analyze if hero image changed
       if (index === 0 && next.length > 0) {
         analyzeProduct(next[0]);
       } else if (next.length === 0) {
@@ -666,12 +681,14 @@ const Studio = () => {
     }, 200);
 
     try {
+      const productImageUrl = productImages[0] || assets[0]?.url || null;
       const { data, error } = await supabase.functions.invoke('generate-shots', {
         body: {
           projectId: project.id, preset: selectedPreset, shotCount, additionalContext,
           category: project.category, shotType: shootType === 'model' ? 'model_shot' : 'product_showcase',
           modelConfig: shootType === 'model' ? modelConfig : null,
           stylePrompt: stylePrompt || undefined,
+          productImageUrl,
         },
       });
       clearInterval(progressInterval);
