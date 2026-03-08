@@ -13,8 +13,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from '@/hooks/use-toast';
-import { Check, Package, Upload, X, Loader2, ArrowLeft, Download, Link2, Pencil, RotateCcw, Undo2, Play, Share2, RefreshCw } from 'lucide-react';
+import { Check, Package, Upload, X, Loader2, ArrowLeft, Download, Link2, Pencil, RotateCcw, Undo2, Play, Share2, RefreshCw, ImageIcon, Palette, Eye } from 'lucide-react';
 
 /* ── Types ── */
 interface Project {
@@ -136,7 +137,7 @@ const GENERATION_STAGES = [
 const EXPORT_FORMATS = [
   { id: 'original', label: 'Original resolution (PNG)', default: true },
   { id: 'web', label: 'Web optimized (JPG, 80%)', default: true },
-  { id: 'amazon', label: 'Amazon listing (2000×2000, white bg)', default: false },
+  { id: 'amazon', label: 'Amazon listing (2000×2000)', default: false },
   { id: 'shopify', label: 'Shopify product image', default: false },
   { id: 'ig-square', label: 'Instagram 1:1', default: false },
   { id: 'ig-portrait', label: 'Instagram 4:5', default: false },
@@ -209,21 +210,13 @@ const Studio = () => {
       ]);
       if (proj) {
         setProject(proj);
-        // If project already has generated assets, jump to results
         const generated = assetData?.filter((a: Asset) => a.asset_type === 'ai_generated') ?? [];
         const originals = assetData?.filter((a: Asset) => a.asset_type === 'original') ?? [];
         setAssets(originals);
         if (generated.length > 0) {
           setGeneratedShots(generated.map((a: Asset) => ({
-            id: a.id,
-            url: a.url,
-            shotLabel: a.shot_label || 'hero',
-            promptUsed: a.prompt_used || '',
-            isEditing: false,
-            editPrompt: '',
-            isRegenerating: false,
-            previousUrl: null,
-            showUndo: false,
+            id: a.id, url: a.url, shotLabel: a.shot_label || 'hero', promptUsed: a.prompt_used || '',
+            isEditing: false, editPrompt: '', isRegenerating: false, previousUrl: null, showUndo: false,
           })));
           setCompletedSteps(new Set([1, 2, 3, 4]));
           setActiveStep(5);
@@ -284,19 +277,14 @@ const Studio = () => {
   /* ── Generation ── */
   const handleGenerate = async () => {
     if (!project || !selectedPreset) return;
-
     const presetName = STYLE_PRESETS.find(p => p.id === selectedPreset)?.name || selectedPreset;
     completeStep(3, presetName, 4);
     generationAbortRef.current = false;
     setGenerationProgress(0);
     setGenerationStage(GENERATION_STAGES[0].label);
 
-    // Animate progress bar
     const progressInterval = setInterval(() => {
-      if (generationAbortRef.current) {
-        clearInterval(progressInterval);
-        return;
-      }
+      if (generationAbortRef.current) { clearInterval(progressInterval); return; }
       setGenerationProgress(prev => {
         const next = Math.min(prev + 2, 90);
         const stage = GENERATION_STAGES.find(s => next <= s.threshold);
@@ -308,50 +296,32 @@ const Studio = () => {
     try {
       const { data, error } = await supabase.functions.invoke('generate-shots', {
         body: {
-          projectId: project.id,
-          preset: selectedPreset,
-          shotCount,
-          additionalContext,
-          category: project.category,
-          shotType: project.shot_type,
+          projectId: project.id, preset: selectedPreset, shotCount, additionalContext,
+          category: project.category, shotType: project.shot_type,
           modelConfig: project.shot_type === 'model_shot' ? modelConfig : null,
         },
       });
-
       clearInterval(progressInterval);
-
       if (generationAbortRef.current) return;
-
       if (error || !data?.assets) {
         toast({ title: 'Generation failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
         setActiveStep(3);
         setCompletedSteps(prev => { const n = new Set(prev); n.delete(3); return n; });
         return;
       }
-
       setGenerationProgress(100);
       setGenerationStage('Done!');
-
-      // Small delay before showing results
       await new Promise(r => setTimeout(r, 600));
 
       const shots: GeneratedShot[] = data.assets.map((a: any) => ({
-        id: a.id,
-        url: a.url,
-        shotLabel: a.shot_label || 'hero',
-        promptUsed: a.prompt_used || '',
-        isEditing: false,
-        editPrompt: '',
-        isRegenerating: false,
-        previousUrl: null,
-        showUndo: false,
+        id: a.id, url: a.url, shotLabel: a.shot_label || 'hero', promptUsed: a.prompt_used || '',
+        isEditing: false, editPrompt: '', isRegenerating: false, previousUrl: null, showUndo: false,
       }));
-
       setGeneratedShots(shots);
       setSelectedExportShots(new Set(shots.map(s => s.id)));
       completeStep(4, `${shots.length} shot${shots.length > 1 ? 's' : ''}`, 5);
       setShowExportPanel(true);
-    } catch (e) {
+    } catch {
       clearInterval(progressInterval);
       toast({ title: 'Generation failed', description: 'Network error', variant: 'destructive' });
       setActiveStep(3);
@@ -373,28 +343,19 @@ const Studio = () => {
     if (!shot.editPrompt.trim()) return;
     const previousUrl = shot.url;
     updateShot(shot.id, { isRegenerating: true, isEditing: false });
-
     try {
       const { data, error } = await supabase.functions.invoke('edit-shot', {
         body: { assetId: shot.id, editPrompt: shot.editPrompt },
       });
-
       if (error || !data?.asset) {
         toast({ title: 'Edit failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
         updateShot(shot.id, { isRegenerating: false, isEditing: true });
         return;
       }
-
       updateShot(shot.id, {
-        url: data.asset.url,
-        promptUsed: data.asset.prompt_used,
-        isRegenerating: false,
-        editPrompt: '',
-        previousUrl,
-        showUndo: true,
+        url: data.asset.url, promptUsed: data.asset.prompt_used, isRegenerating: false,
+        editPrompt: '', previousUrl, showUndo: true,
       });
-
-      // Hide undo after 5 seconds
       setTimeout(() => updateShot(shot.id, { showUndo: false, previousUrl: null }), 5000);
     } catch {
       updateShot(shot.id, { isRegenerating: false, isEditing: true });
@@ -408,23 +369,14 @@ const Studio = () => {
     updateShot(shot.id, { url: shot.previousUrl, previousUrl: null, showUndo: false });
   };
 
-  /* ── Regenerate all ── */
   const handleRegenerateAll = () => {
     toast({
       title: `Regenerate all ${generatedShots.length} shots?`,
       description: `This will replace all shots and cost ${generatedShots.length} credits.`,
-      action: (
-        <Button size="sm" onClick={() => {
-          // Delete existing generated assets and re-run generation
-          handleGenerate();
-        }}>
-          Confirm
-        </Button>
-      ),
+      action: <Button size="sm" onClick={() => handleGenerate()}>Confirm</Button>,
     });
   };
 
-  /* ── Download ── */
   const handleDownload = () => {
     const selected = generatedShots.filter(s => selectedExportShots.has(s.id));
     selected.forEach(shot => {
@@ -445,13 +397,9 @@ const Studio = () => {
   /* ── Video generation ── */
   const handleGenerateVideo = async () => {
     if (!project || !videoConfig.baseImageId) return;
-    const creditCost = calculateVideoCreditCost(videoConfig.duration, videoConfig.resolution);
-    
     setVideoGenerating(true);
     videoAbortRef.current = false;
     setVideoStage(VIDEO_STAGES[0]);
-
-    // Cycle through stages
     let stageIdx = 0;
     const stageInterval = setInterval(() => {
       if (videoAbortRef.current) { clearInterval(stageInterval); return; }
@@ -462,30 +410,20 @@ const Studio = () => {
     try {
       const { data, error } = await supabase.functions.invoke('generate-video', {
         body: {
-          assetId: videoConfig.baseImageId,
-          duration: videoConfig.duration,
-          resolution: videoConfig.resolution,
-          engine: videoConfig.engine,
-          projectId: project.id,
+          assetId: videoConfig.baseImageId, duration: videoConfig.duration,
+          resolution: videoConfig.resolution, engine: videoConfig.engine, projectId: project.id,
         },
       });
-
       clearInterval(stageInterval);
-
       if (videoAbortRef.current) return;
-
       if (error || !data?.asset) {
         toast({ title: 'Video generation failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
         setVideoGenerating(false);
         return;
       }
-
       setGeneratedVideo({
-        id: data.asset.id,
-        url: data.asset.url,
-        duration: videoConfig.duration,
-        resolution: videoConfig.resolution,
-        engine: videoConfig.engine,
+        id: data.asset.id, url: data.asset.url, duration: videoConfig.duration,
+        resolution: videoConfig.resolution, engine: videoConfig.engine,
       });
       setVideoGenerating(false);
     } catch {
@@ -505,7 +443,7 @@ const Studio = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
@@ -513,64 +451,60 @@ const Studio = () => {
 
   if (!project) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-4">
+      <div className="flex flex-col items-center justify-center h-screen gap-4">
         <p className="text-muted-foreground">Project not found.</p>
         <Button variant="outline" onClick={() => navigate('/app/projects')}>Back to Projects</Button>
       </div>
     );
   }
 
+  // Resolve selected model for viewport preview
+  const selectedModelData = PLACEHOLDER_MODELS.find(m => m.id === modelConfig.selectedModel);
+  const selectedPresetData = STYLE_PRESETS.find(p => p.id === selectedPreset);
+
   return (
-    <div className="flex" style={{ height: 'calc(100vh - 48px)' }}>
-      {/* ── Left Panel ── */}
-      <div className="w-[280px] shrink-0 border-r border-border bg-card flex flex-col">
-        <div className="p-4 space-y-4">
+    <div className="flex h-screen">
+      {/* ════════════════════════════════════════════
+          LEFT PANEL — Config
+         ════════════════════════════════════════════ */}
+      <div className="w-[340px] shrink-0 border-r border-border bg-card flex flex-col h-screen overflow-hidden">
+        {/* Project header */}
+        <div className="p-4 space-y-3 shrink-0">
           <Button variant="ghost" size="sm" className="gap-1.5 -ml-2 text-muted-foreground" onClick={() => navigate('/app/projects')}>
             <ArrowLeft className="h-4 w-4" /> Projects
           </Button>
-
-          {thumbnailUrl ? (
-            <img src={thumbnailUrl} alt={project.name} className="w-full aspect-square object-cover rounded-lg" />
-          ) : (
-            <div className="w-full aspect-square rounded-lg bg-muted flex items-center justify-center">
-              <Package className="h-8 w-8 text-muted-foreground" />
-            </div>
-          )}
-
-          <div>
-            <p className="font-medium">{project.name}</p>
-            <div className="flex gap-1.5 mt-1">
-              <Badge variant="outline" className="capitalize text-xs">{project.category}</Badge>
-              <Badge variant="secondary" className="text-xs">{SHOT_LABELS[project.shot_type] ?? project.shot_type}</Badge>
+          <div className="flex items-start gap-3">
+            {thumbnailUrl ? (
+              <img src={thumbnailUrl} alt={project.name} className="w-12 h-12 object-cover rounded-lg shrink-0" />
+            ) : (
+              <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                <Package className="h-5 w-5 text-muted-foreground" />
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="font-medium truncate">{project.name}</p>
+              <div className="flex gap-1.5 mt-1">
+                <Badge variant="outline" className="capitalize text-xs">{project.category}</Badge>
+                <Badge variant="secondary" className="text-xs">{SHOT_LABELS[project.shot_type] ?? project.shot_type}</Badge>
+              </div>
             </div>
           </div>
         </div>
 
         <Separator />
 
-        {/* Step tracker OR Export panel */}
-        {showExportPanel && activeStep === 5 ? (
-          <ExportPanel
-            shots={generatedShots}
-            exportFormats={exportFormats}
-            setExportFormats={setExportFormats}
-            selectedShots={selectedExportShots}
-            setSelectedShots={setSelectedExportShots}
-            onDownload={handleDownload}
-            onBackToSteps={() => setShowExportPanel(false)}
-            generatedVideo={generatedVideo}
-          />
-        ) : (
-          <div className="p-4 flex-1">
-            <div className="space-y-1">
-              {STEPS.map((step) => {
-                const isCompleted = completedSteps.has(step.id);
-                const isActive = activeStep === step.id;
-                const isClickable = isCompleted || isActive;
+        {/* Scrollable config area */}
+        <ScrollArea className="flex-1">
+          <div className="p-4 space-y-1">
+            {/* Step tracker */}
+            {STEPS.map((step) => {
+              const isCompleted = completedSteps.has(step.id);
+              const isActive = activeStep === step.id;
+              const isClickable = isCompleted || isActive;
 
-                return (
+              return (
+                <div key={step.id}>
                   <button
-                    key={step.id}
                     onClick={() => goToStep(step.id)}
                     disabled={!isClickable}
                     className={`w-full flex items-start gap-3 p-2 rounded-md text-left transition-colors ${
@@ -593,78 +527,136 @@ const Studio = () => {
                       )}
                     </div>
                   </button>
-                );
-              })}
-            </div>
+
+                  {/* ── Inline config for active step ── */}
+                  {isActive && step.id === 2 && (
+                    <div className="ml-11 mt-2 mb-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <Step2Config
+                        project={project}
+                        modelConfig={modelConfig}
+                        setModelConfig={setModelConfig}
+                        modelUploadRef={modelUploadRef}
+                        onModelUpload={handleModelUpload}
+                        onContinue={handleCompleteStep2}
+                      />
+                    </div>
+                  )}
+
+                  {isActive && step.id === 3 && (
+                    <div className="ml-11 mt-2 mb-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <Step3Config
+                        selectedPreset={selectedPreset}
+                        setSelectedPreset={setSelectedPreset}
+                        referenceImage={referenceImage}
+                        setReferenceImage={setReferenceImage}
+                        referenceInputRef={referenceInputRef}
+                        onReferenceUpload={handleReferenceUpload}
+                        shotCount={shotCount}
+                        setShotCount={setShotCount}
+                        additionalContext={additionalContext}
+                        setAdditionalContext={setAdditionalContext}
+                        credits={credits}
+                        canGenerate={!!canGenerate}
+                        onGenerate={handleGenerate}
+                      />
+                    </div>
+                  )}
+
+                  {isActive && step.id === 4 && (
+                    <div className="ml-11 mt-2 mb-3">
+                      <p className="text-xs text-muted-foreground animate-pulse">{generationStage || 'Processing...'}</p>
+                      <button onClick={handleCancelGeneration} className="text-xs text-muted-foreground hover:text-foreground mt-1 transition-colors">
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+
+                  {isActive && step.id === 5 && (
+                    <div className="ml-11 mt-2 mb-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <Step5Config
+                        shots={generatedShots}
+                        exportFormats={exportFormats}
+                        setExportFormats={setExportFormats}
+                        selectedShots={selectedExportShots}
+                        setSelectedShots={setSelectedExportShots}
+                        onDownload={handleDownload}
+                        generatedVideo={generatedVideo}
+                        onRegenerateAll={handleRegenerateAll}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
-        )}
+        </ScrollArea>
 
         <Separator />
-        <div className="p-4">
+        <div className="p-4 shrink-0">
           <p className="text-xs text-muted-foreground">Credits remaining: {profile?.credits_remaining ?? 0}</p>
         </div>
       </div>
 
-      {/* ── Main Content ── */}
-      <div className="flex-1 overflow-y-auto px-8 py-8 bg-muted/30">
-        {activeStep === 2 && <Step2ModelSetup project={project} modelConfig={modelConfig} setModelConfig={setModelConfig} modelUploadRef={modelUploadRef} onModelUpload={handleModelUpload} onContinue={handleCompleteStep2} />}
-        {activeStep === 3 && (
-          <Step3StylePreset
-            selectedPreset={selectedPreset}
-            setSelectedPreset={setSelectedPreset}
-            referenceImage={referenceImage}
-            setReferenceImage={setReferenceImage}
-            referenceInputRef={referenceInputRef}
-            onReferenceUpload={handleReferenceUpload}
-            shotCount={shotCount}
-            setShotCount={setShotCount}
-            additionalContext={additionalContext}
-            setAdditionalContext={setAdditionalContext}
-            credits={credits}
-            canGenerate={!!canGenerate}
-            onGenerate={handleGenerate}
-          />
-        )}
-        {activeStep === 4 && (
-          <Step4Generating
-            progress={generationProgress}
-            stage={generationStage}
-            shotCount={shotCount}
-            onCancel={handleCancelGeneration}
-          />
-        )}
-        {activeStep === 5 && (
-          <Step5Results
-            shots={generatedShots}
-            shotCount={shotCount}
-            onEditShot={handleEditShot}
-            onUndoEdit={handleUndoEdit}
-            onCopyLink={handleCopyLink}
-            onRegenerateAll={handleRegenerateAll}
-            onGenerate={handleGenerate}
-            updateShot={updateShot}
-            videoExpanded={videoExpanded}
-            setVideoExpanded={setVideoExpanded}
-            videoConfig={videoConfig}
-            setVideoConfig={setVideoConfig}
-            videoGenerating={videoGenerating}
-            videoStage={videoStage}
-            generatedVideo={generatedVideo}
-            onGenerateVideo={handleGenerateVideo}
-            onCancelVideo={handleCancelVideo}
-            setGeneratedVideo={setGeneratedVideo}
-            creditsRemaining={profile?.credits_remaining ?? 0}
-          />
-        )}
+      {/* ════════════════════════════════════════════
+          RIGHT PANEL — Viewport
+         ════════════════════════════════════════════ */}
+      <div className="flex-1 overflow-y-auto bg-muted/30 h-screen">
+        <div className="p-8 min-h-full">
+          {activeStep === 2 && (
+            <Step2Viewport
+              project={project}
+              modelConfig={modelConfig}
+              selectedModelData={selectedModelData}
+            />
+          )}
+          {activeStep === 3 && (
+            <Step3Viewport
+              selectedPreset={selectedPreset}
+              selectedPresetData={selectedPresetData}
+              referenceImage={referenceImage}
+            />
+          )}
+          {activeStep === 4 && (
+            <Step4Viewport
+              progress={generationProgress}
+              stage={generationStage}
+              shotCount={shotCount}
+            />
+          )}
+          {activeStep === 5 && (
+            <Step5Viewport
+              shots={generatedShots}
+              shotCount={shotCount}
+              onEditShot={handleEditShot}
+              onUndoEdit={handleUndoEdit}
+              onCopyLink={handleCopyLink}
+              updateShot={updateShot}
+              videoExpanded={videoExpanded}
+              setVideoExpanded={setVideoExpanded}
+              videoConfig={videoConfig}
+              setVideoConfig={setVideoConfig}
+              videoGenerating={videoGenerating}
+              videoStage={videoStage}
+              generatedVideo={generatedVideo}
+              onGenerateVideo={handleGenerateVideo}
+              onCancelVideo={handleCancelVideo}
+              setGeneratedVideo={setGeneratedVideo}
+              creditsRemaining={profile?.credits_remaining ?? 0}
+              onGenerate={handleGenerate}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
-/* ════════════════════════════════════════════════
-   Step 2 — Model Setup
-   ════════════════════════════════════════════════ */
-function Step2ModelSetup({ project, modelConfig, setModelConfig, modelUploadRef, onModelUpload, onContinue }: {
+/* ════════════════════════════════════════════════════════════════
+   LEFT PANEL CONFIG COMPONENTS
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Step 2 Config (Left) ── */
+function Step2Config({ project, modelConfig, setModelConfig, modelUploadRef, onModelUpload, onContinue }: {
   project: Project;
   modelConfig: ModelConfig;
   setModelConfig: React.Dispatch<React.SetStateAction<ModelConfig>>;
@@ -674,168 +666,135 @@ function Step2ModelSetup({ project, modelConfig, setModelConfig, modelUploadRef,
 }) {
   if (project.shot_type === 'product_showcase') {
     return (
-      <div className="max-w-lg mx-auto space-y-6">
-        <div>
-          <h2 className="text-xl font-medium" style={{ fontFamily: "'Instrument Serif', serif" }}>Model Setup</h2>
-          <p className="text-sm text-muted-foreground mt-1">Configure how your product will be presented.</p>
+      <div className="space-y-3">
+        <div className="rounded-lg border bg-muted/50 p-3 flex items-center gap-3">
+          <Package className="h-5 w-5 text-muted-foreground shrink-0" />
+          <p className="text-xs text-muted-foreground">Product Showcase — no model needed.</p>
         </div>
-        <Card className="bg-muted/30">
-          <CardContent className="p-6 flex flex-col items-center text-center gap-4">
-            <Package className="h-10 w-10 text-muted-foreground" />
-            <div>
-              <p className="font-semibold">Product Showcase mode</p>
-              <p className="text-sm text-muted-foreground mt-1">We'll place your product in professional scenes without a model. Configure your style preferences in the next step.</p>
-            </div>
-            <Button className="w-full" onClick={onContinue}>Continue to Style →</Button>
-          </CardContent>
-        </Card>
+        <Button className="w-full" size="sm" onClick={onContinue}>Continue to Style →</Button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-medium" style={{ fontFamily: "'Instrument Serif', serif" }}>Model Setup</h2>
-        <p className="text-sm text-muted-foreground mt-1">Choose a model and fine-tune the attributes for your shoot.</p>
-      </div>
-
-      <div className="grid grid-cols-5 gap-8">
-        <div className="col-span-3 space-y-6">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-3">Select from our models</p>
-            <div className="flex gap-3 overflow-x-auto pb-2">
-              {PLACEHOLDER_MODELS.map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => setModelConfig(prev => ({ ...prev, selectedModel: m.id, uploadedModelUrl: null }))}
-                  className={`shrink-0 w-[120px] rounded-xl overflow-hidden border transition-all ${
-                    modelConfig.selectedModel === m.id ? 'ring-2 ring-primary ring-offset-2' : 'hover:border-primary/50'
-                  }`}
-                >
-                  <div className="aspect-[3/4]" style={{ background: m.color }} />
-                  <div className="p-2">
-                    <p className="text-xs font-medium">{m.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{m.attrs}</p>
-                  </div>
-                </button>
-              ))}
+    <div className="space-y-3">
+      {/* Model grid — compact 2-col */}
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Select model</p>
+      <div className="grid grid-cols-2 gap-1.5 max-h-[200px] overflow-y-auto pr-1">
+        {PLACEHOLDER_MODELS.map((m) => (
+          <button
+            key={m.id}
+            onClick={() => setModelConfig(prev => ({ ...prev, selectedModel: m.id, uploadedModelUrl: null }))}
+            className={`rounded-lg overflow-hidden border transition-all text-left ${
+              modelConfig.selectedModel === m.id ? 'ring-2 ring-primary ring-offset-1' : 'hover:border-primary/50'
+            }`}
+          >
+            <div className="aspect-[3/2]" style={{ background: m.color }} />
+            <div className="p-1.5">
+              <p className="text-[11px] font-medium">{m.name}</p>
+              <p className="text-[9px] text-muted-foreground">{m.attrs}</p>
             </div>
-          </div>
+          </button>
+        ))}
+      </div>
 
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-3">Or upload your own</p>
-            <input ref={modelUploadRef} type="file" accept="image/jpeg,image/png" className="hidden" onChange={onModelUpload} />
-            {modelConfig.uploadedModelUrl ? (
-              <div className="relative w-32 h-40 rounded-xl overflow-hidden border">
-                <img src={modelConfig.uploadedModelUrl} alt="Custom model" className="w-full h-full object-cover" />
-                <button
-                  onClick={() => setModelConfig(prev => ({ ...prev, uploadedModelUrl: null }))}
-                  className="absolute top-1 right-1 h-5 w-5 rounded-full bg-background/80 flex items-center justify-center"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => modelUploadRef.current?.click()}
-                className="w-full h-32 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-colors"
-              >
-                <Upload className="h-5 w-5 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Upload a model reference photo</p>
-                <p className="text-xs text-muted-foreground">JPG, PNG up to 10MB</p>
-              </button>
-            )}
-          </div>
-
-          <p className="text-xs text-muted-foreground">Your model photo is used as a style reference and is not stored after generation.</p>
+      {/* Upload */}
+      <input ref={modelUploadRef} type="file" accept="image/jpeg,image/png" className="hidden" onChange={onModelUpload} />
+      {modelConfig.uploadedModelUrl ? (
+        <div className="relative w-20 h-24 rounded-lg overflow-hidden border">
+          <img src={modelConfig.uploadedModelUrl} alt="Custom model" className="w-full h-full object-cover" />
+          <button onClick={() => setModelConfig(prev => ({ ...prev, uploadedModelUrl: null }))} className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-background/80 flex items-center justify-center">
+            <X className="h-2.5 w-2.5" />
+          </button>
         </div>
+      ) : (
+        <button onClick={() => modelUploadRef.current?.click()} className="w-full h-16 rounded-lg border-2 border-dashed border-border flex items-center justify-center gap-2 hover:border-primary/50 transition-colors">
+          <Upload className="h-4 w-4 text-muted-foreground" />
+          <p className="text-xs text-muted-foreground">Upload custom model</p>
+        </button>
+      )}
 
-        <div className="col-span-2 space-y-5">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Gender</label>
-            <Select value={modelConfig.gender} onValueChange={v => setModelConfig(prev => ({ ...prev, gender: v }))}>
-              <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Female">Female</SelectItem>
-                <SelectItem value="Male">Male</SelectItem>
-                <SelectItem value="Non-binary">Non-binary</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      <Separator />
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Ethnicity</label>
-            <Select value={modelConfig.ethnicity} onValueChange={v => setModelConfig(prev => ({ ...prev, ethnicity: v }))}>
-              <SelectTrigger><SelectValue placeholder="Select ethnicity" /></SelectTrigger>
-              <SelectContent>
-                {['South Asian', 'East Asian', 'Southeast Asian', 'Black / African', 'White / Caucasian', 'Latina / Hispanic', 'Middle Eastern', 'Mixed', 'Other'].map(e => (
-                  <SelectItem key={e} value={e}>{e}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Body Type</label>
-            <Select value={modelConfig.bodyType} onValueChange={v => setModelConfig(prev => ({ ...prev, bodyType: v }))}>
-              <SelectTrigger><SelectValue placeholder="Select body type" /></SelectTrigger>
-              <SelectContent>
-                {['Slim', 'Athletic', 'Average', 'Curvy', 'Plus Size'].map(b => (
-                  <SelectItem key={b} value={b}>{b}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Shoot Background</label>
-            <Select value={modelConfig.background} onValueChange={v => setModelConfig(prev => ({ ...prev, background: v }))}>
-              <SelectTrigger><SelectValue placeholder="Select background" /></SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Lifestyle</SelectLabel>
-                  <SelectItem value="café">Café</SelectItem>
-                  <SelectItem value="street">Street</SelectItem>
-                  <SelectItem value="garden">Garden</SelectItem>
-                  <SelectItem value="beach">Beach</SelectItem>
-                  <SelectItem value="urban">Urban rooftop</SelectItem>
-                </SelectGroup>
-                <SelectGroup>
-                  <SelectLabel>Studio</SelectLabel>
-                  <SelectItem value="white-sweep">White sweep</SelectItem>
-                  <SelectItem value="gray-seamless">Gray seamless</SelectItem>
-                  <SelectItem value="dark-studio">Dark studio</SelectItem>
-                  <SelectItem value="colored-gel">Colored gel</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">AI Engine</label>
-            <ToggleGroup type="single" value={modelConfig.aiEngine} onValueChange={v => v && setModelConfig(prev => ({ ...prev, aiEngine: v }))} className="justify-start">
-              <ToggleGroupItem value="gemini" className="px-4">Gemini</ToggleGroupItem>
-              <ToggleGroupItem value="runway" className="px-4">Runway</ToggleGroupItem>
-            </ToggleGroup>
-            <p className="text-xs text-muted-foreground">Gemini is faster. Runway produces more realistic lighting.</p>
-          </div>
-
-          <Alert>
-            <AlertDescription className="text-sm">Both engines preserve your exact product — logos, colors, and proportions.</AlertDescription>
-          </Alert>
+      {/* Attributes */}
+      <div className="space-y-2">
+        <div className="space-y-1">
+          <label className="text-xs font-medium">Gender</label>
+          <Select value={modelConfig.gender} onValueChange={v => setModelConfig(prev => ({ ...prev, gender: v }))}>
+            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Female">Female</SelectItem>
+              <SelectItem value="Male">Male</SelectItem>
+              <SelectItem value="Non-binary">Non-binary</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium">Ethnicity</label>
+          <Select value={modelConfig.ethnicity} onValueChange={v => setModelConfig(prev => ({ ...prev, ethnicity: v }))}>
+            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+            <SelectContent>
+              {['South Asian', 'East Asian', 'Southeast Asian', 'Black / African', 'White / Caucasian', 'Latina / Hispanic', 'Middle Eastern', 'Mixed', 'Other'].map(e => (
+                <SelectItem key={e} value={e}>{e}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium">Body Type</label>
+          <Select value={modelConfig.bodyType} onValueChange={v => setModelConfig(prev => ({ ...prev, bodyType: v }))}>
+            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+            <SelectContent>
+              {['Slim', 'Athletic', 'Average', 'Curvy', 'Plus Size'].map(b => (
+                <SelectItem key={b} value={b}>{b}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium">Background</label>
+          <Select value={modelConfig.background} onValueChange={v => setModelConfig(prev => ({ ...prev, background: v }))}>
+            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Lifestyle</SelectLabel>
+                <SelectItem value="café">Café</SelectItem>
+                <SelectItem value="street">Street</SelectItem>
+                <SelectItem value="garden">Garden</SelectItem>
+                <SelectItem value="beach">Beach</SelectItem>
+                <SelectItem value="urban">Urban rooftop</SelectItem>
+              </SelectGroup>
+              <SelectGroup>
+                <SelectLabel>Studio</SelectLabel>
+                <SelectItem value="white-sweep">White sweep</SelectItem>
+                <SelectItem value="gray-seamless">Gray seamless</SelectItem>
+                <SelectItem value="dark-studio">Dark studio</SelectItem>
+                <SelectItem value="colored-gel">Colored gel</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      <Button className="w-full" onClick={onContinue}>Continue to Style →</Button>
+      <Separator />
+
+      {/* AI Engine */}
+      <div className="space-y-1">
+        <label className="text-xs font-medium">AI Engine</label>
+        <ToggleGroup type="single" value={modelConfig.aiEngine} onValueChange={v => v && setModelConfig(prev => ({ ...prev, aiEngine: v }))} className="justify-start">
+          <ToggleGroupItem value="gemini" className="px-3 h-7 text-xs">Gemini</ToggleGroupItem>
+          <ToggleGroupItem value="runway" className="px-3 h-7 text-xs">Runway</ToggleGroupItem>
+        </ToggleGroup>
+        <p className="text-[10px] text-muted-foreground">Gemini is faster. Runway has better lighting.</p>
+      </div>
+
+      <Button className="w-full" size="sm" onClick={onContinue}>Continue to Style →</Button>
     </div>
   );
 }
 
-/* ════════════════════════════════════════════════
-   Step 3 — Style & Preset
-   ════════════════════════════════════════════════ */
-function Step3StylePreset({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, additionalContext, setAdditionalContext, credits, canGenerate, onGenerate }: {
+/* ── Step 3 Config (Left) ── */
+function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, additionalContext, setAdditionalContext, credits, canGenerate, onGenerate }: {
   selectedPreset: string | null;
   setSelectedPreset: (v: string | null) => void;
   referenceImage: string | null;
@@ -851,191 +810,357 @@ function Step3StylePreset({ selectedPreset, setSelectedPreset, referenceImage, s
   onGenerate: () => void;
 }) {
   return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-xl font-medium" style={{ fontFamily: "'Instrument Serif', serif" }}>Choose a visual style</h2>
-        <p className="text-sm text-muted-foreground mt-1">This sets the overall mood for all your shots.</p>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
+    <div className="space-y-3">
+      {/* Preset grid — 2 col compact */}
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Style preset</p>
+      <div className="grid grid-cols-2 gap-1.5">
         {STYLE_PRESETS.map(p => (
           <button
             key={p.id}
             onClick={() => { setSelectedPreset(p.id); setReferenceImage(null); }}
-            className={`rounded-2xl overflow-hidden border text-left transition-all hover:scale-[1.02] duration-150 ${
-              selectedPreset === p.id ? 'ring-2 ring-offset-2 ring-primary' : ''
+            className={`rounded-lg overflow-hidden border text-left transition-all ${
+              selectedPreset === p.id ? 'ring-2 ring-primary ring-offset-1' : 'hover:border-primary/50'
             }`}
           >
             <div className="aspect-[4/3] overflow-hidden bg-muted">
               <img src={p.img} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
             </div>
-            <div className="p-3">
-              <p className="text-sm font-semibold">{p.name}</p>
-              <p className="text-xs text-muted-foreground">{p.desc}</p>
+            <div className="p-1.5">
+              <p className="text-[11px] font-semibold">{p.name}</p>
+              <p className="text-[9px] text-muted-foreground leading-tight">{p.desc}</p>
             </div>
           </button>
         ))}
-
-        <input ref={referenceInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onReferenceUpload} />
-        {referenceImage ? (
-          <button
-            onClick={() => { setSelectedPreset('custom'); }}
-            className={`rounded-2xl overflow-hidden border text-left transition-all hover:scale-[1.02] duration-150 relative ${
-              selectedPreset === 'custom' ? 'ring-2 ring-offset-2 ring-primary' : ''
-            }`}
-          >
-            <div className="aspect-[4/3] overflow-hidden bg-muted">
-              <img src={referenceImage} alt="Reference" className="w-full h-full object-cover" />
-            </div>
-            <button
-              onClick={(e) => { e.stopPropagation(); setReferenceImage(null); if (selectedPreset === 'custom') setSelectedPreset(null); }}
-              className="absolute top-2 right-2 h-6 w-6 rounded-full bg-background/80 flex items-center justify-center"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-            <div className="p-3">
-              <p className="text-sm font-semibold">Custom Reference</p>
-              <p className="text-xs text-muted-foreground">Your uploaded reference image</p>
-            </div>
-          </button>
-        ) : (
-          <button
-            onClick={() => referenceInputRef.current?.click()}
-            className="rounded-2xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-colors min-h-[200px]"
-          >
-            <Upload className="h-6 w-6 text-muted-foreground" />
-            <p className="text-sm font-medium">Upload a reference image</p>
-            <p className="text-xs text-muted-foreground">Show us the vibe you're going for</p>
-          </button>
-        )}
       </div>
 
-      {selectedPreset && (
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <div>
-            <p className="font-medium">How many shots?</p>
-            <p className="text-sm text-muted-foreground">A campaign set includes 5 varied compositions.</p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              onClick={() => setShotCount('campaign')}
-              className={`rounded-xl border p-5 text-left transition-all ${
-                shotCount === 'campaign' ? 'ring-2 ring-primary ring-offset-2' : 'hover:border-primary/50'
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <p className="font-semibold">Campaign Set</p>
-                <Badge className="text-xs">5 shots</Badge>
-              </div>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Hero shot</li>
-                <li>• Close-up detail</li>
-                <li>• Lifestyle / in-context</li>
-                <li>• Alternate angle</li>
-                <li>• Editorial / mood</li>
-              </ul>
-              <p className="text-xs text-muted-foreground mt-3">5 credits</p>
-            </button>
-
-            <button
-              onClick={() => setShotCount('single')}
-              className={`rounded-xl border p-5 text-left transition-all ${
-                shotCount === 'single' ? 'ring-2 ring-primary ring-offset-2' : 'hover:border-primary/50'
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <p className="font-semibold">Single Shot</p>
-                <Badge variant="secondary" className="text-xs">1 shot</Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">One hero image, regenerate as needed.</p>
-              <p className="text-xs text-muted-foreground mt-3">1 credit</p>
-            </button>
+      {/* Reference upload */}
+      <input ref={referenceInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onReferenceUpload} />
+      {referenceImage ? (
+        <div className="relative rounded-lg overflow-hidden border">
+          <img src={referenceImage} alt="Reference" className="w-full aspect-[4/3] object-cover" />
+          <button
+            onClick={() => { setReferenceImage(null); if (selectedPreset === 'custom') setSelectedPreset(null); }}
+            className="absolute top-1 right-1 h-5 w-5 rounded-full bg-background/80 flex items-center justify-center"
+          >
+            <X className="h-3 w-3" />
+          </button>
+          <div className="p-1.5">
+            <p className="text-[11px] font-semibold">Custom Reference</p>
           </div>
         </div>
+      ) : (
+        <button
+          onClick={() => referenceInputRef.current?.click()}
+          className="w-full h-16 rounded-lg border-2 border-dashed border-border flex items-center justify-center gap-2 hover:border-primary/50 transition-colors"
+        >
+          <Upload className="h-4 w-4 text-muted-foreground" />
+          <p className="text-xs text-muted-foreground">Upload reference image</p>
+        </button>
       )}
 
       {selectedPreset && (
-        <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <label className="text-sm font-medium">Any specific direction? (optional)</label>
-          <Textarea
-            rows={2}
-            maxLength={200}
-            value={additionalContext}
-            onChange={e => setAdditionalContext(e.target.value)}
-            placeholder="e.g. I want it to feel very premium, marble background, the ring should be centered on a velvet surface..."
-          />
-          <p className="text-xs text-right text-muted-foreground">{additionalContext.length}/200</p>
-        </div>
-      )}
+        <>
+          <Separator />
+          {/* Shot count */}
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium">Shots</p>
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                onClick={() => setShotCount('campaign')}
+                className={`rounded-lg border p-2.5 text-left transition-all ${
+                  shotCount === 'campaign' ? 'ring-2 ring-primary ring-offset-1' : 'hover:border-primary/50'
+                }`}
+              >
+                <p className="text-xs font-semibold">Campaign Set</p>
+                <p className="text-[10px] text-muted-foreground">5 shots · 5 credits</p>
+              </button>
+              <button
+                onClick={() => setShotCount('single')}
+                className={`rounded-lg border p-2.5 text-left transition-all ${
+                  shotCount === 'single' ? 'ring-2 ring-primary ring-offset-1' : 'hover:border-primary/50'
+                }`}
+              >
+                <p className="text-xs font-semibold">Single Shot</p>
+                <p className="text-[10px] text-muted-foreground">1 shot · 1 credit</p>
+              </button>
+            </div>
+          </div>
 
-      {selectedPreset && (
-        <Button className="w-full" size="lg" disabled={!canGenerate} onClick={onGenerate}>
-          Generate — {credits} credit{credits > 1 ? 's' : ''}
-        </Button>
+          {/* Context */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium">Direction (optional)</label>
+            <Textarea
+              rows={2}
+              maxLength={200}
+              value={additionalContext}
+              onChange={e => setAdditionalContext(e.target.value)}
+              placeholder="e.g. premium feel, marble bg..."
+              className="text-xs min-h-[60px]"
+            />
+            <p className="text-[10px] text-right text-muted-foreground">{additionalContext.length}/200</p>
+          </div>
+
+          <Button className="w-full" size="sm" disabled={!canGenerate} onClick={onGenerate}>
+            Generate — {credits} credit{credits > 1 ? 's' : ''}
+          </Button>
+        </>
       )}
     </div>
   );
 }
 
-/* ════════════════════════════════════════════════
-   Step 4 — Generating (Processing State)
-   ════════════════════════════════════════════════ */
-function Step4Generating({ progress, stage, shotCount, onCancel }: {
+/* ── Step 5 Config (Left — Export Panel) ── */
+function Step5Config({ shots, exportFormats, setExportFormats, selectedShots, setSelectedShots, onDownload, generatedVideo, onRegenerateAll }: {
+  shots: GeneratedShot[];
+  exportFormats: Set<string>;
+  setExportFormats: React.Dispatch<React.SetStateAction<Set<string>>>;
+  selectedShots: Set<string>;
+  setSelectedShots: React.Dispatch<React.SetStateAction<Set<string>>>;
+  onDownload: () => void;
+  generatedVideo: GeneratedVideo | null;
+  onRegenerateAll: () => void;
+}) {
+  const toggleFormat = (id: string) => {
+    setExportFormats(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  };
+  const toggleShot = (id: string) => {
+    setSelectedShots(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  };
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Export formats</p>
+      <div className="space-y-1.5">
+        {EXPORT_FORMATS.map(f => (
+          <label key={f.id} className="flex items-center gap-2 text-xs cursor-pointer">
+            <Checkbox checked={exportFormats.has(f.id)} onCheckedChange={() => toggleFormat(f.id)} />
+            {f.label}
+          </label>
+        ))}
+      </div>
+
+      {shots.length > 1 && (
+        <>
+          <Separator />
+          <p className="text-xs font-medium text-muted-foreground">Select shots</p>
+          <div className="grid grid-cols-3 gap-1">
+            {shots.map(shot => (
+              <button
+                key={shot.id}
+                onClick={() => toggleShot(shot.id)}
+                className={`relative rounded-md overflow-hidden aspect-square ${
+                  selectedShots.has(shot.id) ? 'ring-2 ring-primary' : 'opacity-50'
+                }`}
+              >
+                <img src={shot.url} alt={shot.shotLabel} className="w-full h-full object-cover" />
+                {selectedShots.has(shot.id) && (
+                  <div className="absolute top-0.5 right-0.5 h-3.5 w-3.5 rounded-full bg-primary flex items-center justify-center">
+                    <Check className="h-2 w-2 text-primary-foreground" />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      <Button className="w-full" size="sm" onClick={onDownload} disabled={selectedShots.size === 0}>
+        <Download className="h-3.5 w-3.5 mr-1.5" /> Download selected
+      </Button>
+
+      {shots.length > 1 && (
+        <Button variant="outline" className="w-full" size="sm" onClick={onRegenerateAll}>
+          <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Regenerate all
+        </Button>
+      )}
+
+      {generatedVideo && (
+        <>
+          <Separator />
+          <div className="flex items-center gap-2">
+            <Play className="h-4 w-4 text-muted-foreground shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium truncate">Product video</p>
+            </div>
+            <Badge variant="secondary" className="text-[10px] shrink-0">{generatedVideo.duration}s</Badge>
+          </div>
+          <a href={generatedVideo.url} download target="_blank" rel="noopener noreferrer" className="block">
+            <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs">
+              <Download className="h-3 w-3" /> Download MP4
+            </Button>
+          </a>
+        </>
+      )}
+    </div>
+  );
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   RIGHT PANEL VIEWPORT COMPONENTS
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Step 2 Viewport ── */
+function Step2Viewport({ project, modelConfig, selectedModelData }: {
+  project: Project;
+  modelConfig: ModelConfig;
+  selectedModelData: typeof PLACEHOLDER_MODELS[0] | undefined;
+}) {
+  if (project.shot_type === 'product_showcase') {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 text-center animate-in fade-in duration-300">
+        <div className="h-20 w-20 rounded-2xl bg-muted flex items-center justify-center">
+          <Package className="h-10 w-10 text-muted-foreground" />
+        </div>
+        <div>
+          <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Product Showcase</p>
+          <p className="text-sm text-muted-foreground mt-1">Your product will be placed in professional scenes.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show uploaded model
+  if (modelConfig.uploadedModelUrl) {
+    return (
+      <div className="flex items-center justify-center h-full animate-in fade-in duration-300">
+        <div className="max-w-md w-full">
+          <img src={modelConfig.uploadedModelUrl} alt="Custom model" className="w-full rounded-2xl shadow-lg object-cover aspect-[3/4]" />
+          <p className="text-sm text-muted-foreground text-center mt-4">Custom uploaded model</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show selected model
+  if (selectedModelData) {
+    return (
+      <div className="flex items-center justify-center h-full animate-in fade-in duration-300">
+        <div className="max-w-sm w-full">
+          <div className="aspect-[3/4] rounded-2xl overflow-hidden shadow-lg" style={{ background: selectedModelData.color }}>
+            <div className="h-full flex flex-col items-center justify-end p-6">
+              <div className="bg-background/90 backdrop-blur-sm rounded-xl p-4 w-full text-center">
+                <p className="font-semibold text-lg">{selectedModelData.name}</p>
+                <p className="text-sm text-muted-foreground">{selectedModelData.attrs}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-4 text-center animate-in fade-in duration-300">
+      <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center">
+        <ImageIcon className="h-8 w-8 text-muted-foreground" />
+      </div>
+      <div>
+        <p className="font-medium">Select a model</p>
+        <p className="text-sm text-muted-foreground mt-1">Choose from our library or upload your own to preview here.</p>
+      </div>
+    </div>
+  );
+}
+
+/* ── Step 3 Viewport ── */
+function Step3Viewport({ selectedPreset, selectedPresetData, referenceImage }: {
+  selectedPreset: string | null;
+  selectedPresetData: typeof STYLE_PRESETS[0] | undefined;
+  referenceImage: string | null;
+}) {
+  // Show reference image
+  if (selectedPreset === 'custom' && referenceImage) {
+    return (
+      <div className="flex items-center justify-center h-full animate-in fade-in duration-300">
+        <div className="max-w-lg w-full">
+          <img src={referenceImage} alt="Custom reference" className="w-full rounded-2xl shadow-lg object-cover" />
+          <p className="text-center mt-4 font-medium">Custom Reference</p>
+          <p className="text-sm text-muted-foreground text-center mt-1">Your uploaded style reference</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show selected preset
+  if (selectedPresetData) {
+    return (
+      <div className="flex items-center justify-center h-full animate-in fade-in duration-300">
+        <div className="max-w-lg w-full">
+          <div className="relative rounded-2xl overflow-hidden shadow-lg">
+            <img src={selectedPresetData.img} alt={selectedPresetData.name} className="w-full aspect-[4/3] object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-6">
+              <p className="text-white font-semibold text-xl">{selectedPresetData.name}</p>
+              <p className="text-white/80 text-sm mt-1">{selectedPresetData.desc}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-4 text-center animate-in fade-in duration-300">
+      <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center">
+        <Palette className="h-8 w-8 text-muted-foreground" />
+      </div>
+      <div>
+        <p className="font-medium">Choose a style</p>
+        <p className="text-sm text-muted-foreground mt-1">Select a preset to preview the visual direction.</p>
+      </div>
+    </div>
+  );
+}
+
+/* ── Step 4 Viewport (Generating) ── */
+function Step4Viewport({ progress, stage, shotCount }: {
   progress: number;
   stage: string;
   shotCount: string;
-  onCancel: () => void;
 }) {
   const isCampaign = shotCount === 'campaign';
 
   return (
-    <div className="space-y-8">
-      <div className="max-w-md mx-auto text-center space-y-4 pt-8">
-        <h2 className="text-xl font-medium" style={{ fontFamily: "'Instrument Serif', serif" }}>Generating your shots</h2>
+    <div className="flex flex-col items-center justify-center h-full gap-6 animate-in fade-in duration-300">
+      <div className="max-w-md w-full space-y-6 text-center">
+        <div>
+          <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Creating your shots</p>
+          <p className="text-sm text-muted-foreground mt-1">{stage}</p>
+        </div>
+
         <Progress value={progress} className="h-2" />
-        <p className="text-sm text-muted-foreground">{stage}</p>
+        <p className="text-xs text-muted-foreground">{progress}%</p>
       </div>
 
-      {/* Skeleton preview grid */}
-      <div className="mt-8">
+      {/* Skeleton preview */}
+      <div className="w-full max-w-2xl mt-4">
         {isCampaign ? (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <Skeleton className="aspect-[4/5] rounded-xl" />
-              <Skeleton className="aspect-[4/5] rounded-xl" />
-              <Skeleton className="aspect-[4/5] rounded-xl" />
-              <Skeleton className="aspect-[4/5] rounded-xl" />
-            </div>
-            <Skeleton className="aspect-[16/9] rounded-xl w-full" />
+          <div className="grid grid-cols-2 gap-3">
+            <Skeleton className="aspect-[4/5] rounded-xl" />
+            <Skeleton className="aspect-[4/5] rounded-xl" />
+            <Skeleton className="aspect-[4/5] rounded-xl" />
+            <Skeleton className="aspect-[4/5] rounded-xl" />
           </div>
         ) : (
-          <div className="max-w-lg mx-auto">
+          <div className="max-w-xs mx-auto">
             <Skeleton className="aspect-[4/5] rounded-xl" />
           </div>
         )}
-      </div>
-
-      <div className="text-center">
-        <button onClick={onCancel} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-          Cancel generation
-        </button>
       </div>
     </div>
   );
 }
 
-/* ════════════════════════════════════════════════
-   Step 5 — Results View
-   ════════════════════════════════════════════════ */
-function Step5Results({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, onRegenerateAll, onGenerate, updateShot, videoExpanded, setVideoExpanded, videoConfig, setVideoConfig, videoGenerating, videoStage, generatedVideo, onGenerateVideo, onCancelVideo, setGeneratedVideo, creditsRemaining }: {
+/* ── Step 5 Viewport (Results) ── */
+function Step5Viewport({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, updateShot, videoExpanded, setVideoExpanded, videoConfig, setVideoConfig, videoGenerating, videoStage, generatedVideo, onGenerateVideo, onCancelVideo, setGeneratedVideo, creditsRemaining, onGenerate }: {
   shots: GeneratedShot[];
   shotCount: string;
   onEditShot: (shot: GeneratedShot) => void;
   onUndoEdit: (shot: GeneratedShot) => void;
   onCopyLink: (url: string) => void;
-  onRegenerateAll: () => void;
-  onGenerate: () => void;
   updateShot: (id: string, updates: Partial<GeneratedShot>) => void;
   videoExpanded: boolean;
   setVideoExpanded: (v: boolean) => void;
@@ -1048,22 +1173,22 @@ function Step5Results({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, on
   onCancelVideo: () => void;
   setGeneratedVideo: React.Dispatch<React.SetStateAction<GeneratedVideo | null>>;
   creditsRemaining: number;
+  onGenerate: () => void;
 }) {
   const isCampaign = shots.length > 1;
   const videoCreditCost = calculateVideoCreditCost(videoConfig.duration, videoConfig.resolution);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-300">
       <div>
         <h2 className="text-xl font-medium" style={{ fontFamily: "'Instrument Serif', serif" }}>Your shots are ready</h2>
-        <p className="text-sm text-muted-foreground mt-1">Click any shot to edit with a prompt, or download from the export panel.</p>
+        <p className="text-sm text-muted-foreground mt-1">Click any shot to edit with a prompt. Use the export panel on the left to download.</p>
       </div>
 
+      {/* Shot grid */}
       {isCampaign ? (
         <div className="space-y-4">
-          {shots[0] && (
-            <ShotCard shot={shots[0]} index={0} wide onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />
-          )}
+          {shots[0] && <ShotCard shot={shots[0]} index={0} wide onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />}
           <div className="grid grid-cols-2 gap-4">
             {shots.slice(1).map((shot, i) => (
               <ShotCard key={shot.id} shot={shot} index={i + 1} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />
@@ -1071,10 +1196,20 @@ function Step5Results({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, on
           </div>
         </div>
       ) : (
-        <div className="max-w-lg mx-auto">
-          {shots[0] && (
-            <ShotCard shot={shots[0]} index={0} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />
-          )}
+        <div className="max-w-lg">
+          {shots[0] && <ShotCard shot={shots[0]} index={0} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />}
+        </div>
+      )}
+
+      {/* Single shot actions */}
+      {!isCampaign && (
+        <div className="max-w-lg space-y-3">
+          <Button variant="outline" className="w-full" onClick={onGenerate}>
+            Generate another variation — 1 credit
+          </Button>
+          <Button className="w-full" onClick={onGenerate}>
+            Add 4 more for a Campaign Set — 4 credits
+          </Button>
         </div>
       )}
 
@@ -1096,17 +1231,12 @@ function Step5Results({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, on
             </div>
           )}
 
-          {/* Expanded config */}
           {videoExpanded && !videoGenerating && !generatedVideo && (
             <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="flex items-center justify-between">
                 <p className="font-medium">Create a product video</p>
-                <Button variant="ghost" size="sm" onClick={() => setVideoExpanded(false)}>
-                  <X className="h-4 w-4" />
-                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setVideoExpanded(false)}><X className="h-4 w-4" /></Button>
               </div>
-
-              {/* Base image selection */}
               <div className="space-y-2">
                 <p className="text-sm font-medium">Which shot should we animate?</p>
                 <div className="flex gap-2 overflow-x-auto pb-2">
@@ -1123,8 +1253,6 @@ function Step5Results({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, on
                   ))}
                 </div>
               </div>
-
-              {/* Config row */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Duration</label>
@@ -1150,22 +1278,12 @@ function Step5Results({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, on
                   <p className="text-xs text-muted-foreground">Veo: cinematic quality. Runway: faster.</p>
                 </div>
               </div>
-
-              {/* Credit cost */}
-              <div>
-                <p className="text-sm font-medium">This will use {videoCreditCost} credits</p>
-                <p className="text-xs text-muted-foreground">
-                  {videoConfig.duration} seconds × {videoConfig.resolution} ({videoConfig.resolution === '1080p' ? '2×' : '1×'}) = {videoCreditCost} credits
-                </p>
-              </div>
-
               <Button className="w-full" onClick={onGenerateVideo} disabled={!videoConfig.baseImageId}>
                 Generate video — {videoCreditCost} credits
               </Button>
             </div>
           )}
 
-          {/* Processing state */}
           {videoGenerating && (
             <div className="space-y-4 animate-in fade-in duration-300">
               <div className="aspect-video bg-muted rounded-xl overflow-hidden relative">
@@ -1173,29 +1291,17 @@ function Step5Results({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, on
               </div>
               <p className="text-sm text-muted-foreground text-center">{videoStage}</p>
               <div className="text-center">
-                <button onClick={onCancelVideo} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                  Cancel generation
-                </button>
+                <button onClick={onCancelVideo} className="text-xs text-muted-foreground hover:text-foreground transition-colors">Cancel</button>
               </div>
             </div>
           )}
 
-          {/* Video result */}
           {generatedVideo && !videoGenerating && (
             <div className="space-y-4 animate-in fade-in duration-300">
-              <video
-                src={generatedVideo.url}
-                controls
-                autoPlay
-                muted
-                loop
-                className="w-full aspect-video rounded-xl bg-muted"
-              />
+              <video src={generatedVideo.url} controls autoPlay muted loop className="w-full aspect-video rounded-xl bg-muted" />
               <div className="flex items-center gap-2">
                 <a href={generatedVideo.url} download target="_blank" rel="noopener noreferrer">
-                  <Button size="sm" className="gap-1.5">
-                    <Download className="h-3.5 w-3.5" /> Download MP4
-                  </Button>
+                  <Button size="sm" className="gap-1.5"><Download className="h-3.5 w-3.5" /> Download MP4</Button>
                 </a>
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { navigator.clipboard.writeText(generatedVideo.url); toast({ title: 'Link copied' }); }}>
                   <Share2 className="h-3.5 w-3.5" /> Share link
@@ -1211,27 +1317,6 @@ function Step5Results({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, on
           )}
         </CardContent>
       </Card>
-
-      {/* Bottom actions */}
-      <div className="space-y-3">
-        {isCampaign && (
-          <Button variant="outline" className="w-full" onClick={onRegenerateAll}>
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Regenerate all shots — {shots.length} credits
-          </Button>
-        )}
-
-        {!isCampaign && (
-          <div className="max-w-lg mx-auto space-y-3">
-            <Button variant="outline" className="w-full" onClick={onGenerate}>
-              Generate another variation — 1 credit
-            </Button>
-            <Button className="w-full" onClick={onGenerate}>
-              Add 4 more shots to make a Campaign Set — 4 credits
-            </Button>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
@@ -1249,11 +1334,7 @@ function ShotCard({ shot, index, wide, onEdit, onUndo, onCopyLink, updateShot }:
   updateShot: (id: string, updates: Partial<GeneratedShot>) => void;
 }) {
   return (
-    <div
-      className="rounded-xl overflow-hidden border bg-card animate-in fade-in duration-300"
-      style={{ animationDelay: `${index * 100}ms` }}
-    >
-      {/* Image */}
+    <div className="rounded-xl overflow-hidden border bg-card animate-in fade-in duration-300" style={{ animationDelay: `${index * 100}ms` }}>
       <div className={`relative ${wide ? 'aspect-[16/9]' : 'aspect-[4/5]'} overflow-hidden bg-muted`}>
         <img
           src={shot.url}
@@ -1266,8 +1347,6 @@ function ShotCard({ shot, index, wide, onEdit, onUndo, onCopyLink, updateShot }:
           </div>
         )}
       </div>
-
-      {/* Footer */}
       <div className="p-4 space-y-3">
         <div className="flex items-center justify-between">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -1275,176 +1354,38 @@ function ShotCard({ shot, index, wide, onEdit, onUndo, onCopyLink, updateShot }:
           </p>
           <div className="flex items-center gap-1">
             <a href={shot.url} download target="_blank" rel="noopener noreferrer">
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <Download className="h-4 w-4" />
-              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8"><Download className="h-4 w-4" /></Button>
             </a>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onCopyLink(shot.url)}>
               <Link2 className="h-4 w-4" />
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => updateShot(shot.id, { isEditing: !shot.isEditing })}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-              Edit with prompt
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => updateShot(shot.id, { isEditing: !shot.isEditing })}>
+              <Pencil className="h-3.5 w-3.5" /> Edit with prompt
             </Button>
           </div>
         </div>
-
-        {/* Undo link */}
         {shot.showUndo && (
-          <button
-            onClick={() => onUndo(shot)}
-            className="flex items-center gap-1 text-xs text-primary hover:underline animate-in fade-in duration-200"
-          >
+          <button onClick={() => onUndo(shot)} className="flex items-center gap-1 text-xs text-primary hover:underline animate-in fade-in duration-200">
             <Undo2 className="h-3 w-3" /> Undo last edit
           </button>
         )}
-
-        {/* Inline edit panel */}
         {shot.isEditing && (
           <div className="space-y-3 animate-in slide-in-from-bottom-2 duration-200 border-t pt-3">
-            <Textarea
-              rows={2}
-              placeholder="Describe the change..."
-              value={shot.editPrompt}
-              onChange={e => updateShot(shot.id, { editPrompt: e.target.value })}
-            />
+            <Textarea rows={2} placeholder="Describe the change..." value={shot.editPrompt} onChange={e => updateShot(shot.id, { editPrompt: e.target.value })} />
             <div className="flex flex-wrap gap-1.5">
               {EDIT_SUGGESTIONS.map(s => (
-                <button
-                  key={s}
-                  onClick={() => updateShot(shot.id, { editPrompt: s })}
-                  className="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-                >
+                <button key={s} onClick={() => updateShot(shot.id, { editPrompt: s })} className="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
                   {s}
                 </button>
               ))}
             </div>
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => onEdit(shot)} disabled={!shot.editPrompt.trim()}>
-                Apply — 1 credit
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => updateShot(shot.id, { isEditing: false, editPrompt: '' })}>
-                Cancel
-              </Button>
+              <Button size="sm" onClick={() => onEdit(shot)} disabled={!shot.editPrompt.trim()}>Apply — 1 credit</Button>
+              <Button variant="ghost" size="sm" onClick={() => updateShot(shot.id, { isEditing: false, editPrompt: '' })}>Cancel</Button>
             </div>
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-/* ════════════════════════════════════════════════
-   Export Panel (Left sidebar replacement)
-   ════════════════════════════════════════════════ */
-function ExportPanel({ shots, exportFormats, setExportFormats, selectedShots, setSelectedShots, onDownload, onBackToSteps, generatedVideo }: {
-  shots: GeneratedShot[];
-  exportFormats: Set<string>;
-  setExportFormats: React.Dispatch<React.SetStateAction<Set<string>>>;
-  selectedShots: Set<string>;
-  setSelectedShots: React.Dispatch<React.SetStateAction<Set<string>>>;
-  onDownload: () => void;
-  onBackToSteps: () => void;
-  generatedVideo: GeneratedVideo | null;
-}) {
-  const toggleFormat = (id: string) => {
-    setExportFormats(prev => {
-      const n = new Set(prev);
-      n.has(id) ? n.delete(id) : n.add(id);
-      return n;
-    });
-  };
-
-  const toggleShot = (id: string) => {
-    setSelectedShots(prev => {
-      const n = new Set(prev);
-      n.has(id) ? n.delete(id) : n.add(id);
-      return n;
-    });
-  };
-
-  return (
-    <div className="p-4 flex-1 overflow-y-auto space-y-4">
-      <button
-        onClick={onBackToSteps}
-        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft className="h-3 w-3" /> Back to steps
-      </button>
-
-      <p className="font-medium">Export</p>
-
-      <div className="space-y-2">
-        {EXPORT_FORMATS.map(f => (
-          <label key={f.id} className="flex items-center gap-2 text-sm cursor-pointer">
-            <Checkbox
-              checked={exportFormats.has(f.id)}
-              onCheckedChange={() => toggleFormat(f.id)}
-            />
-            {f.label}
-          </label>
-        ))}
-      </div>
-
-      {shots.length > 1 && (
-        <>
-          <Separator />
-          <p className="text-xs font-medium text-muted-foreground">Select shots to export</p>
-          <div className="grid grid-cols-3 gap-1.5">
-            {shots.map(shot => (
-              <button
-                key={shot.id}
-                onClick={() => toggleShot(shot.id)}
-                className={`relative rounded-md overflow-hidden aspect-square ${
-                  selectedShots.has(shot.id) ? 'ring-2 ring-primary' : 'opacity-50'
-                }`}
-              >
-                <img src={shot.url} alt={shot.shotLabel} className="w-full h-full object-cover" />
-                {selectedShots.has(shot.id) && (
-                  <div className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-primary flex items-center justify-center">
-                    <Check className="h-2.5 w-2.5 text-primary-foreground" />
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-
-      <Button className="w-full" onClick={onDownload} disabled={selectedShots.size === 0}>
-        Download selected
-      </Button>
-
-      {/* Video section */}
-      {generatedVideo && (
-        <>
-          <Separator />
-          <p className="text-xs font-medium text-muted-foreground">Video</p>
-          <div className="flex items-center gap-2">
-            <Play className="h-4 w-4 text-muted-foreground shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate">Product video</p>
-            </div>
-            <Badge variant="secondary" className="text-[10px] shrink-0">{generatedVideo.duration}s</Badge>
-          </div>
-          <a href={generatedVideo.url} download target="_blank" rel="noopener noreferrer" className="block">
-            <Button variant="outline" size="sm" className="w-full gap-1.5">
-              <Download className="h-3.5 w-3.5" /> Download MP4
-            </Button>
-          </a>
-        </>
-      )}
-
-      <Separator />
-
-      <p className="text-xs text-muted-foreground">
-        Connect Shopify in Settings →
-      </p>
     </div>
   );
 }
