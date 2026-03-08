@@ -21,6 +21,9 @@ const BACKPACK_REGEX =
 const BEAUTY_REGEX =
   /serum|moisturizer|lipstick|foundation|mascara|eyeliner|blush|concealer|primer|sunscreen|shampoo|conditioner|hair.oil|hair.dye|henna|body.wash|soap|lotion|cream|toner|cleanser|face.wash|perfume|cologne|deodorant|nail.polish|lip.gloss|lip.balm|bronzer|highlighter|setting.spray|face.mask|eye.cream|body.butter|exfoliator|scrub|mist|essence|ampoule|bb.cream|cc.cream|compact|kajal|kohl|bindi|sindoor|mehendi|ubtan|hair.serum|dry.shampoo|leave.in|mousse|pomade|wax|gel/i;
 
+const FMCG_REGEX =
+  /chips|biscuit|cookie|snack|cereal|juice|soda|water.bottle|energy.drink|coffee|tea|sauce|ketchup|jam|honey|protein.bar|granola|candy|chocolate|detergent|toothpaste|noodles|pasta|rice|flour|oil|vinegar|mustard|mayonnaise|pickle|chutney|spice|masala|mukhwas|namkeen|papad|atta|ghee|paneer|milk|curd|yogurt|butter|cheese/i;
+
 const APPAREL_CONSTRAINTS = `
 HARD CONSTRAINTS FOR APPAREL VIDEO — you MUST follow ALL of these:
 - Movement: ONLY subtle motion — gentle fabric sway, light material motion, slow walk, soft pose transitions. Nothing more.
@@ -95,6 +98,32 @@ const DISPENSING_CHOREOGRAPHY: Record<string, string> = {
   fragrance: `APPLICATION CHOREOGRAPHY (Fragrance): Model lifts bottle elegantly, presses nozzle — show the fine mist spraying at neck or wrist. Capture the mist catching light mid-air. Model closes eyes briefly, savoring the moment. Ethereal, dreamy mood.`,
 };
 
+const FMCG_SHOWCASE_CONSTRAINTS = `
+HARD CONSTRAINTS FOR FMCG PRODUCT-ONLY VIDEO (SHOWCASE MODE) — you MUST follow ALL of these:
+- Product placement: product stays COMPLETELY STILL. The world moves around it — never the product itself.
+- Camera: very slow camera drift or gentle push-in ONLY. Smooth dolly, slow orbit to capture label, or ultra-slow zoom. NO fast movements.
+- Environmental motion ONLY: subtle light shifts catching packaging shine, gentle particle drift, slow condensation forming, steam rising (if applicable).
+- Macro detail moments: MANDATORY close-ups on label typography, ingredient text, seal/cap detail, packaging material texture, nutritional info panel.
+- BANNED actions: absolutely NO product interaction, NO opening, NO pouring, NO hands touching the product, NO humans at all.
+- Lighting: dramatic product lighting — soft key light creating premium reflections on packaging, light raking across label surface to reveal embossing or texture.
+- Background motion: subtle environmental shifts — light moving across surfaces, gentle bokeh drift, contextual props slightly out of focus.
+- Overall feel: premium product commercial, ASMR-like stillness. The product is the hero — sacred and untouched. Think premium grocery brand campaign.
+- FINAL RULE: This video must contain ZERO humans. No person, no model, no hands, no face, no skin. ONLY the product and its environment.
+`;
+
+const FMCG_MODEL_CONSTRAINTS = `
+HARD CONSTRAINTS FOR FMCG MODEL VIDEO — you MUST follow ALL of these:
+- Movement: smooth lifestyle movements ONLY — product pick-up, pour, sip/bite, place back on surface. Nothing rushed or dramatic.
+- Camera: gentle dolly-in to product label, slow orbit showing all sides of packaging. Warm, inviting framing.
+- MANDATORY "product reveal" moment: at least one prompt must show unwrapping, pouring, opening cap/lid, or first bite/sip.
+- BANNED motion: NO fast cuts, NO dramatic movements, NO 360 spins, NO running, NO tossing products.
+- Lighting: warm, inviting, natural — kitchen/dining/outdoor lifestyle feel. Golden hour or soft window light preferred.
+- CRITICAL SIZE RULE: Product must appear at its REAL-WORLD SIZE relative to the model. Do NOT enlarge or exaggerate packaging. A sachet should look like a sachet, not a suitcase.
+- Framing: mid-shot to medium-wide. Show the model's natural interaction with the product in context.
+- Setting: kitchen counter, dining table, picnic, café, grocery aisle, or outdoor lifestyle — contextual and realistic.
+- Overall feel: warm lifestyle commercial, natural and inviting. Think premium FMCG brand campaign — Tropicana, Lay's, Cadbury.
+`;
+
 const GENERIC_CONSTRAINTS = `
 Write cinematic, visually compelling video prompts that showcase the product beautifully.
 Include varied camera movements and angles. Show the product from its best angles with professional lighting.
@@ -130,7 +159,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { category, productName, productImageUrl, beautyShootMode, beautyApplication } = await req.json();
+    const { category, productName, productImageUrl, beautyShootMode, beautyApplication, fmcgShootMode } = await req.json();
 
     if (!category && !productName) {
       return new Response(
@@ -147,6 +176,7 @@ Deno.serve(async (req) => {
     const isLuggage = LUGGAGE_REGEX.test(category || "") || LUGGAGE_REGEX.test(productName || "") || BACKPACK_REGEX.test(category || "") || BACKPACK_REGEX.test(productName || "");
     const isBackpack = BACKPACK_REGEX.test(category || "") || BACKPACK_REGEX.test(productName || "");
     const isBeauty = BEAUTY_REGEX.test(category || "") || BEAUTY_REGEX.test(productName || "") || ["beauty", "skincare"].includes((category || "").toLowerCase());
+    const isFmcg = !isBeauty && ((category || "").toLowerCase() === "fmcg" || FMCG_REGEX.test(category || "") || FMCG_REGEX.test(productName || ""));
 
     // Determine constraints based on category priority
     let constraints: string;
@@ -158,6 +188,8 @@ Deno.serve(async (req) => {
       constraints = LUGGAGE_CONSTRAINTS;
     } else if (isBeauty) {
       constraints = beautyShootMode === "showcase" ? BEAUTY_SHOWCASE_CONSTRAINTS : BEAUTY_MODEL_CONSTRAINTS;
+    } else if (isFmcg) {
+      constraints = fmcgShootMode === "showcase" ? FMCG_SHOWCASE_CONSTRAINTS : FMCG_MODEL_CONSTRAINTS;
     } else {
       constraints = GENERIC_CONSTRAINTS;
     }
@@ -202,6 +234,16 @@ Every "Application" style prompt MUST include a clear dispensing moment before t
 - Product color/shade if visible through packaging`
       : "";
 
+    const fmcgGroundingCues = isFmcg
+      ? `
+- Packaging type (bottle, can, pouch, sachet, box, carton, jar, tube, packet)
+- Label design, typography, branding, and nutritional info placement
+- Product color, material finish, seal/cap details
+- Size proportions relative to any context objects or the model
+- Contents visible through packaging (if transparent/translucent)
+- Barcode, batch info, or regulatory markings placement`
+      : "";
+
     const imageGroundingInstruction = productImageUrl
       ? `
 IMPORTANT — IMAGE GROUNDING:
@@ -210,7 +252,7 @@ You are provided with the actual generated model/product image. Analyze it caref
 - The outfit/product details: fit, drape, color, pattern, styling
 - The expression and gaze direction
 - The background setting, lighting, and mood
-- Any props or accessories visible${jewelleryGroundingCues}${luggageGroundingCues}${beautyGroundingCues}
+- Any props or accessories visible${jewelleryGroundingCues}${luggageGroundingCues}${beautyGroundingCues}${fmcgGroundingCues}
 
 Write your video prompts as a NATURAL CONTINUATION of this exact image. The video should feel like this still photo came to life. Do NOT write generic prompts — every prompt must reference what you see in the image.
 `
@@ -370,6 +412,7 @@ Include a short reason (1 sentence) explaining why this prompt suits the product
         isLuggage,
         isBackpack,
         isBeauty,
+        isFmcg,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
