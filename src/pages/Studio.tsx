@@ -214,6 +214,7 @@ const Studio = () => {
   const [productInfo, setProductInfo] = useState<ProductInfo | null>(null);
   const [analyzingProduct, setAnalyzingProduct] = useState(false);
   const [analysisPhase, setAnalysisPhase] = useState<'idle' | 'analyzing' | 'done'>('idle');
+  const [productName, setProductName] = useState('');
 
   const referenceInputRef = useRef<HTMLInputElement>(null);
   const modelUploadRef = useRef<HTMLInputElement>(null);
@@ -278,6 +279,7 @@ const Studio = () => {
         return;
       }
       setProductInfo(data);
+      setProductName(data.productName || '');
       setAnalysisPhase('done');
     } catch (e) {
       console.error('Product analysis error:', e);
@@ -700,7 +702,7 @@ const Studio = () => {
          ════════════════════════════════════════════ */}
       <div className="flex-1 overflow-hidden bg-muted/30 h-screen relative canvas-dots">
         {activeStep === 1 && (
-          <Step1Viewport productImages={productImages} productInfo={productInfo} analyzingProduct={analyzingProduct} analysisPhase={analysisPhase} />
+          <Step1Viewport productImages={productImages} productInfo={productInfo} analyzingProduct={analyzingProduct} analysisPhase={analysisPhase} productName={productName} setProductName={setProductName} />
         )}
         {activeStep !== 1 && (
           <div className="p-8 min-h-full overflow-y-auto h-full">
