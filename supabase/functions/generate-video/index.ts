@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { assetId, duration, resolution, engine, projectId } =
+    const { assetId, duration, resolution, engine, projectId, aspectRatio, prompt } =
       await req.json();
 
     if (!assetId || !duration || !resolution || !engine || !projectId) {
@@ -53,6 +53,8 @@ Deno.serve(async (req) => {
         }
       );
     }
+
+    const videoAspectRatio = aspectRatio || "9:16";
 
     // Calculate credit cost: base = duration seconds, 1080p = 2x multiplier
     const resolutionMultiplier = resolution === "1080p" ? 2 : 1;
@@ -110,9 +112,9 @@ Deno.serve(async (req) => {
         project_id: projectId,
         asset_type: "video",
         url: videoUrl,
-        shot_label: `video-${duration}s-${resolution}`,
+        shot_label: `video-${duration}s-${videoAspectRatio}`,
         preset_used: engine,
-        prompt_used: `Generated from asset ${assetId}, ${duration}s ${resolution} using ${engine}`,
+        prompt_used: prompt || `Generated from asset ${assetId}, ${duration}s ${resolution} ${videoAspectRatio} using ${engine}`,
       })
       .select()
       .single();
