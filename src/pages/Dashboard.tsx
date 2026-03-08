@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import {
-  Plus, FolderOpen, ImageIcon, ArrowRight,
+  Plus, FolderOpen, ImageIcon, ArrowRight, Video,
   Gem, Shirt, Footprints, Coffee, Sparkles, Briefcase, Package,
   ArrowDownCircle, ArrowUpCircle,
 } from 'lucide-react';
@@ -71,6 +71,7 @@ const Dashboard = () => {
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [heatmapData, setHeatmapData] = useState<{ created_at: string; amount: number }[]>([]);
   const [assetCounts, setAssetCounts] = useState<Record<string, number>>({});
+  const [stats, setStats] = useState({ projects: 0, images: 0, videos: 0 });
 
   useEffect(() => {
     if (!user) return;
@@ -82,6 +83,9 @@ const Dashboard = () => {
         { data: recentProjects },
         { data: recentTx },
         { data: yearTx },
+        { count: projectCount },
+        { count: imageCount },
+        { count: videoCount },
       ] = await Promise.all([
         supabase
           .from('projects')
@@ -100,7 +104,25 @@ const Dashboard = () => {
           .select('created_at, amount')
           .eq('user_id', user.id)
           .gte('created_at', oneYearAgo.toISOString()),
+        supabase
+          .from('projects')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id),
+        supabase
+          .from('assets')
+          .select('*', { count: 'exact', head: true })
+          .eq('asset_type', 'generated'),
+        supabase
+          .from('assets')
+          .select('*', { count: 'exact', head: true })
+          .eq('asset_type', 'video'),
       ]);
+
+      setStats({
+        projects: projectCount ?? 0,
+        images: imageCount ?? 0,
+        videos: videoCount ?? 0,
+      });
 
       setProjects(recentProjects ?? []);
       setTransactions(recentTx ?? []);
@@ -135,6 +157,49 @@ const Dashboard = () => {
           <span className="text-primary">{getGreeting()},</span> {firstName}
         </h1>
         <p className="text-muted-foreground mt-1">Here's your studio overview.</p>
+      </div>
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <Card>
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="bg-primary/10 p-3 rounded-full">
+              <FolderOpen className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Total Projects</p>
+              <h3 className="text-2xl font-bold">
+                {loading ? <Skeleton className="h-8 w-16 mt-1" /> : stats.projects}
+              </h3>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="bg-primary/10 p-3 rounded-full">
+              <ImageIcon className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Generated Images</p>
+              <h3 className="text-2xl font-bold">
+                {loading ? <Skeleton className="h-8 w-16 mt-1" /> : stats.images}
+              </h3>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="bg-primary/10 p-3 rounded-full">
+              <Video className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Generated Videos</p>
+              <h3 className="text-2xl font-bold">
+                {loading ? <Skeleton className="h-8 w-16 mt-1" /> : stats.videos}
+              </h3>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Credit Usage Heatmap */}
@@ -267,11 +332,11 @@ const Dashboard = () => {
                   return (
                     <div key={tx.id}>
                       <div className="flex items-center gap-3 py-3">
-                        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${isDebit ? 'bg-destructive/10' : 'bg-green-100'}`}>
+                        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${isDebit ? 'bg-destructive/10' : 'bg-primary/10'}`}>
                           {isDebit ? (
                             <ArrowDownCircle className="h-4 w-4 text-destructive" />
                           ) : (
-                            <ArrowUpCircle className="h-4 w-4 text-green-600" />
+                            <ArrowUpCircle className="h-4 w-4 text-primary" />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -280,7 +345,7 @@ const Dashboard = () => {
                             {new Date(tx.created_at).toLocaleDateString()}
                           </p>
                         </div>
-                        <span className={`text-sm font-semibold shrink-0 ${isDebit ? 'text-destructive' : 'text-green-600'}`}>
+                        <span className={`text-sm font-semibold shrink-0 ${isDebit ? 'text-destructive' : 'text-primary'}`}>
                           {isDebit ? '' : '+'}{tx.amount}
                         </span>
                       </div>
