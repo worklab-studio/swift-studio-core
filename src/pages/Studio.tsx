@@ -699,6 +699,7 @@ const Studio = () => {
           modelConfig: shootType === 'model' ? modelConfig : null,
           stylePrompt: stylePrompt || undefined,
           productImageUrl,
+          aspectRatio,
         },
       });
       clearInterval(progressInterval);
