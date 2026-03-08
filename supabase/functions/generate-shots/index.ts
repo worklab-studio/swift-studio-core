@@ -7,7 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SHOT_LABELS_CAMPAIGN = ["hero", "detail", "lifestyle", "alternate", "editorial"];
+const SHOT_LABELS_CAMPAIGN = ["hero", "detail", "lifestyle", "alternate", "editorial", "flat_lay"];
 const SHOT_LABELS_SINGLE = ["hero"];
 
 serve(async (req) => {
@@ -39,7 +39,7 @@ serve(async (req) => {
     }
     const userId = user.id;
 
-    const { projectId, preset, shotCount, additionalContext, category, shotType, modelConfig, stylePrompt, productImageUrl } = await req.json();
+    const { projectId, preset, shotCount, additionalContext, category, shotType, modelConfig, stylePrompt, productImageUrl, aspectRatio } = await req.json();
 
     if (!projectId || !preset || !shotCount) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -64,7 +64,7 @@ serve(async (req) => {
     }
 
     const isCampaign = shotCount === "campaign";
-    const creditCost = isCampaign ? 5 : 1;
+    const creditCost = isCampaign ? 6 : 1;
     const labels = isCampaign ? SHOT_LABELS_CAMPAIGN : SHOT_LABELS_SINGLE;
 
     // Check credits
@@ -103,6 +103,11 @@ serve(async (req) => {
     );
 
     // Build prompts for each shot
+    const ratioInstruction = aspectRatio ? `Image aspect ratio: ${aspectRatio}.` : "";
+    const consistencyInstruction = shotType === "model_shot"
+      ? "IMPORTANT: Every image MUST show ONLY the model wearing/holding the product. Do NOT show the product alone without a model."
+      : "IMPORTANT: Every image MUST show ONLY the product. Do NOT include any human model in the image.";
+
     const shotPrompts = labels.map((label) => {
       const baseStyle = stylePrompt || `${preset} style photography`;
       const shotTypeDesc: Record<string, string> = {
@@ -111,12 +116,13 @@ serve(async (req) => {
         lifestyle: "Lifestyle shot — product in natural use context, environmental storytelling, aspirational setting",
         alternate: "Alternate angle — different perspective showing product from side or back, revealing hidden details",
         editorial: "Editorial shot — magazine-worthy composition, artistic styling, fashion-forward presentation",
+        flat_lay: "Flat lay — top-down bird's eye view, styled arrangement on a clean surface with complementary props",
       };
       const modelDesc = shotType === "model_shot" && modelConfig
         ? `The product is worn/held by a ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""} model with ${modelConfig.bodyType || "average"} build. Background: ${modelConfig.backgroundPrompt || modelConfig.background || "studio"}.`
         : "Product-only shot, no human model.";
 
-      return `${shotTypeDesc[label] || label}. ${baseStyle}. Category: ${category}. ${modelDesc}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}. Professional commercial photography, high resolution, no text, no watermarks.`;
+      return `${shotTypeDesc[label] || label}. ${baseStyle}. Category: ${category}. ${modelDesc} ${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}. ${ratioInstruction} Professional commercial photography, high resolution, no text, no watermarks.`;
     });
 
     // Generate images sequentially to avoid rate limits
