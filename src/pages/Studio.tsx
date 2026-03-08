@@ -1007,8 +1007,32 @@ function Step1Config({ productImages, productUploadRef, onUpload, onRemove }: {
   );
 }
 
+/* ── Background category mapping by product type ── */
+const BACKGROUND_SUGGESTIONS: Record<string, string> = {
+  'Apparel': 'white-sweep',
+  'Clothing': 'white-sweep',
+  'Fashion': 'white-sweep',
+  'Jewelry': 'dark-studio',
+  'Accessories': 'dark-studio',
+  'Watches': 'dark-studio',
+  'Skincare': 'pastel-gradient',
+  'Beauty': 'pastel-gradient',
+  'Cosmetics': 'pastel-gradient',
+  'Electronics': 'gray-seamless',
+  'Tech': 'gray-seamless',
+  'Food': 'warm-beige',
+  'Beverage': 'café',
+  'Shoes': 'white-sweep',
+  'Footwear': 'white-sweep',
+  'Bags': 'dark-studio',
+  'Home': 'living-room',
+  'Furniture': 'living-room',
+  'Sports': 'urban-rooftop',
+  'Fitness': 'urban-rooftop',
+};
+
 /* ── Step 2 Config (Left) ── */
-function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload, selectedTemplate, setSelectedTemplate, templateCategory, setTemplateCategory }: {
+function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload, selectedTemplate, setSelectedTemplate, templateCategory, setTemplateCategory, selectedModelData, modelImages, productInfo }: {
   shootType: 'product' | 'model' | null;
   setShootType: React.Dispatch<React.SetStateAction<'product' | 'model' | null>>;
   modelConfig: ModelConfig;
@@ -1019,10 +1043,50 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
   setSelectedTemplate: React.Dispatch<React.SetStateAction<string | null>>;
   templateCategory: string;
   setTemplateCategory: React.Dispatch<React.SetStateAction<string>>;
+  selectedModelData: typeof PLACEHOLDER_MODELS[0] | undefined;
+  modelImages: Record<string, string>;
+  productInfo: ProductInfo | null;
 }) {
   const filteredTemplates = templateCategory === 'All'
     ? PRODUCT_SHOOT_TEMPLATES
     : PRODUCT_SHOOT_TEMPLATES.filter(t => t.category === templateCategory);
+
+  // Auto-fill gender/ethnicity/bodyType when a model is selected
+  useEffect(() => {
+    if (!selectedModelData) return;
+    const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+    const genderMap: Record<string, string> = { female: 'Female', male: 'Male' };
+    const bodyMap: Record<string, string> = {
+      slim: 'Slim', athletic: 'Athletic', average: 'Average', curvy: 'Curvy',
+      'plus size': 'Plus Size', 'athletic muscular': 'Athletic', 'curvy stocky': 'Curvy',
+    };
+    const ethMap: Record<string, string> = {
+      'south asian': 'South Asian', 'east asian': 'East Asian', 'east asian japanese': 'East Asian',
+      'east asian korean': 'East Asian', 'southeast asian': 'Southeast Asian',
+      'southeast asian filipino': 'Southeast Asian', 'southeast asian thai': 'Southeast Asian',
+      'black': 'Black / African', 'black african': 'Black / African', 'black west african': 'Black / African',
+      'black nigerian': 'Black / African', 'caucasian': 'White / Caucasian', 'caucasian slavic': 'White / Caucasian',
+      'latina': 'Latina / Hispanic', 'latino': 'Latina / Hispanic', 'latina brazilian': 'Latina / Hispanic',
+      'middle eastern': 'Middle Eastern', 'middle eastern persian': 'Middle Eastern',
+      'mixed': 'Mixed', 'mixed race': 'Mixed', 'mixed black-asian': 'Mixed',
+      'mixed caucasian-latina': 'Mixed', 'mixed black-caucasian': 'Mixed',
+    };
+    setModelConfig(prev => ({
+      ...prev,
+      gender: genderMap[selectedModelData.gender] || capitalize(selectedModelData.gender),
+      ethnicity: ethMap[selectedModelData.ethnicity.toLowerCase()] || 'Other',
+      bodyType: bodyMap[selectedModelData.bodyType.toLowerCase()] || capitalize(selectedModelData.bodyType),
+    }));
+  }, [selectedModelData?.id]);
+
+  // Auto-suggest background based on product category
+  useEffect(() => {
+    if (!productInfo?.category || modelConfig.background) return;
+    const suggested = BACKGROUND_SUGGESTIONS[productInfo.category];
+    if (suggested) {
+      setModelConfig(prev => ({ ...prev, background: suggested }));
+    }
+  }, [productInfo?.category]);
 
   return (
     <div className="space-y-4">
@@ -1088,21 +1152,60 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
         <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
           <Separator />
 
+          {/* ── Selected Model Preview ── */}
+          {(selectedModelData || modelConfig.uploadedModelUrl) && (
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-start gap-3">
+                {/* Portrait thumbnail */}
+                <div className="w-14 h-[72px] rounded-lg overflow-hidden shrink-0 border border-border">
+                  {selectedModelData && modelImages[selectedModelData.id] ? (
+                    <img src={modelImages[selectedModelData.id]} alt={selectedModelData.name} className="w-full h-full object-cover" />
+                  ) : modelConfig.uploadedModelUrl ? (
+                    <img src={modelConfig.uploadedModelUrl} alt="Custom model" className="w-full h-full object-cover" />
+                  ) : selectedModelData ? (
+                    <div className="w-full h-full flex items-center justify-center" style={{ background: selectedModelData.color }}>
+                      <span className="text-lg font-bold text-foreground/40">{selectedModelData.name[0]}</span>
+                    </div>
+                  ) : null}
+                </div>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-foreground truncate">
+                    {selectedModelData ? selectedModelData.name : 'Custom Model'}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                    {selectedModelData ? selectedModelData.attrs : 'Uploaded image'}
+                  </p>
+                  {selectedModelData && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Age: {selectedModelData.ageRange}</p>
+                  )}
+                </div>
+                {/* Deselect */}
+                <button
+                  onClick={() => setModelConfig(prev => ({ ...prev, selectedModel: null, uploadedModelUrl: null, gender: '', ethnicity: '', bodyType: '' }))}
+                  className="h-5 w-5 rounded-full bg-muted flex items-center justify-center shrink-0 hover:bg-accent transition-colors"
+                >
+                  <X className="h-3 w-3 text-muted-foreground" />
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Upload */}
           <input ref={modelUploadRef} type="file" accept="image/jpeg,image/png" className="hidden" onChange={onModelUpload} />
-          {modelConfig.uploadedModelUrl ? (
+          {modelConfig.uploadedModelUrl && !selectedModelData ? (
             <div className="relative w-20 h-24 rounded-lg overflow-hidden border">
               <img src={modelConfig.uploadedModelUrl} alt="Custom model" className="w-full h-full object-cover" />
               <button onClick={() => setModelConfig(prev => ({ ...prev, uploadedModelUrl: null }))} className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-background/80 flex items-center justify-center">
                 <X className="h-2.5 w-2.5" />
               </button>
             </div>
-          ) : (
+          ) : !selectedModelData && !modelConfig.uploadedModelUrl ? (
             <button onClick={() => modelUploadRef.current?.click()} className="w-full h-16 rounded-lg border-2 border-dashed border-border flex items-center justify-center gap-2 hover:border-primary/50 transition-colors">
               <Upload className="h-4 w-4 text-muted-foreground" />
               <p className="text-xs text-muted-foreground">Upload custom model</p>
             </button>
-          )}
+          ) : null}
 
           <Separator />
 
@@ -1147,22 +1250,44 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    <SelectLabel>Lifestyle</SelectLabel>
-                    <SelectItem value="café">Café</SelectItem>
-                    <SelectItem value="street">Street</SelectItem>
-                    <SelectItem value="garden">Garden</SelectItem>
-                    <SelectItem value="beach">Beach</SelectItem>
-                    <SelectItem value="urban">Urban rooftop</SelectItem>
-                  </SelectGroup>
-                  <SelectGroup>
                     <SelectLabel>Studio</SelectLabel>
                     <SelectItem value="white-sweep">White sweep</SelectItem>
                     <SelectItem value="gray-seamless">Gray seamless</SelectItem>
                     <SelectItem value="dark-studio">Dark studio</SelectItem>
                     <SelectItem value="colored-gel">Colored gel</SelectItem>
+                    <SelectItem value="pastel-gradient">Pastel gradient</SelectItem>
+                    <SelectItem value="warm-beige">Warm beige</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Lifestyle</SelectLabel>
+                    <SelectItem value="café">Café</SelectItem>
+                    <SelectItem value="street">Street</SelectItem>
+                    <SelectItem value="garden">Garden</SelectItem>
+                    <SelectItem value="beach">Beach</SelectItem>
+                    <SelectItem value="urban-rooftop">Urban rooftop</SelectItem>
+                    <SelectItem value="living-room">Living room</SelectItem>
+                    <SelectItem value="office">Office</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>E-commerce</SelectLabel>
+                    <SelectItem value="pure-white">Pure white</SelectItem>
+                    <SelectItem value="light-gray">Light gray</SelectItem>
+                    <SelectItem value="soft-shadow">Soft shadow</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Mystic</SelectLabel>
+                    <SelectItem value="fog-mist">Fog / mist</SelectItem>
+                    <SelectItem value="neon-glow">Neon glow</SelectItem>
+                    <SelectItem value="dark-moody">Dark moody</SelectItem>
+                    <SelectItem value="ethereal-light">Ethereal light</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
+              {productInfo?.category && (
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Auto-suggested for {productInfo.category}
+                </p>
+              )}
             </div>
           </div>
 
@@ -1178,7 +1303,9 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
             <p className="text-[10px] text-muted-foreground">Gemini is faster. Runway has better lighting.</p>
           </div>
 
-          <p className="text-[10px] text-muted-foreground">Select a model from the grid on the right →</p>
+          {!selectedModelData && !modelConfig.uploadedModelUrl && (
+            <p className="text-[10px] text-muted-foreground">Select a model from the grid on the right →</p>
+          )}
         </div>
       )}
     </div>
