@@ -697,30 +697,31 @@ const Studio = () => {
    ════════════════════════════════════════════════════════════════ */
 
 /* ── Step 1 Config (Left) ── */
-function Step1Config({ productImages, productUploadRef, onUpload, onRemove, onContinue }: {
+function Step1Config({ productImages, productUploadRef, onUpload, onRemove }: {
   productImages: string[];
   productUploadRef: React.RefObject<HTMLInputElement>;
   onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemove: (index: number) => void;
-  onContinue: () => void;
 }) {
   return (
-    <div className="space-y-3">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Add Product Images</p>
-      <p className="text-[11px] text-muted-foreground">Upload photos of your product from different angles.</p>
+    <div className="space-y-4">
+      <div>
+        <p className="text-sm font-semibold text-foreground">Add Product Images</p>
+        <p className="text-xs text-muted-foreground mt-1">Upload photos of your product from different angles.</p>
+      </div>
 
       <input ref={productUploadRef} type="file" accept="image/*" multiple className="hidden" onChange={onUpload} />
 
       <button
         onClick={() => productUploadRef.current?.click()}
-        className="w-full h-20 rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center gap-1.5 hover:border-primary/50 hover:bg-accent/30 transition-colors"
+        className="w-full h-24 rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:border-primary/50 hover:bg-accent/30 transition-colors"
       >
         <Upload className="h-5 w-5 text-muted-foreground" />
         <p className="text-xs text-muted-foreground">Click to upload · Multiple files</p>
       </button>
 
       {productImages.length > 0 && (
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-3 gap-2">
           {productImages.map((url, i) => (
             <div key={i} className="relative group rounded-lg overflow-hidden border aspect-square">
               <img src={url} alt={`Product angle ${i + 1}`} className="w-full h-full object-cover" />
@@ -730,17 +731,13 @@ function Step1Config({ productImages, productUploadRef, onUpload, onRemove, onCo
               >
                 <X className="h-3 w-3" />
               </button>
-              <div className="absolute bottom-1 left-1 bg-background/70 backdrop-blur-sm rounded px-1.5 py-0.5">
-                <p className="text-[9px] font-medium text-foreground">Angle {i + 1}</p>
+              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-background/70 to-transparent p-1.5">
+                <p className="text-[9px] font-medium text-foreground text-center">Angle {i + 1}</p>
               </div>
             </div>
           ))}
         </div>
       )}
-
-      <Button className="w-full" size="sm" disabled={productImages.length === 0} onClick={onContinue}>
-        Continue to Model Setup →
-      </Button>
     </div>
   );
 }
