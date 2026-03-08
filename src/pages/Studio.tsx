@@ -255,8 +255,9 @@ const Studio = () => {
   /* ── AI Product Analysis ── */
   const analyzeProduct = useCallback(async (imageUrl: string) => {
     setAnalyzingProduct(true);
+    setAnalysisPhase('analyzing');
+    setProductInfo(null);
     try {
-      // Convert blob URL to base64
       const response = await fetch(imageUrl);
       const blob = await response.blob();
       const reader = new FileReader();
@@ -272,11 +273,14 @@ const Studio = () => {
       if (error || !data) {
         console.error('Product analysis failed:', error);
         setAnalyzingProduct(false);
+        setAnalysisPhase('idle');
         return;
       }
       setProductInfo(data);
+      setAnalysisPhase('done');
     } catch (e) {
       console.error('Product analysis error:', e);
+      setAnalysisPhase('idle');
     }
     setAnalyzingProduct(false);
   }, []);
