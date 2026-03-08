@@ -2883,8 +2883,9 @@ function ProductsViewport({ assets, productLabels, selectedLabel, onSelectLabel,
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-4 gap-4">
         {productLabels.map((label) => {
-          const productAssets = assets.filter(a => a.product_label === label && a.asset_type === 'ai_generated');
-          const thumbnail = productAssets[0]?.url;
+          const originalAssets = assets.filter(a => a.product_label === label && a.asset_type === 'original');
+          const generatedCount = assets.filter(a => a.product_label === label && a.asset_type === 'ai_generated').length;
+          const thumbnail = originalAssets[0]?.url;
           return (
             <button
               key={label}
@@ -2902,7 +2903,7 @@ function ProductsViewport({ assets, productLabels, selectedLabel, onSelectLabel,
               </div>
               <div className="p-3">
                 <p className="text-sm font-medium truncate">{label}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{productAssets.length} generated image{productAssets.length !== 1 ? 's' : ''}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{generatedCount} generated image{generatedCount !== 1 ? 's' : ''}</p>
               </div>
             </button>
           );
