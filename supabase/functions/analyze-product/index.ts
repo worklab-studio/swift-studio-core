@@ -39,7 +39,19 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: "You are a product photography expert. Analyze the product in the image and return structured information about it.",
+            content: `You are a product photography and fashion expert. Analyze the product in the image and return structured information.
+
+Special instructions for Apparel & Fashion products:
+- Detect the specific garment type precisely (e.g., "slim-fit formal shirt", "embroidered kurta", "A-line midi dress", "distressed denim jacket").
+- Suggest a complete complementary outfit pairing based on formality, color, and cultural context. For example, for a navy formal shirt suggest "charcoal slim-fit trousers, black leather belt, dark brown oxford shoes".
+- For non-apparel products, set garmentType and outfitSuggestion to null.
+
+Model & Background detection (for ALL products):
+- Detect whether a human model is visible in the image (wearing or holding the product).
+- If no model is detected, set modelNote to "No model detected, add in upcoming steps."
+- If a model IS detected on an apparel item, set modelNote to "Model detected — ghost mannequin extraction available."
+- For non-apparel with a model, set modelNote to "Model detected in image."
+- Detect whether the product is on a clean white/studio background. If not, set hasWhiteBackground to false.`,
           },
           {
             role: "user",
@@ -50,7 +62,7 @@ serve(async (req) => {
               },
               {
                 type: "text",
-                text: "Analyze this product image. Identify the product category, colors, material, suggest ideal photography shot types, suggest a product name, and write a brief description.",
+                text: "Analyze this product image. Identify the product category, colors, material, suggest a product name, write a brief description, detect garment type if apparel, suggest outfit pairing if apparel, detect if a human model is present, and check if the background is white/studio.",
               },
             ],
           },
@@ -60,13 +72,13 @@ serve(async (req) => {
             type: "function",
             function: {
               name: "return_product_info",
-              description: "Return structured product analysis",
+              description: "Return structured product analysis with apparel-awareness, model detection, and background check",
               parameters: {
                 type: "object",
                 properties: {
                   category: {
                     type: "string",
-                    description: "Product category (e.g., Footwear, Handbag, Watch, Skincare, Jewelry)",
+                    description: "Product category (e.g., Footwear, Handbag, Watch, Skincare, Jewelry, Apparel)",
                   },
                   colors: {
                     type: "array",
@@ -75,12 +87,12 @@ serve(async (req) => {
                   },
                   material: {
                     type: "string",
-                    description: "Primary material (e.g., Leather, Canvas, Metal, Plastic, Fabric)",
+                    description: "Primary material (e.g., Leather, Canvas, Metal, Plastic, Fabric, Cotton, Silk)",
                   },
                   suggestedShots: {
                     type: "array",
                     items: { type: "string" },
-                    description: "Recommended photography shot types (e.g., Flat lay, 45-degree angle, Detail close-up, On-body, Lifestyle)",
+                    description: "Recommended photography shot types",
                   },
                   description: {
                     type: "string",
@@ -88,10 +100,30 @@ serve(async (req) => {
                   },
                   productName: {
                     type: "string",
-                    description: "Suggested product name (e.g., 'Classic Leather Tote', 'Minimalist Gold Watch')",
+                    description: "Suggested product name (e.g., 'Classic Leather Tote', 'Slim-Fit Navy Formal Shirt')",
+                  },
+                  garmentType: {
+                    type: ["string", "null"],
+                    description: "Specific garment type if apparel (e.g., 'slim-fit formal shirt', 'A-line midi dress', 'embroidered kurta'). Null for non-apparel.",
+                  },
+                  outfitSuggestion: {
+                    type: ["string", "null"],
+                    description: "Complete complementary outfit pairing for apparel based on formality, color, cultural context. Null for non-apparel.",
+                  },
+                  hasModel: {
+                    type: "boolean",
+                    description: "Whether a human model is detected in the image (wearing or holding the product)",
+                  },
+                  hasWhiteBackground: {
+                    type: "boolean",
+                    description: "Whether the product is on a clean white or studio background",
+                  },
+                  modelNote: {
+                    type: ["string", "null"],
+                    description: "Note about model detection status and available actions",
                   },
                 },
-                required: ["category", "colors", "material", "suggestedShots", "description", "productName"],
+                required: ["category", "colors", "material", "suggestedShots", "description", "productName", "garmentType", "outfitSuggestion", "hasModel", "hasWhiteBackground", "modelNote"],
                 additionalProperties: false,
               },
             },
