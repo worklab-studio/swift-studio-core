@@ -1523,12 +1523,19 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
 }
 
 /* ── Step 2 Viewport ── */
-function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelData }: {
+function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelData, selectedTemplate, setSelectedTemplate, templateCategory }: {
   shootType: 'product' | 'model' | null;
   modelConfig: ModelConfig;
   setModelConfig: React.Dispatch<React.SetStateAction<ModelConfig>>;
   selectedModelData: typeof PLACEHOLDER_MODELS[0] | undefined;
+  selectedTemplate: string | null;
+  setSelectedTemplate: React.Dispatch<React.SetStateAction<string | null>>;
+  templateCategory: string;
 }) {
+  const filteredTemplates = templateCategory === 'All'
+    ? PRODUCT_SHOOT_TEMPLATES
+    : PRODUCT_SHOOT_TEMPLATES.filter(t => t.category === templateCategory);
+
   // No shoot type selected yet
   if (!shootType) {
     return (
@@ -1544,17 +1551,47 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
     );
   }
 
-  // Product shoot
+  // Product shoot — template grid
   if (shootType === 'product') {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 text-center animate-in fade-in duration-300">
-        <div className="h-20 w-20 rounded-2xl bg-muted flex items-center justify-center">
-          <Package className="h-10 w-10 text-muted-foreground" />
+      <div className="h-full flex flex-col animate-in fade-in duration-300">
+        <div className="shrink-0 mb-4">
+          <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Scene Templates</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {selectedTemplate
+              ? `Selected: ${PRODUCT_SHOOT_TEMPLATES.find(t => t.id === selectedTemplate)?.name}`
+              : 'Choose a scene template for your product shoot.'}
+          </p>
         </div>
-        <div>
-          <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Product Shoot</p>
-          <p className="text-sm text-muted-foreground mt-1">Your product will be placed in professional studio scenes.</p>
-        </div>
+        <ScrollArea className="flex-1">
+          <div className="grid grid-cols-4 gap-3 pb-4">
+            {filteredTemplates.map((t) => {
+              const isSelected = selectedTemplate === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setSelectedTemplate(prev => prev === t.id ? null : t.id)}
+                  className={`rounded-xl overflow-hidden border transition-all text-left ${
+                    isSelected ? 'ring-2 ring-primary ring-offset-2' : 'hover:border-primary/50 hover:shadow-md'
+                  }`}
+                >
+                  <div className="aspect-square flex items-center justify-center" style={{ background: t.color }}>
+                    {isSelected && (
+                      <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                        <Check className="h-4 w-4 text-primary-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-2">
+                    <p className="text-xs font-medium truncate">{t.name}</p>
+                    <p className="text-[10px] text-muted-foreground line-clamp-2 leading-tight">{t.description}</p>
+                    <Badge variant="outline" className="text-[8px] mt-1 px-1.5 py-0">{t.category}</Badge>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </ScrollArea>
       </div>
     );
   }
