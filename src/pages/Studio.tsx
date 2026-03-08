@@ -1660,6 +1660,25 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
             </div>
           </div>
 
+          {/* Aspect Ratio */}
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium">Image Ratio</p>
+            <div className="grid grid-cols-5 gap-1">
+              {ASPECT_RATIOS.map(r => (
+                <button
+                  key={r.value}
+                  onClick={() => setAspectRatio(r.value)}
+                  className={`rounded-lg border p-2 text-center transition-all ${
+                    aspectRatio === r.value ? 'ring-2 ring-primary ring-offset-1' : 'hover:border-primary/50'
+                  }`}
+                >
+                  <p className="text-[10px] font-semibold">{r.value}</p>
+                  <p className="text-[8px] text-muted-foreground">{r.label}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Context */}
           <div className="space-y-1">
             <label className="text-xs font-medium">Direction (optional)</label>
