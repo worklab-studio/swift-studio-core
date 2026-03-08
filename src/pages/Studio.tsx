@@ -954,6 +954,8 @@ const Studio = () => {
                 onReferenceUpload={handleReferenceUpload}
                 shotCount={shotCount}
                 setShotCount={setShotCount}
+                aspectRatio={aspectRatio}
+                setAspectRatio={setAspectRatio}
                 additionalContext={additionalContext}
                 setAdditionalContext={setAdditionalContext}
                 styleSettings={styleSettings}
@@ -1534,7 +1536,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
 }
 
 /* ── Step 3 Config (Left) ── */
-function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, additionalContext, setAdditionalContext, styleSettings, analyzingStyle }: {
+function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, aspectRatio, setAspectRatio, additionalContext, setAdditionalContext, styleSettings, analyzingStyle }: {
   selectedPreset: string | null;
   setSelectedPreset: (v: string | null) => void;
   referenceImage: string | null;
@@ -1543,6 +1545,8 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
   onReferenceUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   shotCount: string;
   setShotCount: (v: string) => void;
+  aspectRatio: string;
+  setAspectRatio: (v: string) => void;
   additionalContext: string;
   setAdditionalContext: (v: string) => void;
   styleSettings: StyleSettings | null;
@@ -1642,7 +1646,7 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
                 }`}
               >
                 <p className="text-xs font-semibold">Campaign Set</p>
-                <p className="text-[10px] text-muted-foreground">5 shots · 5 credits</p>
+                <p className="text-[10px] text-muted-foreground">6 shots · 6 credits</p>
               </button>
               <button
                 onClick={() => setShotCount('single')}
