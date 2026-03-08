@@ -12,6 +12,12 @@ const APPAREL_REGEX =
 const JEWELLERY_REGEX =
   /ring|necklace|bracelet|bangle|earring|pendant|chain|choker|anklet|brooch|cufflink|tiara|maang.tikka|jhumka|kundan|polki|temple.jewellery|mangalsutra|nose.ring|toe.ring|armlet|kamarbandh|haathphool|studs|hoops|solitaire|charm|locket/i;
 
+const LUGGAGE_REGEX =
+  /suitcase|trolley|luggage|travel.bag|duffel|carry.on|cabin.bag|rolling.bag/i;
+
+const BACKPACK_REGEX =
+  /backpack|rucksack|daypack|school.bag|knapsack|hiking.pack|book.bag/i;
+
 const APPAREL_CONSTRAINTS = `
 HARD CONSTRAINTS FOR APPAREL VIDEO — you MUST follow ALL of these:
 - Movement: ONLY subtle motion — gentle fabric sway, light material motion, slow walk, soft pose transitions. Nothing more.
@@ -35,6 +41,20 @@ HARD CONSTRAINTS FOR JEWELLERY VIDEO — you MUST follow ALL of these:
 - Background: clean, minimal — dark velvet, marble, or soft gradient. Absolutely NO clutter.
 - Angles: show the piece from multiple angles to reveal dimension and craftsmanship — NO full 360 spin.
 - Overall feel: ultra-premium, editorial luxury. Think Cartier / Tiffany campaign. Every frame must feel like fine art.
+`;
+
+const LUGGAGE_CONSTRAINTS = `
+HARD CONSTRAINTS FOR LUGGAGE/BAGS VIDEO — you MUST follow ALL of these:
+- Motion: Show wheels rolling smoothly on different surfaces, handle extension/retraction mechanisms, walking/pulling motion through travel settings.
+- CRITICAL PHYSICS RULE: When the suitcase or trolley is being dragged or pulled, it MUST be tilted back on 2 rear wheels only — NEVER rolling flat on all 4 spinner wheels, as that looks unnatural in video.
+- Camera: orbit or track alongside the luggage to show all dimensions. Close-ups on zippers, wheels, spinner rotation, material texture, and branding.
+- Stability shot: include at least one moment showing the luggage standing upright independently on a flat surface.
+- BACKPACK VARIANT: If the product is a backpack, show the model walking with the bag on both shoulders from a back view. Include strap adjustment moments and back-view tracking shots.
+- Detail shots: MANDATORY close-ups on handle mechanism, wheel assembly, zipper pulls, interior compartments, and material texture.
+- Model action: confidently pulling/carrying luggage beside them, walking purposefully. For backpacks: walking naturally with bag on both shoulders.
+- Background: travel-aspirational settings — airports, hotel lobbies, city streets, scenic trails. Clean and contextual.
+- Angles: show the product from multiple angles — front, side, top-down, and detail views. NO full 360 spin.
+- Overall feel: travel-aspirational, functional yet premium. Think premium luggage brand campaign.
 `;
 
 const GENERIC_CONSTRAINTS = `
@@ -86,7 +106,9 @@ Deno.serve(async (req) => {
 
     const isApparel = APPAREL_REGEX.test(category || "") || APPAREL_REGEX.test(productName || "");
     const isJewellery = JEWELLERY_REGEX.test(category || "") || JEWELLERY_REGEX.test(productName || "") || (category || "").toLowerCase() === "jewellery";
-    const constraints = isJewellery ? JEWELLERY_CONSTRAINTS : isApparel ? APPAREL_CONSTRAINTS : GENERIC_CONSTRAINTS;
+    const isLuggage = LUGGAGE_REGEX.test(category || "") || LUGGAGE_REGEX.test(productName || "") || BACKPACK_REGEX.test(category || "") || BACKPACK_REGEX.test(productName || "");
+    const isBackpack = BACKPACK_REGEX.test(category || "") || BACKPACK_REGEX.test(productName || "");
+    const constraints = isJewellery ? JEWELLERY_CONSTRAINTS : isApparel ? APPAREL_CONSTRAINTS : isLuggage ? LUGGAGE_CONSTRAINTS : GENERIC_CONSTRAINTS;
 
     const jewelleryGroundingCues = isJewellery
       ? `
@@ -94,6 +116,16 @@ Deno.serve(async (req) => {
 - Gemstone colors, cut, clarity, and how light interacts with facets
 - The setting style (prong, bezel, pavé, channel)
 - Surface reflections and sparkle patterns`
+      : "";
+
+    const luggageGroundingCues = isLuggage
+      ? `
+- The handle type (telescopic, top grab, side grab) and its mechanism
+- Wheel configuration (spinner 4-wheel, inline 2-wheel) and their placement
+- Material and texture (hard shell, soft fabric, leather, polycarbonate)
+- Size proportions relative to the model
+- Compartment details, zipper placement, and branding/logo position
+- Strap design and attachment points (especially for backpacks)`
       : "";
 
     const imageGroundingInstruction = productImageUrl
@@ -104,7 +136,7 @@ You are provided with the actual generated model/product image. Analyze it caref
 - The outfit/product details: fit, drape, color, pattern, styling
 - The expression and gaze direction
 - The background setting, lighting, and mood
-- Any props or accessories visible${jewelleryGroundingCues}
+- Any props or accessories visible${jewelleryGroundingCues}${luggageGroundingCues}
 
 Write your video prompts as a NATURAL CONTINUATION of this exact image. The video should feel like this still photo came to life. Do NOT write generic prompts — every prompt must reference what you see in the image.
 `
@@ -261,6 +293,8 @@ Include a short reason (1 sentence) explaining why this prompt suits the product
         prompts: parsed.prompts,
         isApparel,
         isJewellery,
+        isLuggage,
+        isBackpack,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
