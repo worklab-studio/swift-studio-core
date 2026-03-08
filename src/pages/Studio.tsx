@@ -189,16 +189,72 @@ const PRODUCT_SHOOT_TEMPLATES: ProductTemplate[] = [
 
 const TEMPLATE_CATEGORIES = ['All', 'Studio', 'E-commerce', 'Mystic', 'Showcase'] as const;
 
-/* ── Style presets ── */
-const STYLE_PRESETS = [
-  { id: 'classic', name: 'Classic', desc: 'Clean studio, neutral tones, timeless', img: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80' },
-  { id: 'minimalist', name: 'Minimalist', desc: 'Stark white, breathing room, pure product', img: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&q=80' },
-  { id: 'luxury', name: 'Luxury', desc: 'Dark surfaces, gold accents, soft shadow', img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&q=80' },
-  { id: 'loud-luxury', name: 'Loud Luxury', desc: 'Bold marble, dramatic lighting, opulence', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&q=80' },
-  { id: 'magazine', name: 'Magazine', desc: 'Editorial crops, sharp contrast, print-ready', img: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&q=80' },
-  { id: 'avant-garde', name: 'Avant Garde', desc: 'Unexpected angles, abstract props, art-forward', img: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&q=80' },
-  { id: 'influencer', name: 'Influencer', desc: 'Golden hour, warm tones, candid lifestyle', img: 'https://images.unsplash.com/photo-1504703395950-b89145a5425b?w=400&q=80' },
-  { id: 'lifestyle', name: 'Lifestyle', desc: 'Everyday environments, natural light, relatable', img: 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=400&q=80' },
+/* ── Style presets with product/model-specific settings ── */
+interface StyleSettings {
+  pose: string;
+  angle: string;
+  lighting: string;
+  composition: string;
+}
+
+interface StylePreset {
+  id: string;
+  name: string;
+  desc: string;
+  img: string;
+  product: StyleSettings;
+  model: StyleSettings;
+}
+
+const STYLE_PRESETS: StylePreset[] = [
+  {
+    id: 'classic', name: 'Classic', desc: 'Clean studio, neutral tones, timeless',
+    img: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80',
+    product: { pose: 'Centered hero placement, product facing camera at slight angle', angle: 'Eye-level front-facing, straight-on with minimal perspective distortion', lighting: 'Soft diffused three-point lighting, even illumination, subtle shadows', composition: 'Rule of thirds, generous negative space, clean isolation' },
+    model: { pose: 'Confident standing stance, one hand relaxed at side, slight hip shift', angle: 'Slightly low camera at 3/4 turn, medium full-body shot', lighting: 'Beauty dish key light with soft fill, gentle rim light for separation', composition: 'Full body centered frame, head space above, clean backdrop' },
+  },
+  {
+    id: 'minimalist', name: 'Minimalist', desc: 'Stark white, breathing room, pure product',
+    img: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&q=80',
+    product: { pose: 'Single hero product floating or resting on invisible surface', angle: 'Straight-on eye-level, perfectly symmetrical framing', lighting: 'Ultra-soft flat lighting, zero harsh shadows, bright and airy', composition: 'Extreme negative space, centered subject, minimal distractions' },
+    model: { pose: 'Still and poised, arms relaxed, minimal movement, serene expression', angle: 'Eye-level straight-on, clean symmetrical framing', lighting: 'Flat even lighting, very soft shadows, high-key bright', composition: 'Centered subject, vast white space, cropped at waist or full body' },
+  },
+  {
+    id: 'luxury', name: 'Luxury', desc: 'Dark surfaces, gold accents, soft shadow',
+    img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&q=80',
+    product: { pose: 'Product on dark marble or velvet surface, angled to catch light', angle: 'Slightly elevated 30° overhead, looking down at product', lighting: 'Dramatic side lighting with deep shadows, warm gold accents, single key light', composition: 'Off-center placement, dark moody background, luxe props in periphery' },
+    model: { pose: 'Elegant pose, chin slightly elevated, one arm draped, sophisticated stance', angle: 'Low camera looking up slightly, 3/4 profile, waist-up or full body', lighting: 'Rembrandt lighting with warm tones, strong shadows on one side, gold reflector fill', composition: 'Dark backdrop, subject in warm light pool, cinematic crop' },
+  },
+  {
+    id: 'loud-luxury', name: 'Loud Luxury', desc: 'Bold marble, dramatic lighting, opulence',
+    img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&q=80',
+    product: { pose: 'Product elevated on marble pedestal or mirrored surface, bold angle', angle: 'Low dramatic angle looking up, wide lens for grandeur', lighting: 'High contrast split lighting, vivid color gels, specular highlights on surfaces', composition: 'Maximalist staging, rich textures (marble, gold, crystal), product as centerpiece' },
+    model: { pose: 'Power pose, wide stance, expressive hand placement, commanding presence', angle: 'Very low camera angle shooting upward, emphasizing stature and power', lighting: 'Split lighting with colored gels, strong backlight silhouette, dramatic shadows', composition: 'Full body with opulent surroundings, mirror reflections, bold visual impact' },
+  },
+  {
+    id: 'magazine', name: 'Magazine', desc: 'Editorial crops, sharp contrast, print-ready',
+    img: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&q=80',
+    product: { pose: 'Product styled with editorial props, artful arrangement, story-driven', angle: 'Varied angles — overhead flat lay or dramatic 45° perspective', lighting: 'Hard directional light with sharp shadows, high contrast, flash-like crispness', composition: 'Asymmetric editorial layout, text space consideration, bold crops' },
+    model: { pose: 'Dynamic fashion pose, movement in fabric, editorial expression, strong jawline', angle: 'Mixed — straight on for portraits, 3/4 for full body, Dutch angle for drama', lighting: 'Hard flash with sharp shadows, beauty lighting for face, contrast-heavy', composition: 'Tight editorial crops, dramatic framing, intentional negative space for text overlay' },
+  },
+  {
+    id: 'avant-garde', name: 'Avant Garde', desc: 'Unexpected angles, abstract props, art-forward',
+    img: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&q=80',
+    product: { pose: 'Product suspended, floating, or placed in surreal arrangement', angle: 'Extreme angles — very low, very high, or Dutch tilt for disorientation', lighting: 'Colored gels, neon accents, unconventional light placement, mixed color temperatures', composition: 'Rule-breaking composition, abstract backgrounds, layered textures, visual tension' },
+    model: { pose: 'Sculptural body position, unusual hand placement, contorted or geometric pose', angle: 'Extreme low or overhead, wide-angle distortion, close-up abstract crops', lighting: 'Multi-colored gels, harsh directional spots, theatrical shadow play', composition: 'Abstract framing, negative space as design element, fragmented body crops' },
+  },
+  {
+    id: 'influencer', name: 'Influencer', desc: 'Golden hour, warm tones, candid lifestyle',
+    img: 'https://images.unsplash.com/photo-1504703395950-b89145a5425b?w=400&q=80',
+    product: { pose: 'Product held casually in hand or placed in lifestyle setting, natural feel', angle: 'Slightly above eye level selfie angle, shallow depth of field, f/1.8 feel', lighting: 'Golden hour natural light, warm backlighting, soft lens flare', composition: 'Casual off-center framing, bokeh background, authentic lifestyle context' },
+    model: { pose: 'Casual candid mid-action — laughing, walking, hair toss, looking away from camera', angle: 'Slightly above eye level, close medium shot, shallow DOF with creamy bokeh', lighting: 'Golden hour backlight, warm natural fill, soft glowy skin tones', composition: 'Off-center subject, lifestyle environment in bokeh, Instagram-ready crop (4:5)' },
+  },
+  {
+    id: 'lifestyle', name: 'Lifestyle', desc: 'Everyday environments, natural light, relatable',
+    img: 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=400&q=80',
+    product: { pose: 'Product in natural use context — on a table, in a bag, being worn', angle: 'Natural eye-level perspective, as if viewer is in the scene', lighting: 'Window light or open shade, soft natural illumination, warm or neutral tones', composition: 'Environmental context, product integrated into scene, lifestyle props' },
+    model: { pose: 'Natural everyday movement — sitting, leaning, walking, genuine smile', angle: 'Eye-level conversational distance, medium shot, natural perspective', lighting: 'Soft window light or outdoor open shade, natural skin tones, even exposure', composition: 'Environmental portrait, lifestyle context visible, product naturally integrated' },
+  },
 ];
 
 /* ── Steps ── */
@@ -261,6 +317,11 @@ const Studio = () => {
     backgroundPrompt: '',
     aiEngine: 'gemini',
   });
+
+  // Style settings (auto-computed from preset or reference AI)
+  const [styleSettings, setStyleSettings] = useState<StyleSettings | null>(null);
+  const [stylePrompt, setStylePrompt] = useState('');
+  const [analyzingStyle, setAnalyzingStyle] = useState(false);
 
   // Style config
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
@@ -521,14 +582,69 @@ const Studio = () => {
     }
   };
 
-  const handleReferenceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleReferenceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setReferenceImage(url);
-      setSelectedPreset('custom');
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setReferenceImage(url);
+    setSelectedPreset('custom');
+    setStyleSettings(null);
+    setStylePrompt('');
+
+    // Analyze reference image via AI
+    setAnalyzingStyle(true);
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+
+      const { data, error } = await supabase.functions.invoke('analyze-style-reference', {
+        body: { image: base64, shootType: shootType || 'product', productCategory: productInfo?.category || project?.category },
+      });
+
+      if (!error && data) {
+        setStyleSettings({
+          pose: data.pose || '',
+          angle: data.angle || '',
+          lighting: data.lighting || '',
+          composition: data.composition || '',
+        });
+        setStylePrompt(data.fullPrompt || '');
+      }
+    } catch (err) {
+      console.error('Style reference analysis failed:', err);
     }
+    setAnalyzingStyle(false);
   };
+
+  /* ── Build style prompt from preset ── */
+  const buildStylePrompt = useCallback((preset: StylePreset, isModel: boolean, info?: ProductInfo | null): string => {
+    const settings = isModel ? preset.model : preset.product;
+    const productDesc = info
+      ? `${info.category} product (${info.colors?.join(', ') || 'neutral tones'}, ${info.material || 'premium materials'})`
+      : 'product';
+    const garmentInfo = info?.garmentType ? ` — specifically a ${info.garmentType}` : '';
+    const outfitInfo = isModel && info?.outfitSuggestion ? ` Styled with: ${info.outfitSuggestion}.` : '';
+
+    return `${preset.name} style photography for a ${productDesc}${garmentInfo}. ` +
+      `Pose: ${settings.pose}. ` +
+      `Camera angle: ${settings.angle}. ` +
+      `Lighting: ${settings.lighting}. ` +
+      `Composition: ${settings.composition}.${outfitInfo}`;
+  }, []);
+
+  // Auto-compute stylePrompt + styleSettings when preset changes
+  useEffect(() => {
+    if (!selectedPreset || selectedPreset === 'custom') return;
+    const preset = STYLE_PRESETS.find(p => p.id === selectedPreset);
+    if (!preset) return;
+    const isModel = shootType === 'model';
+    const settings = isModel ? preset.model : preset.product;
+    setStyleSettings(settings);
+    setStylePrompt(buildStylePrompt(preset, isModel, productInfo));
+  }, [selectedPreset, shootType, productInfo, buildStylePrompt]);
 
   /* ── Generation ── */
   const handleGenerate = async () => {
@@ -555,6 +671,7 @@ const Studio = () => {
           projectId: project.id, preset: selectedPreset, shotCount, additionalContext,
           category: project.category, shotType: shootType === 'model' ? 'model_shot' : 'product_showcase',
           modelConfig: shootType === 'model' ? modelConfig : null,
+          stylePrompt: stylePrompt || undefined,
         },
       });
       clearInterval(progressInterval);
@@ -811,6 +928,8 @@ const Studio = () => {
                 setShotCount={setShotCount}
                 additionalContext={additionalContext}
                 setAdditionalContext={setAdditionalContext}
+                styleSettings={styleSettings}
+                analyzingStyle={analyzingStyle}
               />
             )}
             {activeStep === 4 && (
@@ -1387,7 +1506,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
 }
 
 /* ── Step 3 Config (Left) ── */
-function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, additionalContext, setAdditionalContext }: {
+function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, additionalContext, setAdditionalContext, styleSettings, analyzingStyle }: {
   selectedPreset: string | null;
   setSelectedPreset: (v: string | null) => void;
   referenceImage: string | null;
@@ -1398,6 +1517,8 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
   setShotCount: (v: string) => void;
   additionalContext: string;
   setAdditionalContext: (v: string) => void;
+  styleSettings: StyleSettings | null;
+  analyzingStyle: boolean;
 }) {
   return (
     <div className="space-y-4">
@@ -1435,6 +1556,12 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
           </button>
           <div className="p-1.5">
             <p className="text-[11px] font-semibold">Custom Reference</p>
+            {analyzingStyle && (
+              <div className="flex items-center gap-1 mt-0.5">
+                <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                <p className="text-[10px] text-primary">Extracting style...</p>
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -1445,6 +1572,32 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
           <Upload className="h-4 w-4 text-muted-foreground" />
           <p className="text-xs text-muted-foreground">Upload reference image</p>
         </button>
+      )}
+
+      {/* Style settings badges */}
+      {styleSettings && (
+        <>
+          <Separator />
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-foreground flex items-center gap-1.5">
+              <Sparkles className="h-3 w-3 text-primary" />
+              Auto-detected settings
+            </p>
+            <div className="space-y-1.5">
+              {[
+                { label: 'Pose', value: styleSettings.pose, icon: '🎯' },
+                { label: 'Angle', value: styleSettings.angle, icon: '📐' },
+                { label: 'Lighting', value: styleSettings.lighting, icon: '💡' },
+                { label: 'Composition', value: styleSettings.composition, icon: '🖼' },
+              ].map(item => (
+                <div key={item.label} className="rounded-md border bg-muted/50 p-2">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{item.icon} {item.label}</p>
+                  <p className="text-[11px] text-foreground mt-0.5 leading-snug">{item.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
       )}
 
       {selectedPreset && (
