@@ -2823,7 +2823,6 @@ function AssetsViewport({ assets, onCopyLink }: {
    Products Viewport
    ════════════════════════════════════════════════ */
 function ProductsViewport({ assets, productLabels, selectedLabel, onSelectLabel, onCopyLink, onLoadProduct }: {
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
   assets: ProjectAsset[];
   productLabels: string[];
   selectedLabel: string | null;
