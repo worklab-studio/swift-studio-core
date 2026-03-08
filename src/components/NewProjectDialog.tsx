@@ -131,30 +131,20 @@ const NewProjectDialog = () => {
           {/* Default Output */}
           <div className="space-y-2">
             <Label>Default Output</Label>
-            <div className="grid grid-cols-2 gap-3">
-              <Card
-                onClick={() => setDefaultOutput('photos')}
-                className={cn(
-                  'px-4 py-3 cursor-pointer transition-all',
-                  defaultOutput === 'photos'
-                    ? 'bg-primary/10 border-primary/30'
-                    : 'hover:border-muted-foreground/20'
-                )}
-              >
-                <p className={cn('font-medium text-sm', defaultOutput === 'photos' && 'text-primary')}>Photos</p>
-              </Card>
-              <Card
-                onClick={() => setDefaultOutput('videos')}
-                className={cn(
-                  'px-4 py-3 cursor-pointer transition-all',
-                  defaultOutput === 'videos'
-                    ? 'bg-primary/10 border-primary/30'
-                    : 'hover:border-muted-foreground/20'
-                )}
-              >
-                <p className={cn('font-medium text-sm', defaultOutput === 'videos' && 'text-primary')}>Videos</p>
-              </Card>
-            </div>
+            <RadioGroup
+              value={defaultOutput}
+              onValueChange={(v) => setDefaultOutput(v as 'photos' | 'videos')}
+              className="flex gap-6"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="photos" id="output-photos" />
+                <Label htmlFor="output-photos" className="cursor-pointer font-normal">Photos</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="videos" id="output-videos" />
+                <Label htmlFor="output-videos" className="cursor-pointer font-normal">Videos</Label>
+              </div>
+            </RadioGroup>
           </div>
 
           {/* Submit */}
