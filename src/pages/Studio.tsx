@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -2830,6 +2831,7 @@ function ProductsViewport({ assets, productLabels, selectedLabel, onSelectLabel,
   onCopyLink: (url: string) => void;
   onLoadProduct: (label: string) => void;
 }) {
+  const [viewingUrl, setViewingUrl] = useState<string | null>(null);
   if (productLabels.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4 text-center animate-in fade-in duration-300">
