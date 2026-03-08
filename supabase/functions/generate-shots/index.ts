@@ -39,7 +39,7 @@ serve(async (req) => {
     }
     const userId = user.id;
 
-    const { projectId, preset, shotCount, additionalContext, category, shotType, modelConfig, stylePrompt, productImageUrl, aspectRatio, keepOriginalModel } = await req.json();
+    const { projectId, preset, shotCount, additionalContext, category, shotType, modelConfig, stylePrompt, productImageUrl, aspectRatio, keepOriginalModel, productLabel } = await req.json();
 
     if (!projectId || !preset || !shotCount) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -192,6 +192,7 @@ serve(async (req) => {
                 const { data: asset } = await supabase.from("assets").insert({
                   project_id: projectId, asset_type: "ai_generated", url,
                   shot_label: label, preset_used: preset, prompt_used: prompt,
+                  product_label: productLabel || null,
                 }).select().single();
                 if (asset) insertedAssets.push(asset);
               }
@@ -221,6 +222,7 @@ serve(async (req) => {
         const { data: asset } = await supabase.from("assets").insert({
           project_id: projectId, asset_type: "ai_generated", url,
           shot_label: label, preset_used: preset, prompt_used: prompt,
+          product_label: productLabel || null,
         }).select().single();
 
         if (asset) insertedAssets.push(asset);

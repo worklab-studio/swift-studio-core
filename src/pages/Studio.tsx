@@ -15,7 +15,8 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from '@/hooks/use-toast';
-import { Check, Package, Upload, X, Loader2, ArrowLeft, Download, Link2, Pencil, RotateCcw, Undo2, Play, Share2, RefreshCw, ImageIcon, Palette, Eye, Sparkles, Camera, Plus, LayoutGrid, Tag } from 'lucide-react';
+import { Check, Package, Upload, X, Loader2, ArrowLeft, Download, Link2, Pencil, RotateCcw, Undo2, Play, Share2, RefreshCw, ImageIcon, Palette, Eye, Sparkles, Camera, Plus, LayoutGrid, Tag, ChevronDown } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 /* ── Types ── */
 interface Project {
@@ -460,6 +461,9 @@ const Studio = () => {
     setGeneratingPortraits(false);
   }, [modelImages]);
 
+  /* ── Product labels for toolbar dropdown ── */
+  const [projectProducts, setProjectProducts] = useState<string[]>([]);
+
   /* ── Fetch project data ── */
   useEffect(() => {
     if (!user || !id) return;
@@ -470,28 +474,35 @@ const Studio = () => {
       ]);
       if (proj) {
         setProject(proj);
-        const generated = assetData?.filter((a: Asset) => a.asset_type === 'ai_generated') ?? [];
-        const originals = assetData?.filter((a: Asset) => a.asset_type === 'original') ?? [];
-        setAssets(originals);
-        if (generated.length > 0) {
-          setGeneratedShots(generated.map((a: Asset) => ({
-            id: a.id, url: a.url, shotLabel: a.shot_label || 'hero', promptUsed: a.prompt_used || '',
-            isEditing: false, editPrompt: '', isRegenerating: false, previousUrl: null, showUndo: false,
-          })));
-          setCompletedSteps(new Set([1, 2, 3, 4]));
-          setActiveStep(5);
-          setShowExportPanel(true);
-          setSelectedExportShots(new Set(generated.map((a: Asset) => a.id)));
-        }
-      }
-      if (assetData) {
-        const originals = assetData.filter((a: Asset) => a.asset_type === 'original');
+        // Extract distinct product labels for toolbar dropdown
+        const generated = assetData?.filter((a: any) => a.asset_type === 'ai_generated') ?? [];
+        const labels = [...new Set(generated.map((a: any) => a.product_label).filter(Boolean))] as string[];
+        setProjectProducts(labels);
+
+        // Only load originals — always start fresh at step 1
+        const originals = assetData?.filter((a: any) => a.asset_type === 'original') ?? [];
         if (originals.length > 0) setAssets(originals);
       }
       setLoading(false);
     };
     fetchData();
   }, [user, id]);
+
+  /* ── Load a specific product's generated assets ── */
+  const loadProductAssets = async (label: string) => {
+    if (!id) return;
+    const { data } = await supabase.from('assets').select('*').eq('project_id', id).eq('asset_type', 'ai_generated').eq('product_label', label);
+    if (data && data.length > 0) {
+      setGeneratedShots(data.map((a: any) => ({
+        id: a.id, url: a.url, shotLabel: a.shot_label || 'hero', promptUsed: a.prompt_used || '',
+        isEditing: false, editPrompt: '', isRegenerating: false, previousUrl: null, showUndo: false,
+      })));
+      setSelectedExportShots(new Set(data.map((a: any) => a.id)));
+      setCompletedSteps(new Set([1, 2, 3, 4]));
+      setActiveStep(5);
+      setShowExportPanel(true);
+    }
+  };
 
   /* ── Reset workspace for new product ── */
   const resetWorkspace = useCallback(() => {
@@ -785,7 +796,7 @@ const Studio = () => {
     try {
       const productImageUrl = productImages[0] || assets[0]?.url || null;
       const { data, error } = await supabase.functions.invoke('generate-shots', {
-        body: {
+          body: {
           projectId: project.id, preset: selectedPreset, shotCount, additionalContext,
           category: project.category, shotType: shootType === 'model' ? 'model_shot' : 'product_showcase',
           modelConfig: shootType === 'model' ? modelConfig : null,
@@ -793,6 +804,7 @@ const Studio = () => {
           productImageUrl,
           aspectRatio,
           keepOriginalModel: modelChoice === 'keep',
+          productLabel: productInfo?.productName || productName || 'Untitled',
         },
       });
       clearInterval(progressInterval);
@@ -815,6 +827,9 @@ const Studio = () => {
       setSelectedExportShots(new Set(shots.map(s => s.id)));
       completeStep(4, `${shots.length} shot${shots.length > 1 ? 's' : ''}`, 5);
       setShowExportPanel(true);
+      // Refresh product labels for toolbar dropdown
+      const pLabel = productInfo?.productName || productName || 'Untitled';
+      setProjectProducts(prev => prev.includes(pLabel) ? prev : [...prev, pLabel]);
     } catch {
       clearInterval(progressInterval);
       toast({ title: 'Generation failed', description: 'Network error', variant: 'destructive' });
@@ -1135,13 +1150,32 @@ const Studio = () => {
             )}
           </button>
           <div className="w-px h-5 bg-border" />
-          <button
-            onClick={() => setActiveStep(1)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors max-w-[160px]"
-          >
-            <Tag className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">{productInfo?.productName || productName || 'No product'}</span>
-          </button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors max-w-[180px]"
+              >
+                <Tag className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{productInfo?.productName || productName || 'Products'}</span>
+                <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-52 p-1" align="center">
+              {projectProducts.length === 0 ? (
+                <p className="text-xs text-muted-foreground px-3 py-2">No products yet</p>
+              ) : (
+                projectProducts.map((label) => (
+                  <button
+                    key={label}
+                    onClick={() => loadProductAssets(label)}
+                    className="w-full text-left px-3 py-1.5 text-xs rounded-sm hover:bg-accent transition-colors truncate"
+                  >
+                    {label}
+                  </button>
+                ))
+              )}
+            </PopoverContent>
+          </Popover>
           <div className="w-px h-5 bg-border" />
           <button
             onClick={resetWorkspace}
