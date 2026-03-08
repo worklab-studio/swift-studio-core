@@ -2290,7 +2290,7 @@ function Step5Viewport({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, u
             Generate another variation — 1 credit
           </Button>
           <Button className="w-full" onClick={onGenerate}>
-            Add 4 more for a Campaign Set — 4 credits
+            Add 5 more for a Campaign Set — 5 credits
           </Button>
         </div>
       )}
