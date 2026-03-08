@@ -65,6 +65,14 @@ interface VideoConfig {
   duration: number;
   resolution: string;
   engine: string;
+  aspectRatio: string;
+  selectedPrompt?: { style: string; text: string; reason: string } | null;
+}
+
+interface VideoPrompt {
+  style: string;
+  text: string;
+  reason: string;
 }
 
 interface ProductInfo {
