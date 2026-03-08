@@ -1038,9 +1038,6 @@ function Step5Config({ shots, exportFormats, setExportFormats, selectedShots, se
         </>
       )}
 
-      <Button className="w-full" size="sm" onClick={onDownload} disabled={selectedShots.size === 0}>
-        <Download className="h-3.5 w-3.5 mr-1.5" /> Download selected
-      </Button>
 
       {shots.length > 1 && (
         <Button variant="outline" className="w-full" size="sm" onClick={onRegenerateAll}>
