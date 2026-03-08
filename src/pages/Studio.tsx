@@ -1197,7 +1197,7 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
   analysisPhase: 'idle' | 'analyzing' | 'done';
   productName: string;
   setProductName: (name: string) => void;
-) {
+}) {
   const ANALYSIS_TEXTS = [
     'Analyzing image...',
     'Detecting materials...',
