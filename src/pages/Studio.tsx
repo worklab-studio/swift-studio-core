@@ -14,7 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
-import { Check, Package, Upload, X, Loader2, ArrowLeft, Download, Link2, Pencil, RotateCcw, Undo2 } from 'lucide-react';
+import { Check, Package, Upload, X, Loader2, ArrowLeft, Download, Link2, Pencil, RotateCcw, Undo2, Play, Share2, RefreshCw } from 'lucide-react';
 
 /* ── Types ── */
 interface Project {
@@ -54,6 +54,33 @@ interface GeneratedShot {
   previousUrl: string | null;
   showUndo: boolean;
 }
+
+interface VideoConfig {
+  baseImageId: string;
+  duration: number;
+  resolution: string;
+  engine: string;
+}
+
+interface GeneratedVideo {
+  id: string;
+  url: string;
+  duration: number;
+  resolution: string;
+  engine: string;
+}
+
+const VIDEO_STAGES = [
+  'Analysing your shot...',
+  'Building the scene...',
+  'Rendering motion...',
+  'Almost there...',
+];
+
+const calculateVideoCreditCost = (duration: number, resolution: string) => {
+  const resMultiplier = resolution === '1080p' ? 2 : 1;
+  return Math.ceil((duration / 2) * resMultiplier);
+};
 
 const SHOT_LABELS: Record<string, string> = { model_shot: 'Model Shot', product_showcase: 'Product Showcase' };
 const SHOT_LABEL_DISPLAY: Record<string, string> = {
@@ -160,6 +187,14 @@ const Studio = () => {
   const [exportFormats, setExportFormats] = useState<Set<string>>(new Set(EXPORT_FORMATS.filter(f => f.default).map(f => f.id)));
   const [selectedExportShots, setSelectedExportShots] = useState<Set<string>>(new Set());
   const generationAbortRef = useRef(false);
+
+  // Video state
+  const [videoExpanded, setVideoExpanded] = useState(false);
+  const [videoConfig, setVideoConfig] = useState<VideoConfig>({ baseImageId: '', duration: 4, resolution: '720p', engine: 'veo' });
+  const [videoGenerating, setVideoGenerating] = useState(false);
+  const [videoStage, setVideoStage] = useState('');
+  const [generatedVideo, setGeneratedVideo] = useState<GeneratedVideo | null>(null);
+  const videoAbortRef = useRef(false);
 
   const referenceInputRef = useRef<HTMLInputElement>(null);
   const modelUploadRef = useRef<HTMLInputElement>(null);
@@ -407,6 +442,64 @@ const Studio = () => {
     toast({ title: 'Link copied to clipboard' });
   };
 
+  /* ── Video generation ── */
+  const handleGenerateVideo = async () => {
+    if (!project || !videoConfig.baseImageId) return;
+    const creditCost = calculateVideoCreditCost(videoConfig.duration, videoConfig.resolution);
+    
+    setVideoGenerating(true);
+    videoAbortRef.current = false;
+    setVideoStage(VIDEO_STAGES[0]);
+
+    // Cycle through stages
+    let stageIdx = 0;
+    const stageInterval = setInterval(() => {
+      if (videoAbortRef.current) { clearInterval(stageInterval); return; }
+      stageIdx = (stageIdx + 1) % VIDEO_STAGES.length;
+      setVideoStage(VIDEO_STAGES[stageIdx]);
+    }, 5000);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-video', {
+        body: {
+          assetId: videoConfig.baseImageId,
+          duration: videoConfig.duration,
+          resolution: videoConfig.resolution,
+          engine: videoConfig.engine,
+          projectId: project.id,
+        },
+      });
+
+      clearInterval(stageInterval);
+
+      if (videoAbortRef.current) return;
+
+      if (error || !data?.asset) {
+        toast({ title: 'Video generation failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
+        setVideoGenerating(false);
+        return;
+      }
+
+      setGeneratedVideo({
+        id: data.asset.id,
+        url: data.asset.url,
+        duration: videoConfig.duration,
+        resolution: videoConfig.resolution,
+        engine: videoConfig.engine,
+      });
+      setVideoGenerating(false);
+    } catch {
+      clearInterval(stageInterval);
+      setVideoGenerating(false);
+      toast({ title: 'Video generation failed', description: 'Network error', variant: 'destructive' });
+    }
+  };
+
+  const handleCancelVideo = () => {
+    videoAbortRef.current = true;
+    setVideoGenerating(false);
+  };
+
   const credits = shotCount === 'campaign' ? 5 : 1;
   const canGenerate = (selectedPreset || referenceImage) && shotCount;
 
@@ -465,6 +558,7 @@ const Studio = () => {
             setSelectedShots={setSelectedExportShots}
             onDownload={handleDownload}
             onBackToSteps={() => setShowExportPanel(false)}
+            generatedVideo={generatedVideo}
           />
         ) : (
           <div className="p-4 flex-1">
@@ -549,6 +643,17 @@ const Studio = () => {
             onRegenerateAll={handleRegenerateAll}
             onGenerate={handleGenerate}
             updateShot={updateShot}
+            videoExpanded={videoExpanded}
+            setVideoExpanded={setVideoExpanded}
+            videoConfig={videoConfig}
+            setVideoConfig={setVideoConfig}
+            videoGenerating={videoGenerating}
+            videoStage={videoStage}
+            generatedVideo={generatedVideo}
+            onGenerateVideo={handleGenerateVideo}
+            onCancelVideo={handleCancelVideo}
+            setGeneratedVideo={setGeneratedVideo}
+            creditsRemaining={profile?.credits_remaining ?? 0}
           />
         )}
       </div>
@@ -923,7 +1028,7 @@ function Step4Generating({ progress, stage, shotCount, onCancel }: {
 /* ════════════════════════════════════════════════
    Step 5 — Results View
    ════════════════════════════════════════════════ */
-function Step5Results({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, onRegenerateAll, onGenerate, updateShot }: {
+function Step5Results({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, onRegenerateAll, onGenerate, updateShot, videoExpanded, setVideoExpanded, videoConfig, setVideoConfig, videoGenerating, videoStage, generatedVideo, onGenerateVideo, onCancelVideo, setGeneratedVideo, creditsRemaining }: {
   shots: GeneratedShot[];
   shotCount: string;
   onEditShot: (shot: GeneratedShot) => void;
@@ -932,8 +1037,20 @@ function Step5Results({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, on
   onRegenerateAll: () => void;
   onGenerate: () => void;
   updateShot: (id: string, updates: Partial<GeneratedShot>) => void;
+  videoExpanded: boolean;
+  setVideoExpanded: (v: boolean) => void;
+  videoConfig: VideoConfig;
+  setVideoConfig: React.Dispatch<React.SetStateAction<VideoConfig>>;
+  videoGenerating: boolean;
+  videoStage: string;
+  generatedVideo: GeneratedVideo | null;
+  onGenerateVideo: () => void;
+  onCancelVideo: () => void;
+  setGeneratedVideo: React.Dispatch<React.SetStateAction<GeneratedVideo | null>>;
+  creditsRemaining: number;
 }) {
   const isCampaign = shots.length > 1;
+  const videoCreditCost = calculateVideoCreditCost(videoConfig.duration, videoConfig.resolution);
 
   return (
     <div className="space-y-6">
@@ -944,11 +1061,9 @@ function Step5Results({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, on
 
       {isCampaign ? (
         <div className="space-y-4">
-          {/* Hero shot spans full width */}
           {shots[0] && (
             <ShotCard shot={shots[0]} index={0} wide onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />
           )}
-          {/* Remaining shots in 2-col grid */}
           <div className="grid grid-cols-2 gap-4">
             {shots.slice(1).map((shot, i) => (
               <ShotCard key={shot.id} shot={shot} index={i + 1} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />
@@ -962,6 +1077,140 @@ function Step5Results({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, on
           )}
         </div>
       )}
+
+      {/* ── Video CTA Card ── */}
+      <Card className="rounded-2xl overflow-hidden">
+        <CardContent className="p-6 space-y-0">
+          {!videoExpanded && !videoGenerating && !generatedVideo && (
+            <div className="flex items-center gap-4">
+              <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                <Play className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium">Turn your shots into a product video</p>
+                <p className="text-sm text-muted-foreground">Cinematic 4–8 second clips. Perfect for Reels, TikTok, and ads.</p>
+              </div>
+              <Button variant="outline" onClick={() => { setVideoExpanded(true); if (!videoConfig.baseImageId && shots.length > 0) setVideoConfig(prev => ({ ...prev, baseImageId: shots[0].id })); }}>
+                Create Video
+              </Button>
+            </div>
+          )}
+
+          {/* Expanded config */}
+          {videoExpanded && !videoGenerating && !generatedVideo && (
+            <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="flex items-center justify-between">
+                <p className="font-medium">Create a product video</p>
+                <Button variant="ghost" size="sm" onClick={() => setVideoExpanded(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Base image selection */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Which shot should we animate?</p>
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {shots.map(shot => (
+                    <button
+                      key={shot.id}
+                      onClick={() => setVideoConfig(prev => ({ ...prev, baseImageId: shot.id }))}
+                      className={`shrink-0 w-20 h-[100px] rounded-lg overflow-hidden border transition-all ${
+                        videoConfig.baseImageId === shot.id ? 'ring-2 ring-accent ring-offset-2' : 'hover:border-accent/50'
+                      }`}
+                    >
+                      <img src={shot.url} alt={shot.shotLabel} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Config row */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Duration</label>
+                  <ToggleGroup type="single" value={String(videoConfig.duration)} onValueChange={v => v && setVideoConfig(prev => ({ ...prev, duration: Number(v) }))} className="justify-start">
+                    <ToggleGroupItem value="4" className="px-3">4s</ToggleGroupItem>
+                    <ToggleGroupItem value="6" className="px-3">6s</ToggleGroupItem>
+                    <ToggleGroupItem value="8" className="px-3">8s</ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Resolution</label>
+                  <ToggleGroup type="single" value={videoConfig.resolution} onValueChange={v => v && setVideoConfig(prev => ({ ...prev, resolution: v }))} className="justify-start">
+                    <ToggleGroupItem value="720p" className="px-3">720p</ToggleGroupItem>
+                    <ToggleGroupItem value="1080p" className="px-3">1080p</ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">AI Engine</label>
+                  <ToggleGroup type="single" value={videoConfig.engine} onValueChange={v => v && setVideoConfig(prev => ({ ...prev, engine: v }))} className="justify-start">
+                    <ToggleGroupItem value="veo" className="px-3">Veo 3.1</ToggleGroupItem>
+                    <ToggleGroupItem value="runway" className="px-3">Runway 4.5</ToggleGroupItem>
+                  </ToggleGroup>
+                  <p className="text-xs text-muted-foreground">Veo: cinematic quality. Runway: faster.</p>
+                </div>
+              </div>
+
+              {/* Credit cost */}
+              <div>
+                <p className="text-sm font-medium">This will use {videoCreditCost} credits</p>
+                <p className="text-xs text-muted-foreground">
+                  {videoConfig.duration} seconds × {videoConfig.resolution} ({videoConfig.resolution === '1080p' ? '2×' : '1×'}) = {videoCreditCost} credits
+                </p>
+              </div>
+
+              <Button className="w-full" onClick={onGenerateVideo} disabled={!videoConfig.baseImageId}>
+                Generate video — {videoCreditCost} credits
+              </Button>
+            </div>
+          )}
+
+          {/* Processing state */}
+          {videoGenerating && (
+            <div className="space-y-4 animate-in fade-in duration-300">
+              <div className="aspect-video bg-muted rounded-xl overflow-hidden relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-foreground/5 to-transparent animate-pulse" />
+              </div>
+              <p className="text-sm text-muted-foreground text-center">{videoStage}</p>
+              <div className="text-center">
+                <button onClick={onCancelVideo} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  Cancel generation
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Video result */}
+          {generatedVideo && !videoGenerating && (
+            <div className="space-y-4 animate-in fade-in duration-300">
+              <video
+                src={generatedVideo.url}
+                controls
+                autoPlay
+                muted
+                loop
+                className="w-full aspect-video rounded-xl bg-muted"
+              />
+              <div className="flex items-center gap-2">
+                <a href={generatedVideo.url} download target="_blank" rel="noopener noreferrer">
+                  <Button size="sm" className="gap-1.5">
+                    <Download className="h-3.5 w-3.5" /> Download MP4
+                  </Button>
+                </a>
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { navigator.clipboard.writeText(generatedVideo.url); toast({ title: 'Link copied' }); }}>
+                  <Share2 className="h-3.5 w-3.5" /> Share link
+                </Button>
+                <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => { setGeneratedVideo(null); setVideoExpanded(true); }}>
+                  <RefreshCw className="h-3.5 w-3.5" /> Regenerate
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Used {calculateVideoCreditCost(generatedVideo.duration, generatedVideo.resolution)} credits · {creditsRemaining} remaining
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Bottom actions */}
       <div className="space-y-3">
@@ -1093,7 +1342,7 @@ function ShotCard({ shot, index, wide, onEdit, onUndo, onCopyLink, updateShot }:
 /* ════════════════════════════════════════════════
    Export Panel (Left sidebar replacement)
    ════════════════════════════════════════════════ */
-function ExportPanel({ shots, exportFormats, setExportFormats, selectedShots, setSelectedShots, onDownload, onBackToSteps }: {
+function ExportPanel({ shots, exportFormats, setExportFormats, selectedShots, setSelectedShots, onDownload, onBackToSteps, generatedVideo }: {
   shots: GeneratedShot[];
   exportFormats: Set<string>;
   setExportFormats: React.Dispatch<React.SetStateAction<Set<string>>>;
@@ -1101,6 +1350,7 @@ function ExportPanel({ shots, exportFormats, setExportFormats, selectedShots, se
   setSelectedShots: React.Dispatch<React.SetStateAction<Set<string>>>;
   onDownload: () => void;
   onBackToSteps: () => void;
+  generatedVideo: GeneratedVideo | null;
 }) {
   const toggleFormat = (id: string) => {
     setExportFormats(prev => {
@@ -1169,6 +1419,26 @@ function ExportPanel({ shots, exportFormats, setExportFormats, selectedShots, se
       <Button className="w-full" onClick={onDownload} disabled={selectedShots.size === 0}>
         Download selected
       </Button>
+
+      {/* Video section */}
+      {generatedVideo && (
+        <>
+          <Separator />
+          <p className="text-xs font-medium text-muted-foreground">Video</p>
+          <div className="flex items-center gap-2">
+            <Play className="h-4 w-4 text-muted-foreground shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium truncate">Product video</p>
+            </div>
+            <Badge variant="secondary" className="text-[10px] shrink-0">{generatedVideo.duration}s</Badge>
+          </div>
+          <a href={generatedVideo.url} download target="_blank" rel="noopener noreferrer" className="block">
+            <Button variant="outline" size="sm" className="w-full gap-1.5">
+              <Download className="h-3.5 w-3.5" /> Download MP4
+            </Button>
+          </a>
+        </>
+      )}
 
       <Separator />
 
