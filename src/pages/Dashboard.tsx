@@ -159,6 +159,49 @@ const Dashboard = () => {
         <p className="text-muted-foreground mt-1">Here's your studio overview.</p>
       </div>
 
+      {/* Stats Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <Card>
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="bg-primary/10 p-3 rounded-full">
+              <FolderOpen className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Total Projects</p>
+              <h3 className="text-2xl font-bold">
+                {loading ? <Skeleton className="h-8 w-16 mt-1" /> : stats.projects}
+              </h3>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="bg-primary/10 p-3 rounded-full">
+              <ImageIcon className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Generated Images</p>
+              <h3 className="text-2xl font-bold">
+                {loading ? <Skeleton className="h-8 w-16 mt-1" /> : stats.images}
+              </h3>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="bg-primary/10 p-3 rounded-full">
+              <Video className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Generated Videos</p>
+              <h3 className="text-2xl font-bold">
+                {loading ? <Skeleton className="h-8 w-16 mt-1" /> : stats.videos}
+              </h3>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Credit Usage Heatmap */}
       {loading ? (
         <Card>
