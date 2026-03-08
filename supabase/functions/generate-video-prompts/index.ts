@@ -18,6 +18,9 @@ const LUGGAGE_REGEX =
 const BACKPACK_REGEX =
   /backpack|rucksack|daypack|school.bag|knapsack|hiking.pack|book.bag/i;
 
+const BEAUTY_REGEX =
+  /serum|moisturizer|lipstick|foundation|mascara|eyeliner|blush|concealer|primer|sunscreen|shampoo|conditioner|hair.oil|hair.dye|henna|body.wash|soap|lotion|cream|toner|cleanser|face.wash|perfume|cologne|deodorant|nail.polish|lip.gloss|lip.balm|bronzer|highlighter|setting.spray|face.mask|eye.cream|body.butter|exfoliator|scrub|mist|essence|ampoule|bb.cream|cc.cream|compact|kajal|kohl|bindi|sindoor|mehendi|ubtan|hair.serum|dry.shampoo|leave.in|mousse|pomade|wax|gel/i;
+
 const APPAREL_CONSTRAINTS = `
 HARD CONSTRAINTS FOR APPAREL VIDEO — you MUST follow ALL of these:
 - Movement: ONLY subtle motion — gentle fabric sway, light material motion, slow walk, soft pose transitions. Nothing more.
@@ -57,6 +60,41 @@ HARD CONSTRAINTS FOR LUGGAGE/BAGS VIDEO — you MUST follow ALL of these:
 - Overall feel: travel-aspirational, functional yet premium. Think premium luggage brand campaign.
 `;
 
+const BEAUTY_SHOWCASE_CONSTRAINTS = `
+HARD CONSTRAINTS FOR BEAUTY PRODUCT-ONLY VIDEO (SHOWCASE MODE) — you MUST follow ALL of these:
+- Product placement: product stays COMPLETELY STILL. The world moves around it — never the product itself.
+- Camera: very slow camera drift or gentle push-in ONLY. Smooth dolly, slow orbit, or ultra-slow zoom. NO fast movements.
+- Environmental motion ONLY: gentle water ripple, floating particles, shifting light beams, subtle fog/mist, drifting petals or botanicals.
+- Macro detail moments: MANDATORY close-ups on water droplets on surface, label typography, cap reflection, surface condensation, texture details.
+- BANNED actions: absolutely NO product interaction, NO opening, NO squeezing, NO pouring, NO hands touching the product, NO humans at all.
+- Lighting: dramatic, cinematic beauty lighting — soft key light creating premium reflections, light raking across packaging surface, caustic light patterns.
+- Background motion: subtle environmental shifts — light moving across surfaces, gentle bokeh drift, particles floating in air.
+- Overall feel: luxury perfume commercial, meditative, ASMR-like stillness. The product is sacred and untouched. Think Chanel No. 5 or La Mer campaign.
+- FINAL RULE: This video must contain ZERO humans. No person, no model, no hands, no face, no skin. ONLY the product and its environment.
+`;
+
+const BEAUTY_MODEL_CONSTRAINTS = `
+HARD CONSTRAINTS FOR BEAUTY MODEL VIDEO — you MUST follow ALL of these:
+- Movement: ONLY smooth, slow movements — gentle product lift, slow application motion, soft hand gestures. Nothing more.
+- Camera: smooth dolly-in from mid-shot to close-up. Tight framing — bust shot or closer. Focus pulls between product and skin.
+- BANNED motion: NO full body shots, NO walking, NO fast movements, NO dramatic gestures, NO 360 spins.
+- Framing: bust shot or tighter. Face and product must dominate the frame.
+- Skin quality: flawless, glowing, well-moisturised, dewy, luminous, natural-looking skin in every frame.
+- Lighting: soft diffused beauty lighting with gentle key light creating natural glow — no harsh shadows.
+- PROMPT SPLIT RULE: Of your 5 prompts, at least 2 MUST be "Application" style — showing the model actively using/applying the product with a clear dispensing moment. The remaining 3 should be editorial/lifestyle poses.
+- Overall feel: premium beauty editorial, intimate and aspirational. Think Glossier or Fenty Beauty campaign.
+`;
+
+const DISPENSING_CHOREOGRAPHY: Record<string, string> = {
+  face: `APPLICATION CHOREOGRAPHY (Face): Model pumps or squeezes product onto fingertips/palm, then gently presses and pats onto cheeks and forehead with upward strokes. Show the product pooling on fingertips before application. End with a dewy, glowing finish on skin.`,
+  hair: `APPLICATION CHOREOGRAPHY (Hair): Model tilts bottle, pouring product into cupped palm — show the liquid pooling. Then massages into hair (wet or dry), working through strands. Show lather forming if applicable. Hair should look glossy and healthy.`,
+  lips: `APPLICATION CHOREOGRAPHY (Lips): Model uncaps the product with a deliberate motion. Glides applicator or bullet across lips in a smooth stroke — show the color payoff. End with lips pressing together gently. Tight close-up on lip texture.`,
+  eyes: `APPLICATION CHOREOGRAPHY (Eyes): Model dispenses a small drop onto ring finger tip — show the product bead. Gently dabs and pats around the eye area with feather-light touches. Show product absorbing into skin. Extreme close-up on eye area.`,
+  body: `APPLICATION CHOREOGRAPHY (Body): Model squeezes lotion/cream onto palm — show it curling out of the tube/pump. Rubs palms together, then smooths onto arm, shoulder, or collarbone with long flowing strokes. Show product absorbing, skin glowing.`,
+  nails: `APPLICATION CHOREOGRAPHY (Nails): Model holds brush with precision, painting nails in smooth deliberate strokes. Show the color layering and building opacity. Close-up on brush meeting nail surface. Elegant hand positioning throughout.`,
+  fragrance: `APPLICATION CHOREOGRAPHY (Fragrance): Model lifts bottle elegantly, presses nozzle — show the fine mist spraying at neck or wrist. Capture the mist catching light mid-air. Model closes eyes briefly, savoring the moment. Ethereal, dreamy mood.`,
+};
+
 const GENERIC_CONSTRAINTS = `
 Write cinematic, visually compelling video prompts that showcase the product beautifully.
 Include varied camera movements and angles. Show the product from its best angles with professional lighting.
@@ -92,7 +130,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { category, productName, productImageUrl } = await req.json();
+    const { category, productName, productImageUrl, beautyShootMode, beautyApplication } = await req.json();
 
     if (!category && !productName) {
       return new Response(
@@ -108,7 +146,33 @@ Deno.serve(async (req) => {
     const isJewellery = JEWELLERY_REGEX.test(category || "") || JEWELLERY_REGEX.test(productName || "") || (category || "").toLowerCase() === "jewellery";
     const isLuggage = LUGGAGE_REGEX.test(category || "") || LUGGAGE_REGEX.test(productName || "") || BACKPACK_REGEX.test(category || "") || BACKPACK_REGEX.test(productName || "");
     const isBackpack = BACKPACK_REGEX.test(category || "") || BACKPACK_REGEX.test(productName || "");
-    const constraints = isJewellery ? JEWELLERY_CONSTRAINTS : isApparel ? APPAREL_CONSTRAINTS : isLuggage ? LUGGAGE_CONSTRAINTS : GENERIC_CONSTRAINTS;
+    const isBeauty = BEAUTY_REGEX.test(category || "") || BEAUTY_REGEX.test(productName || "") || ["beauty", "skincare"].includes((category || "").toLowerCase());
+
+    // Determine constraints based on category priority
+    let constraints: string;
+    if (isJewellery) {
+      constraints = JEWELLERY_CONSTRAINTS;
+    } else if (isApparel) {
+      constraints = APPAREL_CONSTRAINTS;
+    } else if (isLuggage) {
+      constraints = LUGGAGE_CONSTRAINTS;
+    } else if (isBeauty) {
+      constraints = beautyShootMode === "showcase" ? BEAUTY_SHOWCASE_CONSTRAINTS : BEAUTY_MODEL_CONSTRAINTS;
+    } else {
+      constraints = GENERIC_CONSTRAINTS;
+    }
+
+    // Build dispensing choreography instruction for beauty model mode
+    let beautyDispensingInstruction = "";
+    if (isBeauty && beautyShootMode !== "showcase" && beautyApplication) {
+      const choreography = DISPENSING_CHOREOGRAPHY[beautyApplication];
+      if (choreography) {
+        beautyDispensingInstruction = `
+DISPENSING CHOREOGRAPHY REQUIREMENT:
+${choreography}
+Every "Application" style prompt MUST include a clear dispensing moment before the application begins — this is the hero visual of the video.`;
+      }
+    }
 
     const jewelleryGroundingCues = isJewellery
       ? `
@@ -128,6 +192,16 @@ Deno.serve(async (req) => {
 - Strap design and attachment points (especially for backpacks)`
       : "";
 
+    const beautyGroundingCues = isBeauty
+      ? `
+- Packaging shape, color, material, and finish (matte, glossy, frosted, metallic)
+- Dispensing mechanism (pump, tube, dropper, spray nozzle, jar, stick, compact)
+- Product texture visible (cream, liquid, gel, powder, solid)
+- Label typography, branding, and logo placement
+- Cap/closure design and material
+- Product color/shade if visible through packaging`
+      : "";
+
     const imageGroundingInstruction = productImageUrl
       ? `
 IMPORTANT — IMAGE GROUNDING:
@@ -136,7 +210,7 @@ You are provided with the actual generated model/product image. Analyze it caref
 - The outfit/product details: fit, drape, color, pattern, styling
 - The expression and gaze direction
 - The background setting, lighting, and mood
-- Any props or accessories visible${jewelleryGroundingCues}${luggageGroundingCues}
+- Any props or accessories visible${jewelleryGroundingCues}${luggageGroundingCues}${beautyGroundingCues}
 
 Write your video prompts as a NATURAL CONTINUATION of this exact image. The video should feel like this still photo came to life. Do NOT write generic prompts — every prompt must reference what you see in the image.
 `
@@ -149,6 +223,7 @@ Product: ${productName || category}
 Category: ${category || "general"}
 
 ${constraints}
+${beautyDispensingInstruction}
 ${imageGroundingInstruction}
 
 Each prompt must be 25-45 words of precise video direction.
@@ -163,7 +238,6 @@ Include a short reason (1 sentence) explaining why this prompt suits the product
     const messages: any[] = [{ role: "system", content: systemPrompt }];
 
     if (productImageUrl && !productImageUrl.startsWith("blob:")) {
-      // Multimodal message with image
       messages.push({
         role: "user",
         content: [
@@ -295,6 +369,7 @@ Include a short reason (1 sentence) explaining why this prompt suits the product
         isJewellery,
         isLuggage,
         isBackpack,
+        isBeauty,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
