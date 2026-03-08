@@ -756,7 +756,7 @@ const Studio = () => {
             </Button>
           )}
           {activeStep === 2 && (
-            <Button className="w-full" disabled={!shootType} onClick={handleCompleteStep2}>
+            <Button className="w-full" disabled={!shootType || (shootType === 'product' && !selectedTemplate)} onClick={handleCompleteStep2}>
               Continue to Style
             </Button>
           )}
