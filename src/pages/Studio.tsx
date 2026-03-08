@@ -2406,10 +2406,9 @@ function Step5Viewport({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, u
 /* ════════════════════════════════════════════════
    ShotCard Component
    ════════════════════════════════════════════════ */
-function ShotCard({ shot, index, wide, onEdit, onUndo, onCopyLink, updateShot }: {
+function ShotCard({ shot, index, onEdit, onUndo, onCopyLink, updateShot }: {
   shot: GeneratedShot;
   index: number;
-  wide?: boolean;
   onEdit: (shot: GeneratedShot) => void;
   onUndo: (shot: GeneratedShot) => void;
   onCopyLink: (url: string) => void;
@@ -2417,7 +2416,7 @@ function ShotCard({ shot, index, wide, onEdit, onUndo, onCopyLink, updateShot }:
 }) {
   return (
     <div className="rounded-xl overflow-hidden border bg-card animate-in fade-in duration-300" style={{ animationDelay: `${index * 100}ms` }}>
-      <div className={`relative ${wide ? 'aspect-[16/9]' : 'aspect-[4/5]'} overflow-hidden bg-muted`}>
+      <div className="relative aspect-square overflow-hidden bg-muted">
         <img
           src={shot.url}
           alt={SHOT_LABEL_DISPLAY[shot.shotLabel] || shot.shotLabel}
