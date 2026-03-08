@@ -71,6 +71,7 @@ const Dashboard = () => {
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [heatmapData, setHeatmapData] = useState<{ created_at: string; amount: number }[]>([]);
   const [assetCounts, setAssetCounts] = useState<Record<string, number>>({});
+  const [stats, setStats] = useState({ projects: 0, images: 0, videos: 0 });
 
   useEffect(() => {
     if (!user) return;
@@ -82,6 +83,9 @@ const Dashboard = () => {
         { data: recentProjects },
         { data: recentTx },
         { data: yearTx },
+        { count: projectCount },
+        { count: imageCount },
+        { count: videoCount },
       ] = await Promise.all([
         supabase
           .from('projects')
@@ -100,7 +104,25 @@ const Dashboard = () => {
           .select('created_at, amount')
           .eq('user_id', user.id)
           .gte('created_at', oneYearAgo.toISOString()),
+        supabase
+          .from('projects')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id),
+        supabase
+          .from('assets')
+          .select('*', { count: 'exact', head: true })
+          .eq('asset_type', 'generated'),
+        supabase
+          .from('assets')
+          .select('*', { count: 'exact', head: true })
+          .eq('asset_type', 'video'),
       ]);
+
+      setStats({
+        projects: projectCount ?? 0,
+        images: imageCount ?? 0,
+        videos: videoCount ?? 0,
+      });
 
       setProjects(recentProjects ?? []);
       setTransactions(recentTx ?? []);
