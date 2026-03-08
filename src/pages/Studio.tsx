@@ -671,6 +671,7 @@ const Studio = () => {
           projectId: project.id, preset: selectedPreset, shotCount, additionalContext,
           category: project.category, shotType: shootType === 'model' ? 'model_shot' : 'product_showcase',
           modelConfig: shootType === 'model' ? modelConfig : null,
+          stylePrompt: stylePrompt || undefined,
         },
       });
       clearInterval(progressInterval);
