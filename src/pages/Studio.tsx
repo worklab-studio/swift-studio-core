@@ -1002,8 +1002,8 @@ function Step5Config({ shots, exportFormats, setExportFormats, selectedShots, se
   };
 
   return (
-    <div className="space-y-3">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Export formats</p>
+    <div className="space-y-4">
+      <p className="text-sm font-semibold text-foreground">Export formats</p>
       <div className="space-y-1.5">
         {EXPORT_FORMATS.map(f => (
           <label key={f.id} className="flex items-center gap-2 text-xs cursor-pointer">
