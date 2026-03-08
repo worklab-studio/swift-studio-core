@@ -336,6 +336,7 @@ const Studio = () => {
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [shotCount, setShotCount] = useState<string>('campaign');
+  const [aspectRatio, setAspectRatio] = useState<string>('1:1');
   const [additionalContext, setAdditionalContext] = useState('');
 
   // Generation state
@@ -837,7 +838,7 @@ const Studio = () => {
     setVideoGenerating(false);
   };
 
-  const credits = shotCount === 'campaign' ? 5 : 1;
+  const credits = shotCount === 'campaign' ? 6 : 1;
   const canGenerate = (selectedPreset || referenceImage) && shotCount;
 
   if (loading) {
