@@ -1313,11 +1313,14 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
               />
             </div>
 
-            {/* Category + Material + Colors inline */}
+            {/* Category + Garment Type + Material + Colors inline */}
             <div className="flex flex-wrap items-center gap-3">
               <div className="rounded-xl border border-border bg-card px-3 py-1.5 space-y-0.5">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Category</p>
                 <p className="text-xs font-semibold text-foreground">{productInfo.category}</p>
+                {productInfo.garmentType && (
+                  <p className="text-[10px] text-muted-foreground">{productInfo.garmentType}</p>
+                )}
               </div>
               <div className="rounded-xl border border-border bg-card px-3 py-1.5 space-y-0.5">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Material</p>
@@ -1335,6 +1338,31 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
                 </div>
               </div>
             </div>
+
+            {/* Model & Background status */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={productInfo.hasModel ? "default" : "outline"} className="text-[10px] gap-1">
+                <Eye className="h-2.5 w-2.5" />
+                {productInfo.hasModel ? 'Model Detected' : 'No Model'}
+              </Badge>
+              <Badge variant={productInfo.hasWhiteBackground ? "default" : "outline"} className="text-[10px] gap-1">
+                <ImageIcon className="h-2.5 w-2.5" />
+                {productInfo.hasWhiteBackground ? 'White Background' : 'Background Removal Needed'}
+              </Badge>
+            </div>
+
+            {/* Model note */}
+            {productInfo.modelNote && (
+              <p className="text-[10px] text-muted-foreground italic">{productInfo.modelNote}</p>
+            )}
+
+            {/* Outfit suggestion for apparel */}
+            {productInfo.outfitSuggestion && (
+              <div className="rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 space-y-0.5">
+                <p className="text-[10px] font-medium text-primary uppercase tracking-wider">Outfit Pairing</p>
+                <p className="text-xs text-foreground leading-relaxed">{productInfo.outfitSuggestion}</p>
+              </div>
+            )}
 
             {/* Description */}
             <p className="text-xs text-muted-foreground leading-relaxed max-w-lg line-clamp-2">{productInfo.description}</p>
