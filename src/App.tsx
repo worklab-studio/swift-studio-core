@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import Assets from "./pages/Assets";
+import Studio from "./pages/Studio";
 import Placeholder from "./pages/Placeholder";
 import NotFound from "./pages/NotFound";
 
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="projects" element={<Projects />} />
               <Route path="assets" element={<Assets />} />
+              <Route path="projects/:id" element={<Studio />} />
               {/* new-project route removed — handled by dialog */}
               <Route path="billing" element={<Placeholder />} />
               <Route path="integrations" element={<Placeholder />} />
