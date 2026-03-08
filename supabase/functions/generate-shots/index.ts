@@ -10,40 +10,6 @@ const corsHeaders = {
 const SHOT_LABELS_CAMPAIGN = ["hero", "detail", "lifestyle", "alternate", "editorial"];
 const SHOT_LABELS_SINGLE = ["hero"];
 
-// Curated Unsplash images per preset for MVP placeholders
-const PRESET_IMAGES: Record<string, string[]> = {
-  classic: [
-    "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80",
-    "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80",
-    "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80",
-    "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=800&q=80",
-    "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800&q=80",
-  ],
-  minimalist: [
-    "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&q=80",
-    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80",
-    "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=800&q=80",
-    "https://images.unsplash.com/photo-1560343090-f0409e92791a?w=800&q=80",
-    "https://images.unsplash.com/photo-1611930022073-b7a4ba5fcccd?w=800&q=80",
-  ],
-  luxury: [
-    "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80",
-    "https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?w=800&q=80",
-    "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&q=80",
-    "https://images.unsplash.com/photo-1558171813-01ac71e4c6a3?w=800&q=80",
-    "https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=800&q=80",
-  ],
-};
-
-// Default fallback images
-const DEFAULT_IMAGES = [
-  "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80",
-  "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80",
-  "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80",
-  "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=800&q=80",
-  "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800&q=80",
-];
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -74,7 +40,7 @@ serve(async (req) => {
     }
     const userId = claimsData.claims.sub as string;
 
-    const { projectId, preset, shotCount, additionalContext, category, shotType, modelConfig, stylePrompt } = await req.json();
+    const { projectId, preset, shotCount, additionalContext, category, shotType, modelConfig, stylePrompt, productImageUrl } = await req.json();
 
     if (!projectId || !preset || !shotCount) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -123,11 +89,55 @@ serve(async (req) => {
       });
     }
 
-    // Use AI to generate descriptive prompts for each shot
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    let shotPrompts: string[] = labels.map((l) => `${preset} style ${l} shot`);
+    if (!LOVABLE_API_KEY) {
+      return new Response(JSON.stringify({ error: "AI not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    if (LOVABLE_API_KEY) {
+    // Service client for storage uploads
+    const serviceClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    // Build prompts for each shot
+    const shotPrompts = labels.map((label) => {
+      const baseStyle = stylePrompt || `${preset} style photography`;
+      const shotTypeDesc: Record<string, string> = {
+        hero: "Hero shot — primary product showcase, clean and striking, the definitive product image",
+        detail: "Close-up detail shot — macro-style focus on texture, stitching, material quality, fine details",
+        lifestyle: "Lifestyle shot — product in natural use context, environmental storytelling, aspirational setting",
+        alternate: "Alternate angle — different perspective showing product from side or back, revealing hidden details",
+        editorial: "Editorial shot — magazine-worthy composition, artistic styling, fashion-forward presentation",
+      };
+      const modelDesc = shotType === "model_shot" && modelConfig
+        ? `The product is worn/held by a ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""} model with ${modelConfig.bodyType || "average"} build. Background: ${modelConfig.backgroundPrompt || modelConfig.background || "studio"}.`
+        : "Product-only shot, no human model.";
+
+      return `${shotTypeDesc[label] || label}. ${baseStyle}. Category: ${category}. ${modelDesc}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}. Professional commercial photography, high resolution, no text, no watermarks.`;
+    });
+
+    // Generate images sequentially to avoid rate limits
+    const insertedAssets: any[] = [];
+
+    for (let i = 0; i < labels.length; i++) {
+      const label = labels[i];
+      const prompt = shotPrompts[i];
+
+      console.log(`Generating shot ${i + 1}/${labels.length}: ${label}`);
+
+      // Build message content with product image reference if available
+      const messageContent: any[] = [{ type: "text", text: prompt }];
+      if (productImageUrl) {
+        messageContent.push({
+          type: "image_url",
+          image_url: { url: productImageUrl },
+        });
+      }
+
       try {
         const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
@@ -136,93 +146,100 @@ serve(async (req) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-3-flash-preview",
-            messages: [
-              {
-                role: "system",
-                content: "You generate short creative image prompts for product photography. Return ONLY a JSON array of strings, one prompt per shot.",
-              },
-              {
-                role: "user",
-                content: `Generate ${labels.length} image prompt(s) for a ${category} product. ${stylePrompt ? `Style direction: ${stylePrompt}.` : `Style: ${preset}.`} Shot types: ${labels.join(", ")}. ${shotType === "model_shot" && modelConfig ? `Model: ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""} ${modelConfig.bodyType || ""}. Background: ${modelConfig.backgroundPrompt || modelConfig.background || "studio"}.` : "Product showcase, no model."} ${additionalContext ? `Additional direction: ${additionalContext}` : ""}`,
-              },
-            ],
-            tools: [
-              {
-                type: "function",
-                function: {
-                  name: "return_prompts",
-                  description: "Return generated image prompts",
-                  parameters: {
-                    type: "object",
-                    properties: {
-                      prompts: {
-                        type: "array",
-                        items: { type: "string" },
-                      },
-                    },
-                    required: ["prompts"],
-                    additionalProperties: false,
-                  },
-                },
-              },
-            ],
-            tool_choice: { type: "function", function: { name: "return_prompts" } },
+            model: "google/gemini-3-pro-image-preview",
+            messages: [{ role: "user", content: messageContent }],
+            modalities: ["image", "text"],
           }),
         });
 
-        if (aiResponse.ok) {
-          const aiData = await aiResponse.json();
-          const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-          if (toolCall) {
-            const parsed = JSON.parse(toolCall.function.arguments);
-            if (Array.isArray(parsed.prompts) && parsed.prompts.length >= labels.length) {
-              shotPrompts = parsed.prompts.slice(0, labels.length);
+        if (!aiResponse.ok) {
+          const errText = await aiResponse.text();
+          console.error(`AI error for ${label}:`, aiResponse.status, errText);
+
+          if (aiResponse.status === 429) {
+            // Wait and retry once
+            console.log("Rate limited, waiting 10s and retrying...");
+            await new Promise((r) => setTimeout(r, 10000));
+            const retryResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${LOVABLE_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: "google/gemini-3-pro-image-preview",
+                messages: [{ role: "user", content: messageContent }],
+                modalities: ["image", "text"],
+              }),
+            });
+            if (!retryResponse.ok) {
+              console.error(`Retry also failed for ${label}`);
+              continue;
             }
+            const retryData = await retryResponse.json();
+            const retryImage = retryData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+            if (retryImage) {
+              const url = await uploadBase64Image(serviceClient, retryImage, projectId, label);
+              if (url) {
+                const { data: asset } = await supabase.from("assets").insert({
+                  project_id: projectId, asset_type: "ai_generated", url,
+                  shot_label: label, preset_used: preset, prompt_used: prompt,
+                }).select().single();
+                if (asset) insertedAssets.push(asset);
+              }
+            }
+            continue;
           }
+
+          if (aiResponse.status === 402) {
+            return new Response(JSON.stringify({ error: "Insufficient AI credits" }), {
+              status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          continue;
         }
-      } catch (e) {
-        console.error("AI prompt generation failed, using defaults:", e);
+
+        const aiData = await aiResponse.json();
+        const imageData = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+
+        if (!imageData) {
+          console.error(`No image in response for ${label}`);
+          continue;
+        }
+
+        const url = await uploadBase64Image(serviceClient, imageData, projectId, label);
+        if (!url) continue;
+
+        const { data: asset } = await supabase.from("assets").insert({
+          project_id: projectId, asset_type: "ai_generated", url,
+          shot_label: label, preset_used: preset, prompt_used: prompt,
+        }).select().single();
+
+        if (asset) insertedAssets.push(asset);
+      } catch (shotErr) {
+        console.error(`Error generating ${label}:`, shotErr);
+        continue;
+      }
+
+      // Small delay between shots to avoid rate limits
+      if (i < labels.length - 1) {
+        await new Promise((r) => setTimeout(r, 2000));
       }
     }
 
-    // Get placeholder images based on preset
-    const presetImages = PRESET_IMAGES[preset] || DEFAULT_IMAGES;
-
-    // Insert assets
-    const assetsToInsert = labels.map((label, i) => ({
-      project_id: projectId,
-      asset_type: "ai_generated",
-      url: presetImages[i % presetImages.length],
-      shot_label: label,
-      preset_used: preset,
-      prompt_used: shotPrompts[i] || `${preset} ${label}`,
-    }));
-
-    const { data: insertedAssets, error: insertErr } = await supabase
-      .from("assets")
-      .insert(assetsToInsert)
-      .select();
-
-    if (insertErr) {
-      console.error("Insert error:", insertErr);
-      return new Response(JSON.stringify({ error: "Failed to save generated assets" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    if (insertedAssets.length === 0) {
+      return new Response(JSON.stringify({ error: "Failed to generate any images" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     // Deduct credits
-    await supabase
-      .from("profiles")
-      .update({ credits_remaining: profileData.credits_remaining - creditCost })
-      .eq("user_id", userId);
+    await supabase.from("profiles").update({
+      credits_remaining: profileData.credits_remaining - creditCost,
+    }).eq("user_id", userId);
 
     // Update project status
-    await supabase
-      .from("projects")
-      .update({ status: "complete" })
-      .eq("id", projectId);
+    await supabase.from("projects").update({ status: "complete" }).eq("id", projectId);
 
     return new Response(JSON.stringify({ assets: insertedAssets }), {
       status: 200,
@@ -236,3 +253,39 @@ serve(async (req) => {
     );
   }
 });
+
+async function uploadBase64Image(
+  serviceClient: any,
+  dataUrl: string,
+  projectId: string,
+  label: string
+): Promise<string | null> {
+  const base64Match = dataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
+  if (!base64Match) {
+    console.error("Invalid image format from AI");
+    return null;
+  }
+
+  const ext = base64Match[1] === "jpeg" ? "jpg" : base64Match[1];
+  const base64Content = base64Match[2];
+  const binaryData = Uint8Array.from(atob(base64Content), (c) => c.charCodeAt(0));
+  const filePath = `${projectId}/generated-${label}-${Date.now()}.${ext}`;
+
+  const { error: uploadErr } = await serviceClient.storage
+    .from("originals")
+    .upload(filePath, binaryData, {
+      contentType: `image/${base64Match[1]}`,
+      upsert: true,
+    });
+
+  if (uploadErr) {
+    console.error("Storage upload error:", uploadErr);
+    return null;
+  }
+
+  const { data: publicUrlData } = serviceClient.storage
+    .from("originals")
+    .getPublicUrl(filePath);
+
+  return publicUrlData.publicUrl;
+}
