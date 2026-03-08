@@ -978,9 +978,6 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
             <p className="text-[10px] text-right text-muted-foreground">{additionalContext.length}/200</p>
           </div>
 
-          <Button className="w-full" size="sm" disabled={!canGenerate} onClick={onGenerate}>
-            Generate — {credits} credit{credits > 1 ? 's' : ''}
-          </Button>
         </>
       )}
     </div>
@@ -988,13 +985,12 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
 }
 
 /* ── Step 5 Config (Left — Export Panel) ── */
-function Step5Config({ shots, exportFormats, setExportFormats, selectedShots, setSelectedShots, onDownload, generatedVideo, onRegenerateAll }: {
+function Step5Config({ shots, exportFormats, setExportFormats, selectedShots, setSelectedShots, generatedVideo, onRegenerateAll }: {
   shots: GeneratedShot[];
   exportFormats: Set<string>;
   setExportFormats: React.Dispatch<React.SetStateAction<Set<string>>>;
   selectedShots: Set<string>;
   setSelectedShots: React.Dispatch<React.SetStateAction<Set<string>>>;
-  onDownload: () => void;
   generatedVideo: GeneratedVideo | null;
   onRegenerateAll: () => void;
 }) {
