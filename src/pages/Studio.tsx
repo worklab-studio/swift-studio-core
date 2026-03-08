@@ -319,6 +319,11 @@ const Studio = () => {
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [stepSummaries, setStepSummaries] = useState<Record<number, string>>({});
 
+  // Toolbar view switcher
+  const [toolbarView, setToolbarView] = useState<'studio' | 'assets' | 'products'>('studio');
+  const [projectAssets, setProjectAssets] = useState<ProjectAsset[]>([]);
+  const [selectedProductLabel, setSelectedProductLabel] = useState<string | null>(null);
+
   // Product images (Step 1)
   const [productImages, setProductImages] = useState<string[]>([]);
   const productUploadRef = useRef<HTMLInputElement>(null);
