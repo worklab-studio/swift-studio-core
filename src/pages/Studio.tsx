@@ -697,55 +697,57 @@ const Studio = () => {
       {/* ════════════════════════════════════════════
           RIGHT PANEL — Viewport
          ════════════════════════════════════════════ */}
-      <div className="flex-1 overflow-y-auto bg-muted/30 h-screen">
-        <div className="p-8 min-h-full">
-          {activeStep === 1 && (
-            <Step1Viewport productImages={productImages} productInfo={productInfo} analyzingProduct={analyzingProduct} />
-          )}
-          {activeStep === 2 && (
-            <Step2Viewport
-              project={project}
-              modelConfig={modelConfig}
-              selectedModelData={selectedModelData}
-            />
-          )}
-          {activeStep === 3 && (
-            <Step3Viewport
-              selectedPreset={selectedPreset}
-              selectedPresetData={selectedPresetData}
-              referenceImage={referenceImage}
-            />
-          )}
-          {activeStep === 4 && (
-            <Step4Viewport
-              progress={generationProgress}
-              stage={generationStage}
-              shotCount={shotCount}
-            />
-          )}
-          {activeStep === 5 && (
-            <Step5Viewport
-              shots={generatedShots}
-              shotCount={shotCount}
-              onEditShot={handleEditShot}
-              onUndoEdit={handleUndoEdit}
-              onCopyLink={handleCopyLink}
-              updateShot={updateShot}
-              videoExpanded={videoExpanded}
-              setVideoExpanded={setVideoExpanded}
-              videoConfig={videoConfig}
-              setVideoConfig={setVideoConfig}
-              videoGenerating={videoGenerating}
-              videoStage={videoStage}
-              generatedVideo={generatedVideo}
-              onGenerateVideo={handleGenerateVideo}
-              onCancelVideo={handleCancelVideo}
-              setGeneratedVideo={setGeneratedVideo}
-              creditsRemaining={profile?.credits_remaining ?? 0}
-              onGenerate={handleGenerate}
-            />
-          )}
-        </div>
+      <div className="flex-1 overflow-hidden bg-muted/30 h-screen relative canvas-dots">
+        {activeStep === 1 && (
+          <Step1Viewport productImages={productImages} productInfo={productInfo} analyzingProduct={analyzingProduct} analysisPhase={analysisPhase} />
+        )}
+        {activeStep !== 1 && (
+          <div className="p-8 min-h-full overflow-y-auto h-full">
+            {activeStep === 2 && (
+              <Step2Viewport
+                project={project}
+                modelConfig={modelConfig}
+                selectedModelData={selectedModelData}
+              />
+            )}
+            {activeStep === 3 && (
+              <Step3Viewport
+                selectedPreset={selectedPreset}
+                selectedPresetData={selectedPresetData}
+                referenceImage={referenceImage}
+              />
+            )}
+            {activeStep === 4 && (
+              <Step4Viewport
+                progress={generationProgress}
+                stage={generationStage}
+                shotCount={shotCount}
+              />
+            )}
+            {activeStep === 5 && (
+              <Step5Viewport
+                shots={generatedShots}
+                shotCount={shotCount}
+                onEditShot={handleEditShot}
+                onUndoEdit={handleUndoEdit}
+                onCopyLink={handleCopyLink}
+                updateShot={updateShot}
+                videoExpanded={videoExpanded}
+                setVideoExpanded={setVideoExpanded}
+                videoConfig={videoConfig}
+                setVideoConfig={setVideoConfig}
+                videoGenerating={videoGenerating}
+                videoStage={videoStage}
+                generatedVideo={generatedVideo}
+                onGenerateVideo={handleGenerateVideo}
+                onCancelVideo={handleCancelVideo}
+                setGeneratedVideo={setGeneratedVideo}
+                creditsRemaining={profile?.credits_remaining ?? 0}
+                onGenerate={handleGenerate}
+              />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
