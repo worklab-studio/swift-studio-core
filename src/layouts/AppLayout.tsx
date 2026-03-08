@@ -29,7 +29,7 @@ export const AppLayout = () => {
       <div className="min-h-screen bg-background">
         {!isMobile && <AppSidebar collapsed={collapsed} onToggle={toggle} />}
         <div className={isMobile ? '' : `transition-all duration-200 ${collapsed ? 'ml-16' : 'ml-60'}`}>
-          <AppTopbar collapsed={collapsed} onToggle={toggle} isMobile={isMobile} />
+          {!isStudioRoute && <AppTopbar collapsed={collapsed} onToggle={toggle} isMobile={isMobile} />}
           <main className={mainPadding}>
             <div key={location.pathname}>
               <div className={isStudioRoute ? '' : 'animate-fade-in'}>
