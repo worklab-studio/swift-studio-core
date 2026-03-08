@@ -74,7 +74,7 @@ const Projects = () => {
           {projects.map((p) => (
             <Card
               key={p.id}
-              className="border-0 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer overflow-hidden"
+              className="border border-border/50 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer overflow-hidden"
               onClick={() => navigate(`/app/projects/${p.id}`)}
             >
               <div className="bg-gradient-to-br from-muted to-muted/50 h-40 flex items-center justify-center">
