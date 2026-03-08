@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -2767,6 +2768,7 @@ function AssetsViewport({ assets, onCopyLink }: {
   assets: ProjectAsset[];
   onCopyLink: (url: string) => void;
 }) {
+  const [viewingUrl, setViewingUrl] = useState<string | null>(null);
   if (assets.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4 text-center animate-in fade-in duration-300">
@@ -2797,6 +2799,7 @@ function AssetsViewport({ assets, onCopyLink }: {
                   <button className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Download className="h-4 w-4" /></button>
                 </a>
                 <button onClick={() => onCopyLink(a.url)} className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Link2 className="h-4 w-4" /></button>
+                <button onClick={() => setViewingUrl(a.url)} className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Eye className="h-4 w-4" /></button>
               </div>
             </div>
             <div className="mt-1.5 flex items-center gap-1.5">
@@ -2806,6 +2809,12 @@ function AssetsViewport({ assets, onCopyLink }: {
           </div>
         ))}
       </div>
+      <Dialog open={!!viewingUrl} onOpenChange={() => setViewingUrl(null)}>
+        <DialogContent className="max-w-4xl p-2">
+          <DialogTitle className="sr-only">View Asset</DialogTitle>
+          {viewingUrl && <img src={viewingUrl} alt="" className="w-full h-auto rounded-lg" />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -2821,6 +2830,7 @@ function ProductsViewport({ assets, productLabels, selectedLabel, onSelectLabel,
   onCopyLink: (url: string) => void;
   onLoadProduct: (label: string) => void;
 }) {
+  const [viewingUrl, setViewingUrl] = useState<string | null>(null);
   if (productLabels.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4 text-center animate-in fade-in duration-300">
@@ -2862,6 +2872,7 @@ function ProductsViewport({ assets, productLabels, selectedLabel, onSelectLabel,
                     <button className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Download className="h-4 w-4" /></button>
                   </a>
                   <button onClick={() => onCopyLink(a.url)} className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Link2 className="h-4 w-4" /></button>
+                  <button onClick={() => setViewingUrl(a.url)} className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Eye className="h-4 w-4" /></button>
                 </div>
               </div>
               {a.shot_label && (
@@ -2870,6 +2881,12 @@ function ProductsViewport({ assets, productLabels, selectedLabel, onSelectLabel,
             </div>
           ))}
         </div>
+        <Dialog open={!!viewingUrl} onOpenChange={() => setViewingUrl(null)}>
+          <DialogContent className="max-w-4xl p-2">
+            <DialogTitle className="sr-only">View Asset</DialogTitle>
+            {viewingUrl && <img src={viewingUrl} alt="" className="w-full h-auto rounded-lg" />}
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
