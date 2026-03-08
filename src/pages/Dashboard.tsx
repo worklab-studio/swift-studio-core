@@ -345,7 +345,7 @@ const Dashboard = () => {
                             {new Date(tx.created_at).toLocaleDateString()}
                           </p>
                         </div>
-                        <span className={`text-sm font-semibold shrink-0 ${isDebit ? 'text-destructive' : 'text-green-600'}`}>
+                        <span className={`text-sm font-semibold shrink-0 ${isDebit ? 'text-destructive' : 'text-primary'}`}>
                           {isDebit ? '' : '+'}{tx.amount}
                         </span>
                       </div>
