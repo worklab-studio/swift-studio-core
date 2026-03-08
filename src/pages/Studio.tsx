@@ -2903,7 +2903,7 @@ function ProductsViewport({ assets, productLabels, selectedLabel, onSelectLabel,
               </div>
               <div className="p-3">
                 <p className="text-sm font-medium truncate">{label}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{productAssets.length} generated image{productAssets.length !== 1 ? 's' : ''}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{generatedCount} generated image{generatedCount !== 1 ? 's' : ''}</p>
               </div>
             </button>
           );
