@@ -74,7 +74,7 @@ serve(async (req) => {
     }
     const userId = claimsData.claims.sub as string;
 
-    const { projectId, preset, shotCount, additionalContext, category, shotType, modelConfig } = await req.json();
+    const { projectId, preset, shotCount, additionalContext, category, shotType, modelConfig, stylePrompt } = await req.json();
 
     if (!projectId || !preset || !shotCount) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
