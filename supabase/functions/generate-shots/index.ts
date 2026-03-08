@@ -128,26 +128,17 @@ serve(async (req) => {
       return `${shotTypeDesc[label] || label}. ${baseStyle}. Category: ${category}. ${modelDesc} ${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}. ${ratioInstruction} Professional commercial photography, high resolution, no text, no watermarks.`;
     });
 
-    // Generate images sequentially to avoid rate limits
+    // Generate images in parallel batches
     const insertedAssets: any[] = [];
 
-    for (let i = 0; i < labels.length; i++) {
-      const label = labels[i];
-      const prompt = shotPrompts[i];
-
-      console.log(`Generating shot ${i + 1}/${labels.length}: ${label}`);
-
-      // Build message content with product image reference if available
+    async function generateSingleShot(label: string, prompt: string): Promise<any | null> {
       const messageContent: any[] = [{ type: "text", text: prompt }];
       if (productImageUrl) {
-        messageContent.push({
-          type: "image_url",
-          image_url: { url: productImageUrl },
-        });
+        messageContent.push({ type: "image_url", image_url: { url: productImageUrl } });
       }
 
-      try {
-        const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const callAI = async () => {
+        const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -159,80 +150,70 @@ serve(async (req) => {
             modalities: ["image", "text"],
           }),
         });
+        return resp;
+      };
 
-        if (!aiResponse.ok) {
-          const errText = await aiResponse.text();
-          console.error(`AI error for ${label}:`, aiResponse.status, errText);
+      let aiResponse = await callAI();
 
-          if (aiResponse.status === 429) {
-            // Wait and retry once
-            console.log("Rate limited, waiting 10s and retrying...");
-            await new Promise((r) => setTimeout(r, 10000));
-            const retryResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${LOVABLE_API_KEY}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                model: "google/gemini-3-pro-image-preview",
-                messages: [{ role: "user", content: messageContent }],
-                modalities: ["image", "text"],
-              }),
-            });
-            if (!retryResponse.ok) {
-              console.error(`Retry also failed for ${label}`);
-              continue;
-            }
-            const retryData = await retryResponse.json();
-            const retryImage = retryData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-            if (retryImage) {
-              const url = await uploadBase64Image(serviceClient, retryImage, projectId, label);
-              if (url) {
-                const { data: asset } = await supabase.from("assets").insert({
-                  project_id: projectId, asset_type: "ai_generated", url,
-                  shot_label: label, preset_used: preset, prompt_used: prompt,
-                  product_label: productLabel || null,
-                }).select().single();
-                if (asset) insertedAssets.push(asset);
-              }
-            }
-            continue;
-          }
-
-          if (aiResponse.status === 402) {
-            return new Response(JSON.stringify({ error: "Insufficient AI credits" }), {
-              status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
-          }
-          continue;
-        }
-
-        const aiData = await aiResponse.json();
-        const imageData = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-
-        if (!imageData) {
-          console.error(`No image in response for ${label}`);
-          continue;
-        }
-
-        const url = await uploadBase64Image(serviceClient, imageData, projectId, label);
-        if (!url) continue;
-
-        const { data: asset } = await supabase.from("assets").insert({
-          project_id: projectId, asset_type: "ai_generated", url,
-          shot_label: label, preset_used: preset, prompt_used: prompt,
-          product_label: productLabel || null,
-        }).select().single();
-
-        if (asset) insertedAssets.push(asset);
-      } catch (shotErr) {
-        console.error(`Error generating ${label}:`, shotErr);
-        continue;
+      if (aiResponse.status === 429) {
+        console.log(`Rate limited for ${label}, waiting 10s and retrying...`);
+        await new Promise((r) => setTimeout(r, 10000));
+        aiResponse = await callAI();
       }
 
-      // Small delay between shots to avoid rate limits
-      if (i < labels.length - 1) {
+      if (aiResponse.status === 402) {
+        throw new Error("INSUFFICIENT_AI_CREDITS");
+      }
+
+      if (!aiResponse.ok) {
+        const errText = await aiResponse.text();
+        console.error(`AI error for ${label}:`, aiResponse.status, errText);
+        return null;
+      }
+
+      const aiData = await aiResponse.json();
+      const imageData = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+      if (!imageData) {
+        console.error(`No image in response for ${label}`);
+        return null;
+      }
+
+      const url = await uploadBase64Image(serviceClient, imageData, projectId, label);
+      if (!url) return null;
+
+      const { data: asset } = await supabase.from("assets").insert({
+        project_id: projectId, asset_type: "ai_generated", url,
+        shot_label: label, preset_used: preset, prompt_used: prompt,
+        product_label: productLabel || null,
+      }).select().single();
+
+      return asset || null;
+    }
+
+    // Process in batches of 3
+    const batchSize = 3;
+    for (let i = 0; i < labels.length; i += batchSize) {
+      const batchLabels = labels.slice(i, i + batchSize);
+      const batchPrompts = shotPrompts.slice(i, i + batchSize);
+
+      console.log(`Processing batch ${Math.floor(i / batchSize) + 1}: ${batchLabels.join(", ")}`);
+
+      const results = await Promise.allSettled(
+        batchLabels.map((label, idx) => generateSingleShot(label, batchPrompts[idx]))
+      );
+
+      for (const result of results) {
+        if (result.status === "fulfilled" && result.value) {
+          insertedAssets.push(result.value);
+        } else if (result.status === "rejected" && result.reason?.message === "INSUFFICIENT_AI_CREDITS") {
+          return new Response(JSON.stringify({ error: "Insufficient AI credits" }), {
+            status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+
+      // Pause between batches
+      if (i + batchSize < labels.length) {
         await new Promise((r) => setTimeout(r, 2000));
       }
     }
