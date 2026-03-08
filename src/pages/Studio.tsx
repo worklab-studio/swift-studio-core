@@ -65,6 +65,14 @@ interface VideoConfig {
   duration: number;
   resolution: string;
   engine: string;
+  aspectRatio: string;
+  selectedPrompt?: { style: string; text: string; reason: string } | null;
+}
+
+interface VideoPrompt {
+  style: string;
+  text: string;
+  reason: string;
 }
 
 interface ProductInfo {
@@ -369,11 +377,14 @@ const Studio = () => {
 
   // Video state
   const [videoExpanded, setVideoExpanded] = useState(false);
-  const [videoConfig, setVideoConfig] = useState<VideoConfig>({ baseImageId: '', duration: 4, resolution: '720p', engine: 'veo' });
+  const [videoConfig, setVideoConfig] = useState<VideoConfig>({ baseImageId: '', duration: 4, resolution: '720p', engine: 'veo', aspectRatio: '9:16' });
   const [videoGenerating, setVideoGenerating] = useState(false);
   const [videoStage, setVideoStage] = useState('');
   const [generatedVideo, setGeneratedVideo] = useState<GeneratedVideo | null>(null);
   const videoAbortRef = useRef(false);
+  const [videoPrompts, setVideoPrompts] = useState<VideoPrompt[]>([]);
+  const [videoPromptsLoading, setVideoPromptsLoading] = useState(false);
+  const [videoPromptStep, setVideoPromptStep] = useState<'config' | 'prompts' | 'generating' | 'done'>('config');
 
   // AI Product Recognition
   const [productInfo, setProductInfo] = useState<ProductInfo | null>(null);
@@ -557,7 +568,7 @@ const Studio = () => {
     setExportFormat('png');
     setSelectedExportShots(new Set());
     setVideoExpanded(false);
-    setVideoConfig({ baseImageId: '', duration: 4, resolution: '720p', engine: 'veo' });
+    setVideoConfig({ baseImageId: '', duration: 4, resolution: '720p', engine: 'veo', aspectRatio: '9:16' });
     setVideoGenerating(false);
     setVideoStage('');
     setGeneratedVideo(null);
@@ -926,10 +937,38 @@ const Studio = () => {
     toast({ title: 'Link copied to clipboard' });
   };
 
+  /* ── Generate video prompts ── */
+  const handleGenerateVideoPrompts = async () => {
+    if (!project) return;
+    setVideoPromptsLoading(true);
+    setVideoPrompts([]);
+    try {
+      const selectedShot = generatedShots.find(s => s.id === videoConfig.baseImageId);
+      const { data, error } = await supabase.functions.invoke('generate-video-prompts', {
+        body: {
+          category: project.category || productInfo?.category || '',
+          productName: productName || productInfo?.productName || project.name,
+          productImageUrl: selectedShot?.url || null,
+        },
+      });
+      if (error || !data?.prompts) {
+        toast({ title: 'Failed to generate prompts', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
+        setVideoPromptsLoading(false);
+        return;
+      }
+      setVideoPrompts(data.prompts);
+      setVideoPromptStep('prompts');
+    } catch {
+      toast({ title: 'Failed to generate prompts', description: 'Network error', variant: 'destructive' });
+    }
+    setVideoPromptsLoading(false);
+  };
+
   /* ── Video generation ── */
   const handleGenerateVideo = async () => {
     if (!project || !videoConfig.baseImageId) return;
     setVideoGenerating(true);
+    setVideoPromptStep('generating');
     videoAbortRef.current = false;
     setVideoStage(VIDEO_STAGES[0]);
     let stageIdx = 0;
@@ -943,7 +982,9 @@ const Studio = () => {
       const { data, error } = await supabase.functions.invoke('generate-video', {
         body: {
           assetId: videoConfig.baseImageId, duration: videoConfig.duration,
-          resolution: videoConfig.resolution, engine: videoConfig.engine, projectId: project.id,
+          resolution: videoConfig.resolution, engine: videoConfig.engine,
+          projectId: project.id, aspectRatio: videoConfig.aspectRatio,
+          prompt: videoConfig.selectedPrompt?.text || null,
         },
       });
       clearInterval(stageInterval);
@@ -951,6 +992,7 @@ const Studio = () => {
       if (error || !data?.asset) {
         toast({ title: 'Video generation failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
         setVideoGenerating(false);
+        setVideoPromptStep('prompts');
         return;
       }
       setGeneratedVideo({
@@ -958,9 +1000,11 @@ const Studio = () => {
         resolution: videoConfig.resolution, engine: videoConfig.engine,
       });
       setVideoGenerating(false);
+      setVideoPromptStep('done');
     } catch {
       clearInterval(stageInterval);
       setVideoGenerating(false);
+      setVideoPromptStep('prompts');
       toast({ title: 'Video generation failed', description: 'Network error', variant: 'destructive' });
     }
   };
@@ -968,6 +1012,7 @@ const Studio = () => {
   const handleCancelVideo = () => {
     videoAbortRef.current = true;
     setVideoGenerating(false);
+    setVideoPromptStep('config');
   };
 
   const credits = shotCount === 'campaign' ? 6 : 1;
@@ -1300,6 +1345,11 @@ const Studio = () => {
                     setGeneratedVideo={setGeneratedVideo}
                     creditsRemaining={profile?.credits_remaining ?? 0}
                     onGenerate={handleGenerate}
+                    videoPrompts={videoPrompts}
+                    videoPromptsLoading={videoPromptsLoading}
+                    videoPromptStep={videoPromptStep}
+                    setVideoPromptStep={setVideoPromptStep}
+                    onGenerateVideoPrompts={handleGenerateVideoPrompts}
                   />
                 )}
               </div>
@@ -2527,7 +2577,7 @@ function Step4Viewport({ progress, stage, shotCount, aspectRatio }: {
 }
 
 /* ── Step 5 Viewport (Results) ── */
-function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, onCopyLink, updateShot, videoExpanded, setVideoExpanded, videoConfig, setVideoConfig, videoGenerating, videoStage, generatedVideo, onGenerateVideo, onCancelVideo, setGeneratedVideo, creditsRemaining, onGenerate }: {
+function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, onCopyLink, updateShot, videoExpanded, setVideoExpanded, videoConfig, setVideoConfig, videoGenerating, videoStage, generatedVideo, onGenerateVideo, onCancelVideo, setGeneratedVideo, creditsRemaining, onGenerate, videoPrompts, videoPromptsLoading, videoPromptStep, setVideoPromptStep, onGenerateVideoPrompts }: {
   shots: GeneratedShot[];
   shotCount: string;
   aspectRatio: string;
@@ -2547,6 +2597,11 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
   setGeneratedVideo: React.Dispatch<React.SetStateAction<GeneratedVideo | null>>;
   creditsRemaining: number;
   onGenerate: () => void;
+  videoPrompts: VideoPrompt[];
+  videoPromptsLoading: boolean;
+  videoPromptStep: 'config' | 'prompts' | 'generating' | 'done';
+  setVideoPromptStep: (step: 'config' | 'prompts' | 'generating' | 'done') => void;
+  onGenerateVideoPrompts: () => void;
 }) {
   const isCampaign = shots.length > 1;
   const videoCreditCost = calculateVideoCreditCost(videoConfig.duration, videoConfig.resolution);
@@ -2601,11 +2656,11 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
             </div>
           )}
 
-          {videoExpanded && !videoGenerating && !generatedVideo && (
+          {videoExpanded && videoPromptStep === 'config' && !videoGenerating && !generatedVideo && (
             <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="flex items-center justify-between">
                 <p className="font-medium">Create a product video</p>
-                <Button variant="ghost" size="sm" onClick={() => setVideoExpanded(false)}><X className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="sm" onClick={() => { setVideoExpanded(false); setVideoPromptStep('config'); }}><X className="h-4 w-4" /></Button>
               </div>
               <div className="space-y-2">
                 <p className="text-sm font-medium">Which shot should we animate?</p>
@@ -2623,7 +2678,7 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
                   ))}
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Duration</label>
                   <ToggleGroup type="single" value={String(videoConfig.duration)} onValueChange={v => v && setVideoConfig(prev => ({ ...prev, duration: Number(v) }))} className="justify-start">
@@ -2632,6 +2687,16 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
                     <ToggleGroupItem value="8" className="px-3">8s</ToggleGroupItem>
                   </ToggleGroup>
                 </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Aspect Ratio</label>
+                  <ToggleGroup type="single" value={videoConfig.aspectRatio} onValueChange={v => v && setVideoConfig(prev => ({ ...prev, aspectRatio: v }))} className="justify-start">
+                    <ToggleGroupItem value="9:16" className="px-3">9:16</ToggleGroupItem>
+                    <ToggleGroupItem value="16:9" className="px-3">16:9</ToggleGroupItem>
+                    <ToggleGroupItem value="1:1" className="px-3">1:1</ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Resolution</label>
                   <ToggleGroup type="single" value={videoConfig.resolution} onValueChange={v => v && setVideoConfig(prev => ({ ...prev, resolution: v }))} className="justify-start">
@@ -2645,10 +2710,46 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
                     <ToggleGroupItem value="veo" className="px-3">Veo 3.1</ToggleGroupItem>
                     <ToggleGroupItem value="runway" className="px-3">Runway 4.5</ToggleGroupItem>
                   </ToggleGroup>
-                  <p className="text-xs text-muted-foreground">Veo: cinematic quality. Runway: faster.</p>
                 </div>
               </div>
-              <Button className="w-full" onClick={onGenerateVideo} disabled={!videoConfig.baseImageId}>
+              <Button className="w-full" onClick={onGenerateVideoPrompts} disabled={!videoConfig.baseImageId || videoPromptsLoading}>
+                {videoPromptsLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Generating prompts...</> : 'Generate video prompts'}
+              </Button>
+            </div>
+          )}
+
+          {videoExpanded && videoPromptStep === 'prompts' && !videoGenerating && !generatedVideo && (
+            <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Choose a video direction</p>
+                  <p className="text-sm text-muted-foreground">Select the style that best fits your product</p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setVideoPromptStep('config')}><ArrowLeft className="h-4 w-4" /></Button>
+              </div>
+              <div className="space-y-3">
+                {videoPrompts.map((prompt, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setVideoConfig(prev => ({ ...prev, selectedPrompt: prompt }))}
+                    className={`w-full text-left p-4 rounded-xl border transition-all ${
+                      videoConfig.selectedPrompt?.text === prompt.text
+                        ? 'ring-2 ring-accent border-accent bg-accent/5'
+                        : 'hover:border-accent/50 bg-card'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="outline" className="text-[10px] px-2 py-0">{prompt.style}</Badge>
+                      {videoConfig.selectedPrompt?.text === prompt.text && (
+                        <Check className="h-3.5 w-3.5 text-accent" />
+                      )}
+                    </div>
+                    <p className="text-sm leading-relaxed">{prompt.text}</p>
+                    <p className="text-xs text-muted-foreground mt-2 italic">{prompt.reason}</p>
+                  </button>
+                ))}
+              </div>
+              <Button className="w-full" onClick={onGenerateVideo} disabled={!videoConfig.selectedPrompt}>
                 Generate video — {videoCreditCost} credits
               </Button>
             </div>
@@ -2676,7 +2777,7 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { navigator.clipboard.writeText(generatedVideo.url); toast({ title: 'Link copied' }); }}>
                   <Share2 className="h-3.5 w-3.5" /> Share link
                 </Button>
-                <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => { setGeneratedVideo(null); setVideoExpanded(true); }}>
+                <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => { setGeneratedVideo(null); setVideoPromptStep('config'); setVideoExpanded(true); }}>
                   <RefreshCw className="h-3.5 w-3.5" /> Regenerate
                 </Button>
               </div>
