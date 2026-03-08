@@ -18,5 +18,8 @@ verify_jwt = false
 [functions.generate-video]
 verify_jwt = false
 
+[functions.generate-video-prompts]
+verify_jwt = false
+
 [functions.remove-background]
 verify_jwt = false
