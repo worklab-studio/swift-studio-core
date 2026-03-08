@@ -63,6 +63,14 @@ interface VideoConfig {
   engine: string;
 }
 
+interface ProductInfo {
+  category: string;
+  colors: string[];
+  material: string;
+  suggestedShots: string[];
+  description: string;
+}
+
 interface GeneratedVideo {
   id: string;
   url: string;
@@ -200,6 +208,10 @@ const Studio = () => {
   const [videoStage, setVideoStage] = useState('');
   const [generatedVideo, setGeneratedVideo] = useState<GeneratedVideo | null>(null);
   const videoAbortRef = useRef(false);
+
+  // AI Product Recognition
+  const [productInfo, setProductInfo] = useState<ProductInfo | null>(null);
+  const [analyzingProduct, setAnalyzingProduct] = useState(false);
 
   const referenceInputRef = useRef<HTMLInputElement>(null);
   const modelUploadRef = useRef<HTMLInputElement>(null);
