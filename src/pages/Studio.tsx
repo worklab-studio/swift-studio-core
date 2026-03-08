@@ -382,6 +382,9 @@ const Studio = () => {
   const [videoStage, setVideoStage] = useState('');
   const [generatedVideo, setGeneratedVideo] = useState<GeneratedVideo | null>(null);
   const videoAbortRef = useRef(false);
+  const [videoPrompts, setVideoPrompts] = useState<VideoPrompt[]>([]);
+  const [videoPromptsLoading, setVideoPromptsLoading] = useState(false);
+  const [videoPromptStep, setVideoPromptStep] = useState<'config' | 'prompts' | 'generating' | 'done'>('config');
 
   // AI Product Recognition
   const [productInfo, setProductInfo] = useState<ProductInfo | null>(null);
