@@ -77,7 +77,10 @@ const NewProjectDialog = () => {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl p-8 gap-0">
-        <DialogTitle className="text-xl font-semibold mb-6">Create New Project</DialogTitle>
+        <div className="mb-6">
+          <DialogTitle className="text-xl font-semibold">Create New Project</DialogTitle>
+          <p className="text-sm text-muted-foreground mt-1">Set up your product shoot in seconds</p>
+        </div>
 
         <div className="space-y-6">
           {/* Project Name */}
@@ -102,11 +105,11 @@ const NewProjectDialog = () => {
                   className={cn(
                     'px-3 py-2 cursor-pointer transition-all',
                     category === c.id
-                      ? 'bg-muted/60 border-muted-foreground/30'
+                      ? 'bg-primary/10 border-primary/30'
                       : 'hover:border-muted-foreground/20'
                   )}
                 >
-                  <p className="font-medium text-sm">{c.name}</p>
+                  <p className={cn('font-medium text-sm', category === c.id && 'text-primary')}>{c.name}</p>
                 </Card>
               ))}
             </div>
@@ -133,22 +136,22 @@ const NewProjectDialog = () => {
                 className={cn(
                   'px-4 py-3 cursor-pointer transition-all',
                   defaultOutput === 'photos'
-                    ? 'bg-muted/60 border-muted-foreground/30'
+                    ? 'bg-primary/10 border-primary/30'
                     : 'hover:border-muted-foreground/20'
                 )}
               >
-                <p className="font-medium text-sm">Photos</p>
+                <p className={cn('font-medium text-sm', defaultOutput === 'photos' && 'text-primary')}>Photos</p>
               </Card>
               <Card
                 onClick={() => setDefaultOutput('videos')}
                 className={cn(
                   'px-4 py-3 cursor-pointer transition-all',
                   defaultOutput === 'videos'
-                    ? 'bg-muted/60 border-muted-foreground/30'
+                    ? 'bg-primary/10 border-primary/30'
                     : 'hover:border-muted-foreground/20'
                 )}
               >
-                <p className="font-medium text-sm">Videos</p>
+                <p className={cn('font-medium text-sm', defaultOutput === 'videos' && 'text-primary')}>Videos</p>
               </Card>
             </div>
           </div>
