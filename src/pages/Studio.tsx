@@ -1119,7 +1119,8 @@ const Studio = () => {
          ════════════════════════════════════════════ */}
       <div className="flex-1 overflow-hidden bg-muted/30 h-screen relative canvas-dots">
         {/* ── Floating Studio Toolbar ── */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 px-2 py-1.5 rounded-full border bg-background/80 backdrop-blur-md shadow-lg">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30 p-[30px] group/toolbar pointer-events-auto">
+          <div className="flex items-center gap-1 px-2 py-1.5 rounded-full border bg-background/80 backdrop-blur-md shadow-lg opacity-40 group-hover/toolbar:opacity-100 transition-opacity duration-300">
           <button
             onClick={() => {
               if (generatedShots.length > 0) { setActiveStep(5); }
@@ -1149,6 +1150,7 @@ const Studio = () => {
             <Plus className="h-3.5 w-3.5" />
             New Product
           </button>
+          </div>
         </div>
         {activeStep === 1 && (
           <Step1Viewport productImages={productImages} productInfo={productInfo} analyzingProduct={analyzingProduct} analysisPhase={analysisPhase} productName={productName} setProductName={setProductName} modelChoice={modelChoice} removingBackground={removingBackground} onRemoveBackground={handleRemoveBackground} onKeepModel={handleKeepModel} />
