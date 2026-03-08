@@ -521,7 +521,7 @@ const Studio = () => {
   }
 
   return (
-    <div className="flex h-full -m-8">
+    <div className="flex" style={{ height: 'calc(100vh - 48px)' }}>
       {/* ── Left Panel ── */}
       <div className="w-[280px] shrink-0 border-r border-border bg-card flex flex-col">
         <div className="p-4 space-y-4">
