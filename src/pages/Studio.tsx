@@ -15,7 +15,7 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from '@/hooks/use-toast';
-import { Check, Package, Upload, X, Loader2, ArrowLeft, Download, Link2, Pencil, RotateCcw, Undo2, Play, Share2, RefreshCw, ImageIcon, Palette, Eye, Sparkles, Camera } from 'lucide-react';
+import { Check, Package, Upload, X, Loader2, ArrowLeft, Download, Link2, Pencil, RotateCcw, Undo2, Play, Share2, RefreshCw, ImageIcon, Palette, Eye, Sparkles, Camera, Plus, LayoutGrid, Tag } from 'lucide-react';
 
 /* ── Types ── */
 interface Project {
@@ -492,6 +492,43 @@ const Studio = () => {
     };
     fetchData();
   }, [user, id]);
+
+  /* ── Reset workspace for new product ── */
+  const resetWorkspace = useCallback(() => {
+    setActiveStep(1);
+    setCompletedSteps(new Set());
+    setStepSummaries({});
+    setProductImages([]);
+    setProductInfo(null);
+    setProductName('');
+    setAnalyzingProduct(false);
+    setAnalysisPhase('idle');
+    setModelChoice(null);
+    setRemovingBackground(false);
+    setShootType(null);
+    setSelectedTemplate(null);
+    setTemplateCategory('All');
+    setModelConfig({ selectedModel: null, uploadedModelUrl: null, gender: '', ethnicity: '', bodyType: '', background: '', backgroundPrompt: '', aiEngine: 'gemini' });
+    setStyleSettings(null);
+    setStylePrompt('');
+    setSelectedPreset(null);
+    setReferenceImage(null);
+    setShotCount('campaign');
+    setAspectRatio('1:1');
+    setAdditionalContext('');
+    setGenerationProgress(0);
+    setGenerationStage('');
+    setGeneratedShots([]);
+    setShowExportPanel(false);
+    setExportFormats(new Set(EXPORT_FORMATS.filter(f => f.default).map(f => f.id)));
+    setSelectedExportShots(new Set());
+    setVideoExpanded(false);
+    setVideoConfig({ baseImageId: '', duration: 4, resolution: '720p', engine: 'veo' });
+    setVideoGenerating(false);
+    setVideoStage('');
+    setGeneratedVideo(null);
+    toast({ title: 'Workspace reset', description: 'Ready for a new product shoot.' });
+  }, []);
 
   const thumbnailUrl = productImages[0] ?? assets[0]?.url ?? null;
 
@@ -1081,6 +1118,38 @@ const Studio = () => {
           RIGHT PANEL — Viewport
          ════════════════════════════════════════════ */}
       <div className="flex-1 overflow-hidden bg-muted/30 h-screen relative canvas-dots">
+        {/* ── Floating Studio Toolbar ── */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 px-2 py-1.5 rounded-full border bg-background/80 backdrop-blur-md shadow-lg">
+          <button
+            onClick={() => {
+              if (generatedShots.length > 0) { setActiveStep(5); }
+              else { toast({ title: 'No assets yet', description: 'Generate shots first.' }); }
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+            Assets
+            {generatedShots.length > 0 && (
+              <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-semibold">{generatedShots.length}</span>
+            )}
+          </button>
+          <div className="w-px h-5 bg-border" />
+          <button
+            onClick={() => setActiveStep(1)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors max-w-[160px]"
+          >
+            <Tag className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{productInfo?.productName || productName || 'No product'}</span>
+          </button>
+          <div className="w-px h-5 bg-border" />
+          <button
+            onClick={resetWorkspace}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            New Product
+          </button>
+        </div>
         {activeStep === 1 && (
           <Step1Viewport productImages={productImages} productInfo={productInfo} analyzingProduct={analyzingProduct} analysisPhase={analysisPhase} productName={productName} setProductName={setProductName} modelChoice={modelChoice} removingBackground={removingBackground} onRemoveBackground={handleRemoveBackground} onKeepModel={handleKeepModel} />
         )}
