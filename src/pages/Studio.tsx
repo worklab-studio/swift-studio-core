@@ -150,6 +150,44 @@ const PLACEHOLDER_MODELS = [
   { id: 'm40', name: 'Raj', attrs: 'M · South Asian · Curvy', color: 'hsl(290 50% 55% / 0.2)' },
 ];
 
+/* ── Product Shoot Templates ── */
+interface ProductTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: 'Studio' | 'E-commerce' | 'Mystic' | 'Showcase';
+  color: string;
+}
+
+const PRODUCT_SHOOT_TEMPLATES: ProductTemplate[] = [
+  // Studio (5)
+  { id: 'pt1', name: 'Mannequin Front', description: 'Product displayed on mannequin, front-facing', category: 'Studio', color: 'hsl(220 15% 70% / 0.25)' },
+  { id: 'pt2', name: 'Mannequin 3/4 Angle', description: 'Three-quarter view on mannequin with depth', category: 'Studio', color: 'hsl(220 15% 65% / 0.25)' },
+  { id: 'pt3', name: 'Ghost Mannequin', description: 'Invisible mannequin effect, clean silhouette', category: 'Studio', color: 'hsl(220 15% 60% / 0.25)' },
+  { id: 'pt4', name: 'Hanging on Rail', description: 'Product hanging on a professional clothing rail', category: 'Studio', color: 'hsl(220 15% 55% / 0.25)' },
+  { id: 'pt5', name: 'Folded Stack', description: 'Neatly folded product in a stacked arrangement', category: 'Studio', color: 'hsl(220 15% 50% / 0.25)' },
+  // E-commerce (5)
+  { id: 'pt6', name: 'White Flat Lay', description: 'Flat lay on pure white background', category: 'E-commerce', color: 'hsl(0 0% 92% / 0.4)' },
+  { id: 'pt7', name: 'Hanger with Shadow', description: 'Hanging product with dramatic drop shadow', category: 'E-commerce', color: 'hsl(0 0% 85% / 0.35)' },
+  { id: 'pt8', name: 'Pack Shot Grid', description: 'Multiple angles in a grid layout', category: 'E-commerce', color: 'hsl(0 0% 88% / 0.35)' },
+  { id: 'pt9', name: 'Size Comparison', description: 'Product shown with scale reference objects', category: 'E-commerce', color: 'hsl(0 0% 82% / 0.35)' },
+  { id: 'pt10', name: 'Tag Close-up', description: 'Detail shot highlighting labels and tags', category: 'E-commerce', color: 'hsl(0 0% 78% / 0.35)' },
+  // Mystic (5)
+  { id: 'pt11', name: 'Floating in Mist', description: 'Product suspended in ethereal fog', category: 'Mystic', color: 'hsl(270 40% 60% / 0.2)' },
+  { id: 'pt12', name: 'Fabric Explosion', description: 'Dynamic burst of fabric in mid-air', category: 'Mystic', color: 'hsl(340 50% 55% / 0.2)' },
+  { id: 'pt13', name: 'Ethereal Glow', description: 'Soft halo lighting with dreamy atmosphere', category: 'Mystic', color: 'hsl(200 50% 65% / 0.2)' },
+  { id: 'pt14', name: 'Dark Moody Drape', description: 'Rich shadows with dramatic fabric draping', category: 'Mystic', color: 'hsl(250 30% 30% / 0.3)' },
+  { id: 'pt15', name: 'Surreal Levitation', description: 'Product defying gravity in an abstract scene', category: 'Mystic', color: 'hsl(180 40% 50% / 0.2)' },
+  // Showcase (5)
+  { id: 'pt16', name: 'Editorial Spread', description: 'Magazine-style editorial composition', category: 'Showcase', color: 'hsl(30 50% 60% / 0.2)' },
+  { id: 'pt17', name: 'Window Light Drape', description: 'Natural window light with soft fabric fall', category: 'Showcase', color: 'hsl(45 60% 70% / 0.2)' },
+  { id: 'pt18', name: 'Styled Flat Lay', description: 'Curated accessories and props around product', category: 'Showcase', color: 'hsl(15 45% 55% / 0.2)' },
+  { id: 'pt19', name: 'Textured Surface', description: 'Product on marble, wood, or fabric surface', category: 'Showcase', color: 'hsl(25 30% 50% / 0.2)' },
+  { id: 'pt20', name: 'Color Story', description: 'Monochromatic arrangement highlighting tones', category: 'Showcase', color: 'hsl(350 40% 55% / 0.2)' },
+];
+
+const TEMPLATE_CATEGORIES = ['All', 'Studio', 'E-commerce', 'Mystic', 'Showcase'] as const;
+
 /* ── Style presets ── */
 const STYLE_PRESETS = [
   { id: 'classic', name: 'Classic', desc: 'Clean studio, neutral tones, timeless', img: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80' },
@@ -253,6 +291,8 @@ const Studio = () => {
 
   // Shoot type selection (Step 2)
   const [shootType, setShootType] = useState<'product' | 'model' | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [templateCategory, setTemplateCategory] = useState<string>('All');
 
   const referenceInputRef = useRef<HTMLInputElement>(null);
   const modelUploadRef = useRef<HTMLInputElement>(null);
@@ -375,7 +415,8 @@ const Studio = () => {
 
   const handleCompleteStep2 = () => {
     if (shootType === 'product') {
-      completeStep(2, 'Product Shoot', 3);
+      const tpl = PRODUCT_SHOOT_TEMPLATES.find(t => t.id === selectedTemplate);
+      completeStep(2, tpl ? `Product · ${tpl.name}` : 'Product Shoot', 3);
     } else {
       const parts = [modelConfig.aiEngine === 'gemini' ? 'Gemini' : 'Runway'];
       if (modelConfig.gender) parts.push(modelConfig.gender);
