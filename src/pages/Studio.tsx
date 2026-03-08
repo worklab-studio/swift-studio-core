@@ -1843,13 +1843,17 @@ function Step5Config({ shots, exportFormats, setExportFormats, selectedShots, se
    ════════════════════════════════════════════════════════════════ */
 
 /* ── Step 1 Viewport ── */
-function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisPhase, productName, setProductName }: { 
+function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisPhase, productName, setProductName, modelChoice, removingBackground, onRemoveBackground, onKeepModel }: { 
   productImages: string[]; 
   productInfo: ProductInfo | null;
   analyzingProduct: boolean;
   analysisPhase: 'idle' | 'analyzing' | 'done';
   productName: string;
   setProductName: (name: string) => void;
+  modelChoice: 'remove' | 'keep' | null;
+  removingBackground: boolean;
+  onRemoveBackground: () => void;
+  onKeepModel: () => void;
 }) {
   const ANALYSIS_TEXTS = [
     'Analyzing image...',
