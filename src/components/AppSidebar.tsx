@@ -43,7 +43,7 @@ export const AppSidebar = () => {
     <aside className="fixed left-0 top-0 z-30 flex h-screen w-60 flex-col border-r bg-background py-6">
       {/* Logo */}
       <div className="px-6 mb-6">
-        <span className="font-['Instrument_Serif'] italic text-xl">Swift</span>
+        <span className="font-['Instrument_Serif'] italic text-xl text-primary">Swift</span>
         <span className="text-xl font-light ml-1">Studio</span>
       </div>
 

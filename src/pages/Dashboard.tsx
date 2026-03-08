@@ -65,7 +65,7 @@ const Dashboard = () => {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl">Good morning, {firstName}</h1>
+        <h1 className="text-3xl"><span className="text-primary">Good morning,</span> {firstName}</h1>
         <p className="text-muted-foreground mt-1">Here's your studio overview.</p>
       </div>
 
