@@ -88,6 +88,11 @@ interface GeneratedVideo {
   engine: string;
 }
 
+function ratioToCss(ratio: string): string {
+  const [w, h] = ratio.split(':').map(Number);
+  return `${w}/${h}`;
+}
+
 const VIDEO_STAGES = [
   'Analysing your shot...',
   'Building the scene...',
@@ -1112,6 +1117,7 @@ const Studio = () => {
                     setSelectedShots={setSelectedExportShots}
                     generatedVideo={generatedVideo}
                     onRegenerateAll={handleRegenerateAll}
+                    aspectRatio={aspectRatio}
                   />
                 )}
               </div>
@@ -1269,12 +1275,14 @@ const Studio = () => {
                     progress={generationProgress}
                     stage={generationStage}
                     shotCount={shotCount}
+                    aspectRatio={aspectRatio}
                   />
                 )}
                 {activeStep === 5 && (
                   <Step5Viewport
                     shots={generatedShots}
                     shotCount={shotCount}
+                    aspectRatio={aspectRatio}
                     onEditShot={handleEditShot}
                     onUndoEdit={handleUndoEdit}
                     onCopyLink={handleCopyLink}
@@ -1932,7 +1940,7 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
 }
 
 /* ── Step 5 Config (Left — Export Panel) ── */
-function Step5Config({ shots, exportFormat, setExportFormat, selectedShots, setSelectedShots, generatedVideo, onRegenerateAll }: {
+function Step5Config({ shots, exportFormat, setExportFormat, selectedShots, setSelectedShots, generatedVideo, onRegenerateAll, aspectRatio }: {
   shots: GeneratedShot[];
   exportFormat: string;
   setExportFormat: React.Dispatch<React.SetStateAction<string>>;
@@ -1940,6 +1948,7 @@ function Step5Config({ shots, exportFormat, setExportFormat, selectedShots, setS
   setSelectedShots: React.Dispatch<React.SetStateAction<Set<string>>>;
   generatedVideo: GeneratedVideo | null;
   onRegenerateAll: () => void;
+  aspectRatio: string;
 }) {
   const toggleShot = (id: string) => {
     setSelectedShots(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -1966,9 +1975,10 @@ function Step5Config({ shots, exportFormat, setExportFormat, selectedShots, setS
               <button
                 key={shot.id}
                 onClick={() => toggleShot(shot.id)}
-                className={`relative rounded-md overflow-hidden aspect-square ${
+                className={`relative rounded-md overflow-hidden ${
                   selectedShots.has(shot.id) ? 'ring-2 ring-primary' : 'opacity-50'
                 }`}
+                style={{ aspectRatio: ratioToCss(aspectRatio) }}
               >
                 <img src={shot.url} alt={shot.shotLabel} className="w-full h-full object-cover" />
                 {selectedShots.has(shot.id) && (
@@ -2477,10 +2487,11 @@ function Step3Viewport({ selectedPreset, selectedPresetData, referenceImage }: {
 }
 
 /* ── Step 4 Viewport (Generating) ── */
-function Step4Viewport({ progress, stage, shotCount }: {
+function Step4Viewport({ progress, stage, shotCount, aspectRatio }: {
   progress: number;
   stage: string;
   shotCount: string;
+  aspectRatio: string;
 }) {
   const isCampaign = shotCount === 'campaign';
 
@@ -2500,16 +2511,13 @@ function Step4Viewport({ progress, stage, shotCount }: {
       <div className="w-full max-w-2xl mt-4">
         {isCampaign ? (
           <div className="grid grid-cols-3 gap-3">
-            <Skeleton className="aspect-square rounded-xl" />
-            <Skeleton className="aspect-square rounded-xl" />
-            <Skeleton className="aspect-square rounded-xl" />
-            <Skeleton className="aspect-square rounded-xl" />
-            <Skeleton className="aspect-square rounded-xl" />
-            <Skeleton className="aspect-square rounded-xl" />
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="rounded-xl" style={{ aspectRatio: ratioToCss(aspectRatio) }} />
+            ))}
           </div>
         ) : (
           <div className="max-w-xs mx-auto">
-            <Skeleton className="aspect-[4/5] rounded-xl" />
+            <Skeleton className="rounded-xl" style={{ aspectRatio: ratioToCss(aspectRatio) }} />
           </div>
         )}
       </div>
@@ -2518,9 +2526,10 @@ function Step4Viewport({ progress, stage, shotCount }: {
 }
 
 /* ── Step 5 Viewport (Results) ── */
-function Step5Viewport({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, updateShot, videoExpanded, setVideoExpanded, videoConfig, setVideoConfig, videoGenerating, videoStage, generatedVideo, onGenerateVideo, onCancelVideo, setGeneratedVideo, creditsRemaining, onGenerate }: {
+function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, onCopyLink, updateShot, videoExpanded, setVideoExpanded, videoConfig, setVideoConfig, videoGenerating, videoStage, generatedVideo, onGenerateVideo, onCancelVideo, setGeneratedVideo, creditsRemaining, onGenerate }: {
   shots: GeneratedShot[];
   shotCount: string;
+  aspectRatio: string;
   onEditShot: (shot: GeneratedShot) => void;
   onUndoEdit: (shot: GeneratedShot) => void;
   onCopyLink: (url: string) => void;
@@ -2552,12 +2561,12 @@ function Step5Viewport({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, u
       {isCampaign ? (
         <div className="grid grid-cols-3 gap-4">
           {shots.map((shot, i) => (
-            <ShotCard key={shot.id} shot={shot} index={i} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />
+            <ShotCard key={shot.id} shot={shot} index={i} aspectRatio={aspectRatio} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />
           ))}
         </div>
       ) : (
         <div className="max-w-lg">
-          {shots[0] && <ShotCard shot={shots[0]} index={0} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />}
+          {shots[0] && <ShotCard shot={shots[0]} index={0} aspectRatio={aspectRatio} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />}
         </div>
       )}
 
@@ -2684,9 +2693,10 @@ function Step5Viewport({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, u
 /* ════════════════════════════════════════════════
    ShotCard Component
    ════════════════════════════════════════════════ */
-function ShotCard({ shot, index, onEdit, onUndo, onCopyLink, updateShot }: {
+function ShotCard({ shot, index, aspectRatio = '1:1', onEdit, onUndo, onCopyLink, updateShot }: {
   shot: GeneratedShot;
   index: number;
+  aspectRatio?: string;
   onEdit: (shot: GeneratedShot) => void;
   onUndo: (shot: GeneratedShot) => void;
   onCopyLink: (url: string) => void;
@@ -2694,7 +2704,7 @@ function ShotCard({ shot, index, onEdit, onUndo, onCopyLink, updateShot }: {
 }) {
   return (
     <div className="rounded-xl overflow-hidden border bg-card animate-in fade-in duration-300" style={{ animationDelay: `${index * 100}ms` }}>
-      <div className="relative aspect-square overflow-hidden bg-muted">
+      <div className="relative overflow-hidden bg-muted" style={{ aspectRatio: ratioToCss(aspectRatio) }}>
         <img
           src={shot.url}
           alt={SHOT_LABEL_DISPLAY[shot.shotLabel] || shot.shotLabel}
