@@ -106,7 +106,7 @@ const SHOT_LABEL_DISPLAY: Record<string, string> = {
   editorial: 'Editorial',
 };
 
-/* ── Placeholder models ── */
+/* ── Placeholder models (40) ── */
 const PLACEHOLDER_MODELS = [
   { id: 'm1', name: 'Priya', attrs: 'F · South Asian · Slim', color: 'hsl(355 82% 56% / 0.2)' },
   { id: 'm2', name: 'Amara', attrs: 'F · Black · Athletic', color: 'hsl(30 80% 55% / 0.2)' },
@@ -118,6 +118,36 @@ const PLACEHOLDER_MODELS = [
   { id: 'm8', name: 'James', attrs: 'M · Caucasian · Average', color: 'hsl(100 40% 55% / 0.2)' },
   { id: 'm9', name: 'Kenzo', attrs: 'M · East Asian · Slim', color: 'hsl(190 50% 55% / 0.2)' },
   { id: 'm10', name: 'Nia', attrs: 'F · Black · Plus Size', color: 'hsl(20 70% 55% / 0.2)' },
+  { id: 'm11', name: 'Aisha', attrs: 'F · Middle Eastern · Athletic', color: 'hsl(45 70% 55% / 0.2)' },
+  { id: 'm12', name: 'Liam', attrs: 'M · Caucasian · Slim', color: 'hsl(210 55% 55% / 0.2)' },
+  { id: 'm13', name: 'Yuki', attrs: 'F · East Asian · Average', color: 'hsl(320 50% 55% / 0.2)' },
+  { id: 'm14', name: 'Carlos', attrs: 'M · Latino · Athletic', color: 'hsl(15 65% 55% / 0.2)' },
+  { id: 'm15', name: 'Zara', attrs: 'F · Mixed · Slim', color: 'hsl(280 55% 55% / 0.2)' },
+  { id: 'm16', name: 'Dev', attrs: 'M · South Asian · Average', color: 'hsl(170 50% 55% / 0.2)' },
+  { id: 'm17', name: 'Keiko', attrs: 'F · East Asian · Curvy', color: 'hsl(240 45% 55% / 0.2)' },
+  { id: 'm18', name: 'Marcus', attrs: 'M · Black · Athletic', color: 'hsl(10 75% 55% / 0.2)' },
+  { id: 'm19', name: 'Anya', attrs: 'F · Caucasian · Slim', color: 'hsl(300 50% 55% / 0.2)' },
+  { id: 'm20', name: 'Omar', attrs: 'M · Middle Eastern · Average', color: 'hsl(50 60% 55% / 0.2)' },
+  { id: 'm21', name: 'Luna', attrs: 'F · Latina · Slim', color: 'hsl(330 65% 55% / 0.2)' },
+  { id: 'm22', name: 'Ravi', attrs: 'M · South Asian · Slim', color: 'hsl(180 50% 55% / 0.2)' },
+  { id: 'm23', name: 'Hana', attrs: 'F · Southeast Asian · Average', color: 'hsl(140 45% 55% / 0.2)' },
+  { id: 'm24', name: 'Ethan', attrs: 'M · Caucasian · Athletic', color: 'hsl(230 50% 55% / 0.2)' },
+  { id: 'm25', name: 'Jasmine', attrs: 'F · Mixed · Athletic', color: 'hsl(60 55% 55% / 0.2)' },
+  { id: 'm26', name: 'Kofi', attrs: 'M · Black · Slim', color: 'hsl(25 70% 55% / 0.2)' },
+  { id: 'm27', name: 'Nina', attrs: 'F · Caucasian · Plus Size', color: 'hsl(310 50% 55% / 0.2)' },
+  { id: 'm28', name: 'Takeshi', attrs: 'M · East Asian · Athletic', color: 'hsl(195 55% 55% / 0.2)' },
+  { id: 'm29', name: 'Isla', attrs: 'F · Mixed · Curvy', color: 'hsl(350 60% 55% / 0.2)' },
+  { id: 'm30', name: 'Hassan', attrs: 'M · Middle Eastern · Slim', color: 'hsl(155 50% 55% / 0.2)' },
+  { id: 'm31', name: 'Valentina', attrs: 'F · Latina · Athletic', color: 'hsl(5 75% 55% / 0.2)' },
+  { id: 'm32', name: 'Jin', attrs: 'M · East Asian · Average', color: 'hsl(205 50% 55% / 0.2)' },
+  { id: 'm33', name: 'Adaeze', attrs: 'F · Black · Slim', color: 'hsl(35 65% 55% / 0.2)' },
+  { id: 'm34', name: 'Noah', attrs: 'M · Caucasian · Plus Size', color: 'hsl(120 40% 55% / 0.2)' },
+  { id: 'm35', name: 'Suki', attrs: 'F · Southeast Asian · Slim', color: 'hsl(260 50% 55% / 0.2)' },
+  { id: 'm36', name: 'Mateo', attrs: 'M · Latino · Slim', color: 'hsl(40 60% 55% / 0.2)' },
+  { id: 'm37', name: 'Leila', attrs: 'F · Middle Eastern · Curvy', color: 'hsl(175 50% 55% / 0.2)' },
+  { id: 'm38', name: 'Daniel', attrs: 'M · Mixed · Athletic', color: 'hsl(85 45% 55% / 0.2)' },
+  { id: 'm39', name: 'Chioma', attrs: 'F · Black · Athletic', color: 'hsl(15 80% 55% / 0.2)' },
+  { id: 'm40', name: 'Raj', attrs: 'M · South Asian · Curvy', color: 'hsl(290 50% 55% / 0.2)' },
 ];
 
 /* ── Style presets ── */
@@ -220,6 +250,9 @@ const Studio = () => {
   const [analyzingProduct, setAnalyzingProduct] = useState(false);
   const [analysisPhase, setAnalysisPhase] = useState<'idle' | 'analyzing' | 'done'>('idle');
   const [productName, setProductName] = useState('');
+
+  // Shoot type selection (Step 2)
+  const [shootType, setShootType] = useState<'product' | 'model' | null>(null);
 
   const referenceInputRef = useRef<HTMLInputElement>(null);
   const modelUploadRef = useRef<HTMLInputElement>(null);
@@ -341,8 +374,8 @@ const Studio = () => {
   }, []);
 
   const handleCompleteStep2 = () => {
-    if (project?.shot_type === 'product_showcase') {
-      completeStep(2, 'Product Showcase', 3);
+    if (shootType === 'product') {
+      completeStep(2, 'Product Shoot', 3);
     } else {
       const parts = [modelConfig.aiEngine === 'gemini' ? 'Gemini' : 'Runway'];
       if (modelConfig.gender) parts.push(modelConfig.gender);
@@ -391,8 +424,8 @@ const Studio = () => {
       const { data, error } = await supabase.functions.invoke('generate-shots', {
         body: {
           projectId: project.id, preset: selectedPreset, shotCount, additionalContext,
-          category: project.category, shotType: project.shot_type,
-          modelConfig: project.shot_type === 'model_shot' ? modelConfig : null,
+          category: project.category, shotType: shootType === 'model' ? 'model_shot' : 'product_showcase',
+          modelConfig: shootType === 'model' ? modelConfig : null,
         },
       });
       clearInterval(progressInterval);
@@ -622,7 +655,8 @@ const Studio = () => {
             )}
             {activeStep === 2 && (
               <Step2Config
-                project={project}
+                shootType={shootType}
+                setShootType={setShootType}
                 modelConfig={modelConfig}
                 setModelConfig={setModelConfig}
                 modelUploadRef={modelUploadRef}
@@ -677,7 +711,7 @@ const Studio = () => {
             </Button>
           )}
           {activeStep === 2 && (
-            <Button className="w-full" onClick={handleCompleteStep2}>
+            <Button className="w-full" disabled={!shootType} onClick={handleCompleteStep2}>
               Continue to Style
             </Button>
           )}
@@ -713,8 +747,9 @@ const Studio = () => {
           <div className="p-8 min-h-full overflow-y-auto h-full">
             {activeStep === 2 && (
               <Step2Viewport
-                project={project}
+                shootType={shootType}
                 modelConfig={modelConfig}
+                setModelConfig={setModelConfig}
                 selectedModelData={selectedModelData}
               />
             )}
@@ -861,134 +896,150 @@ function Step1Config({ productImages, productUploadRef, onUpload, onRemove }: {
 }
 
 /* ── Step 2 Config (Left) ── */
-function Step2Config({ project, modelConfig, setModelConfig, modelUploadRef, onModelUpload }: {
-  project: Project;
+function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload }: {
+  shootType: 'product' | 'model' | null;
+  setShootType: React.Dispatch<React.SetStateAction<'product' | 'model' | null>>;
   modelConfig: ModelConfig;
   setModelConfig: React.Dispatch<React.SetStateAction<ModelConfig>>;
   modelUploadRef: React.RefObject<HTMLInputElement>;
   onModelUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
-  if (project.shot_type === 'product_showcase') {
-    return (
-      <div className="space-y-4">
-        <div className="rounded-lg border bg-muted/50 p-4 flex items-center gap-3">
-          <Package className="h-5 w-5 text-muted-foreground shrink-0" />
-          <p className="text-sm text-muted-foreground">Product Showcase — no model needed.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
-      <p className="text-sm font-semibold text-foreground">Select model</p>
-      <div className="grid grid-cols-2 gap-1.5 max-h-[200px] overflow-y-auto pr-1">
-        {PLACEHOLDER_MODELS.map((m) => (
-          <button
-            key={m.id}
-            onClick={() => setModelConfig(prev => ({ ...prev, selectedModel: m.id, uploadedModelUrl: null }))}
-            className={`rounded-lg overflow-hidden border transition-all text-left ${
-              modelConfig.selectedModel === m.id ? 'ring-2 ring-primary ring-offset-1' : 'hover:border-primary/50'
-            }`}
-          >
-            <div className="aspect-[3/2]" style={{ background: m.color }} />
-            <div className="p-1.5">
-              <p className="text-[11px] font-medium">{m.name}</p>
-              <p className="text-[9px] text-muted-foreground">{m.attrs}</p>
-            </div>
-          </button>
-        ))}
+      <div>
+        <p className="text-sm font-semibold text-foreground">Shoot Type</p>
+        <p className="text-xs text-muted-foreground mt-1">Choose how your product will be presented.</p>
       </div>
 
-      {/* Upload */}
-      <input ref={modelUploadRef} type="file" accept="image/jpeg,image/png" className="hidden" onChange={onModelUpload} />
-      {modelConfig.uploadedModelUrl ? (
-        <div className="relative w-20 h-24 rounded-lg overflow-hidden border">
-          <img src={modelConfig.uploadedModelUrl} alt="Custom model" className="w-full h-full object-cover" />
-          <button onClick={() => setModelConfig(prev => ({ ...prev, uploadedModelUrl: null }))} className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-background/80 flex items-center justify-center">
-            <X className="h-2.5 w-2.5" />
-          </button>
-        </div>
-      ) : (
-        <button onClick={() => modelUploadRef.current?.click()} className="w-full h-16 rounded-lg border-2 border-dashed border-border flex items-center justify-center gap-2 hover:border-primary/50 transition-colors">
-          <Upload className="h-4 w-4 text-muted-foreground" />
-          <p className="text-xs text-muted-foreground">Upload custom model</p>
+      {/* Shoot type cards */}
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          onClick={() => setShootType('product')}
+          className={`rounded-lg border p-4 text-left transition-all ${
+            shootType === 'product' ? 'ring-2 ring-primary ring-offset-1' : 'hover:border-primary/50'
+          }`}
+        >
+          <Package className="h-5 w-5 text-muted-foreground mb-2" />
+          <p className="text-xs font-semibold">Product Shoot</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">Clean product-only shots</p>
         </button>
+        <button
+          onClick={() => setShootType('model')}
+          className={`rounded-lg border p-4 text-left transition-all ${
+            shootType === 'model' ? 'ring-2 ring-primary ring-offset-1' : 'hover:border-primary/50'
+          }`}
+        >
+          <ImageIcon className="h-5 w-5 text-muted-foreground mb-2" />
+          <p className="text-xs font-semibold">Model Shoot</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">Product on AI model</p>
+        </button>
+      </div>
+
+      {/* Product shoot confirmation */}
+      {shootType === 'product' && (
+        <div className="rounded-lg border bg-muted/50 p-3 animate-in fade-in duration-200">
+          <p className="text-xs text-muted-foreground">Your product will be placed in professional studio scenes — no model needed.</p>
+        </div>
       )}
 
-      <Separator />
+      {/* Model shoot settings */}
+      {shootType === 'model' && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+          <Separator />
 
-      {/* Attributes */}
-      <div className="space-y-2">
-        <div className="space-y-1">
-          <label className="text-xs font-medium">Gender</label>
-          <Select value={modelConfig.gender} onValueChange={v => setModelConfig(prev => ({ ...prev, gender: v }))}>
-            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Female">Female</SelectItem>
-              <SelectItem value="Male">Male</SelectItem>
-              <SelectItem value="Non-binary">Non-binary</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-medium">Ethnicity</label>
-          <Select value={modelConfig.ethnicity} onValueChange={v => setModelConfig(prev => ({ ...prev, ethnicity: v }))}>
-            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-            <SelectContent>
-              {['South Asian', 'East Asian', 'Southeast Asian', 'Black / African', 'White / Caucasian', 'Latina / Hispanic', 'Middle Eastern', 'Mixed', 'Other'].map(e => (
-                <SelectItem key={e} value={e}>{e}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-medium">Body Type</label>
-          <Select value={modelConfig.bodyType} onValueChange={v => setModelConfig(prev => ({ ...prev, bodyType: v }))}>
-            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-            <SelectContent>
-              {['Slim', 'Athletic', 'Average', 'Curvy', 'Plus Size'].map(b => (
-                <SelectItem key={b} value={b}>{b}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-medium">Background</label>
-          <Select value={modelConfig.background} onValueChange={v => setModelConfig(prev => ({ ...prev, background: v }))}>
-            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectLabel>Lifestyle</SelectLabel>
-                <SelectItem value="café">Café</SelectItem>
-                <SelectItem value="street">Street</SelectItem>
-                <SelectItem value="garden">Garden</SelectItem>
-                <SelectItem value="beach">Beach</SelectItem>
-                <SelectItem value="urban">Urban rooftop</SelectItem>
-              </SelectGroup>
-              <SelectGroup>
-                <SelectLabel>Studio</SelectLabel>
-                <SelectItem value="white-sweep">White sweep</SelectItem>
-                <SelectItem value="gray-seamless">Gray seamless</SelectItem>
-                <SelectItem value="dark-studio">Dark studio</SelectItem>
-                <SelectItem value="colored-gel">Colored gel</SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+          {/* Upload */}
+          <input ref={modelUploadRef} type="file" accept="image/jpeg,image/png" className="hidden" onChange={onModelUpload} />
+          {modelConfig.uploadedModelUrl ? (
+            <div className="relative w-20 h-24 rounded-lg overflow-hidden border">
+              <img src={modelConfig.uploadedModelUrl} alt="Custom model" className="w-full h-full object-cover" />
+              <button onClick={() => setModelConfig(prev => ({ ...prev, uploadedModelUrl: null }))} className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-background/80 flex items-center justify-center">
+                <X className="h-2.5 w-2.5" />
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => modelUploadRef.current?.click()} className="w-full h-16 rounded-lg border-2 border-dashed border-border flex items-center justify-center gap-2 hover:border-primary/50 transition-colors">
+              <Upload className="h-4 w-4 text-muted-foreground" />
+              <p className="text-xs text-muted-foreground">Upload custom model</p>
+            </button>
+          )}
 
-      <Separator />
+          <Separator />
 
-      {/* AI Engine */}
-      <div className="space-y-1">
-        <label className="text-xs font-medium">AI Engine</label>
-        <ToggleGroup type="single" value={modelConfig.aiEngine} onValueChange={v => v && setModelConfig(prev => ({ ...prev, aiEngine: v }))} className="justify-start">
-          <ToggleGroupItem value="gemini" className="px-3 h-7 text-xs">Gemini</ToggleGroupItem>
-          <ToggleGroupItem value="runway" className="px-3 h-7 text-xs">Runway</ToggleGroupItem>
-        </ToggleGroup>
-        <p className="text-[10px] text-muted-foreground">Gemini is faster. Runway has better lighting.</p>
-      </div>
+          {/* Attributes */}
+          <div className="space-y-2">
+            <div className="space-y-1">
+              <label className="text-xs font-medium">Gender</label>
+              <Select value={modelConfig.gender} onValueChange={v => setModelConfig(prev => ({ ...prev, gender: v }))}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Female">Female</SelectItem>
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Non-binary">Non-binary</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium">Ethnicity</label>
+              <Select value={modelConfig.ethnicity} onValueChange={v => setModelConfig(prev => ({ ...prev, ethnicity: v }))}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  {['South Asian', 'East Asian', 'Southeast Asian', 'Black / African', 'White / Caucasian', 'Latina / Hispanic', 'Middle Eastern', 'Mixed', 'Other'].map(e => (
+                    <SelectItem key={e} value={e}>{e}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium">Body Type</label>
+              <Select value={modelConfig.bodyType} onValueChange={v => setModelConfig(prev => ({ ...prev, bodyType: v }))}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  {['Slim', 'Athletic', 'Average', 'Curvy', 'Plus Size'].map(b => (
+                    <SelectItem key={b} value={b}>{b}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium">Background</label>
+              <Select value={modelConfig.background} onValueChange={v => setModelConfig(prev => ({ ...prev, background: v }))}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Lifestyle</SelectLabel>
+                    <SelectItem value="café">Café</SelectItem>
+                    <SelectItem value="street">Street</SelectItem>
+                    <SelectItem value="garden">Garden</SelectItem>
+                    <SelectItem value="beach">Beach</SelectItem>
+                    <SelectItem value="urban">Urban rooftop</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Studio</SelectLabel>
+                    <SelectItem value="white-sweep">White sweep</SelectItem>
+                    <SelectItem value="gray-seamless">Gray seamless</SelectItem>
+                    <SelectItem value="dark-studio">Dark studio</SelectItem>
+                    <SelectItem value="colored-gel">Colored gel</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* AI Engine */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium">AI Engine</label>
+            <ToggleGroup type="single" value={modelConfig.aiEngine} onValueChange={v => v && setModelConfig(prev => ({ ...prev, aiEngine: v }))} className="justify-start">
+              <ToggleGroupItem value="gemini" className="px-3 h-7 text-xs">Gemini</ToggleGroupItem>
+              <ToggleGroupItem value="runway" className="px-3 h-7 text-xs">Runway</ToggleGroupItem>
+            </ToggleGroup>
+            <p className="text-[10px] text-muted-foreground">Gemini is faster. Runway has better lighting.</p>
+          </div>
+
+          <p className="text-[10px] text-muted-foreground">Select a model from the grid on the right →</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -1395,65 +1446,79 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
 }
 
 /* ── Step 2 Viewport ── */
-function Step2Viewport({ project, modelConfig, selectedModelData }: {
-  project: Project;
+function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelData }: {
+  shootType: 'product' | 'model' | null;
   modelConfig: ModelConfig;
+  setModelConfig: React.Dispatch<React.SetStateAction<ModelConfig>>;
   selectedModelData: typeof PLACEHOLDER_MODELS[0] | undefined;
 }) {
-  if (project.shot_type === 'product_showcase') {
+  // No shoot type selected yet
+  if (!shootType) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 text-center animate-in fade-in duration-300">
+        <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center">
+          <Camera className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <div>
+          <p className="font-medium">Choose a shoot type</p>
+          <p className="text-sm text-muted-foreground mt-1">Select Product Shoot or Model Shoot on the left to continue.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Product shoot
+  if (shootType === 'product') {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-center animate-in fade-in duration-300">
         <div className="h-20 w-20 rounded-2xl bg-muted flex items-center justify-center">
           <Package className="h-10 w-10 text-muted-foreground" />
         </div>
         <div>
-          <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Product Showcase</p>
-          <p className="text-sm text-muted-foreground mt-1">Your product will be placed in professional scenes.</p>
+          <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Product Shoot</p>
+          <p className="text-sm text-muted-foreground mt-1">Your product will be placed in professional studio scenes.</p>
         </div>
       </div>
     );
   }
 
-  // Show uploaded model
-  if (modelConfig.uploadedModelUrl) {
-    return (
-      <div className="flex items-center justify-center h-full animate-in fade-in duration-300">
-        <div className="max-w-md w-full">
-          <img src={modelConfig.uploadedModelUrl} alt="Custom model" className="w-full rounded-2xl shadow-lg object-cover aspect-[3/4]" />
-          <p className="text-sm text-muted-foreground text-center mt-4">Custom uploaded model</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show selected model
-  if (selectedModelData) {
-    return (
-      <div className="flex items-center justify-center h-full animate-in fade-in duration-300">
-        <div className="max-w-sm w-full">
-          <div className="aspect-[3/4] rounded-2xl overflow-hidden shadow-lg" style={{ background: selectedModelData.color }}>
-            <div className="h-full flex flex-col items-center justify-end p-6">
-              <div className="bg-background/90 backdrop-blur-sm rounded-xl p-4 w-full text-center">
-                <p className="font-semibold text-lg">{selectedModelData.name}</p>
-                <p className="text-sm text-muted-foreground">{selectedModelData.attrs}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Empty state
+  // Model shoot — show 40-model grid
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-4 text-center animate-in fade-in duration-300">
-      <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center">
-        <ImageIcon className="h-8 w-8 text-muted-foreground" />
+    <div className="h-full flex flex-col animate-in fade-in duration-300">
+      <div className="shrink-0 mb-4">
+        <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Choose an AI Model</p>
+        <p className="text-sm text-muted-foreground mt-1">Select a model for your shoot. {selectedModelData ? `Selected: ${selectedModelData.name}` : 'Click to select.'}</p>
       </div>
-      <div>
-        <p className="font-medium">Select a model</p>
-        <p className="text-sm text-muted-foreground mt-1">Choose from our library or upload your own to preview here.</p>
-      </div>
+      <ScrollArea className="flex-1">
+        <div className="grid grid-cols-5 gap-3 pb-4">
+          {PLACEHOLDER_MODELS.map((m) => {
+            const isSelected = modelConfig.selectedModel === m.id;
+            return (
+              <button
+                key={m.id}
+                onClick={() => setModelConfig(prev => ({ ...prev, selectedModel: prev.selectedModel === m.id ? null : m.id, uploadedModelUrl: null }))}
+                className={`rounded-xl overflow-hidden border transition-all text-left ${
+                  isSelected ? 'ring-2 ring-primary ring-offset-2' : 'hover:border-primary/50 hover:shadow-md'
+                }`}
+              >
+                <div className="aspect-[3/4]" style={{ background: m.color }}>
+                  {isSelected && (
+                    <div className="h-full flex items-center justify-center">
+                      <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                        <Check className="h-4 w-4 text-primary-foreground" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="p-2">
+                  <p className="text-xs font-medium truncate">{m.name}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{m.attrs}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </ScrollArea>
     </div>
   );
 }
