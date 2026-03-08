@@ -106,7 +106,7 @@ const NewProjectDialog = () => {
                   className={cn(
                     'px-3 py-2 cursor-pointer transition-all',
                     category === c.id
-                      ? 'bg-primary/10 border-primary/30'
+                      ? 'border-primary/30'
                       : 'hover:border-muted-foreground/20'
                   )}
                 >
