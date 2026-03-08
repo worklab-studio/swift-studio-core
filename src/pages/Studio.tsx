@@ -150,6 +150,44 @@ const PLACEHOLDER_MODELS = [
   { id: 'm40', name: 'Raj', attrs: 'M · South Asian · Curvy', color: 'hsl(290 50% 55% / 0.2)' },
 ];
 
+/* ── Product Shoot Templates ── */
+interface ProductTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: 'Studio' | 'E-commerce' | 'Mystic' | 'Showcase';
+  color: string;
+}
+
+const PRODUCT_SHOOT_TEMPLATES: ProductTemplate[] = [
+  // Studio (5)
+  { id: 'pt1', name: 'Mannequin Front', description: 'Product displayed on mannequin, front-facing', category: 'Studio', color: 'hsl(220 15% 70% / 0.25)' },
+  { id: 'pt2', name: 'Mannequin 3/4 Angle', description: 'Three-quarter view on mannequin with depth', category: 'Studio', color: 'hsl(220 15% 65% / 0.25)' },
+  { id: 'pt3', name: 'Ghost Mannequin', description: 'Invisible mannequin effect, clean silhouette', category: 'Studio', color: 'hsl(220 15% 60% / 0.25)' },
+  { id: 'pt4', name: 'Hanging on Rail', description: 'Product hanging on a professional clothing rail', category: 'Studio', color: 'hsl(220 15% 55% / 0.25)' },
+  { id: 'pt5', name: 'Folded Stack', description: 'Neatly folded product in a stacked arrangement', category: 'Studio', color: 'hsl(220 15% 50% / 0.25)' },
+  // E-commerce (5)
+  { id: 'pt6', name: 'White Flat Lay', description: 'Flat lay on pure white background', category: 'E-commerce', color: 'hsl(0 0% 92% / 0.4)' },
+  { id: 'pt7', name: 'Hanger with Shadow', description: 'Hanging product with dramatic drop shadow', category: 'E-commerce', color: 'hsl(0 0% 85% / 0.35)' },
+  { id: 'pt8', name: 'Pack Shot Grid', description: 'Multiple angles in a grid layout', category: 'E-commerce', color: 'hsl(0 0% 88% / 0.35)' },
+  { id: 'pt9', name: 'Size Comparison', description: 'Product shown with scale reference objects', category: 'E-commerce', color: 'hsl(0 0% 82% / 0.35)' },
+  { id: 'pt10', name: 'Tag Close-up', description: 'Detail shot highlighting labels and tags', category: 'E-commerce', color: 'hsl(0 0% 78% / 0.35)' },
+  // Mystic (5)
+  { id: 'pt11', name: 'Floating in Mist', description: 'Product suspended in ethereal fog', category: 'Mystic', color: 'hsl(270 40% 60% / 0.2)' },
+  { id: 'pt12', name: 'Fabric Explosion', description: 'Dynamic burst of fabric in mid-air', category: 'Mystic', color: 'hsl(340 50% 55% / 0.2)' },
+  { id: 'pt13', name: 'Ethereal Glow', description: 'Soft halo lighting with dreamy atmosphere', category: 'Mystic', color: 'hsl(200 50% 65% / 0.2)' },
+  { id: 'pt14', name: 'Dark Moody Drape', description: 'Rich shadows with dramatic fabric draping', category: 'Mystic', color: 'hsl(250 30% 30% / 0.3)' },
+  { id: 'pt15', name: 'Surreal Levitation', description: 'Product defying gravity in an abstract scene', category: 'Mystic', color: 'hsl(180 40% 50% / 0.2)' },
+  // Showcase (5)
+  { id: 'pt16', name: 'Editorial Spread', description: 'Magazine-style editorial composition', category: 'Showcase', color: 'hsl(30 50% 60% / 0.2)' },
+  { id: 'pt17', name: 'Window Light Drape', description: 'Natural window light with soft fabric fall', category: 'Showcase', color: 'hsl(45 60% 70% / 0.2)' },
+  { id: 'pt18', name: 'Styled Flat Lay', description: 'Curated accessories and props around product', category: 'Showcase', color: 'hsl(15 45% 55% / 0.2)' },
+  { id: 'pt19', name: 'Textured Surface', description: 'Product on marble, wood, or fabric surface', category: 'Showcase', color: 'hsl(25 30% 50% / 0.2)' },
+  { id: 'pt20', name: 'Color Story', description: 'Monochromatic arrangement highlighting tones', category: 'Showcase', color: 'hsl(350 40% 55% / 0.2)' },
+];
+
+const TEMPLATE_CATEGORIES = ['All', 'Studio', 'E-commerce', 'Mystic', 'Showcase'] as const;
+
 /* ── Style presets ── */
 const STYLE_PRESETS = [
   { id: 'classic', name: 'Classic', desc: 'Clean studio, neutral tones, timeless', img: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80' },
@@ -253,6 +291,8 @@ const Studio = () => {
 
   // Shoot type selection (Step 2)
   const [shootType, setShootType] = useState<'product' | 'model' | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [templateCategory, setTemplateCategory] = useState<string>('All');
 
   const referenceInputRef = useRef<HTMLInputElement>(null);
   const modelUploadRef = useRef<HTMLInputElement>(null);
@@ -375,7 +415,8 @@ const Studio = () => {
 
   const handleCompleteStep2 = () => {
     if (shootType === 'product') {
-      completeStep(2, 'Product Shoot', 3);
+      const tpl = PRODUCT_SHOOT_TEMPLATES.find(t => t.id === selectedTemplate);
+      completeStep(2, tpl ? `Product · ${tpl.name}` : 'Product Shoot', 3);
     } else {
       const parts = [modelConfig.aiEngine === 'gemini' ? 'Gemini' : 'Runway'];
       if (modelConfig.gender) parts.push(modelConfig.gender);
@@ -661,6 +702,10 @@ const Studio = () => {
                 setModelConfig={setModelConfig}
                 modelUploadRef={modelUploadRef}
                 onModelUpload={handleModelUpload}
+                selectedTemplate={selectedTemplate}
+                setSelectedTemplate={setSelectedTemplate}
+                templateCategory={templateCategory}
+                setTemplateCategory={setTemplateCategory}
               />
             )}
             {activeStep === 3 && (
@@ -711,7 +756,7 @@ const Studio = () => {
             </Button>
           )}
           {activeStep === 2 && (
-            <Button className="w-full" disabled={!shootType} onClick={handleCompleteStep2}>
+            <Button className="w-full" disabled={!shootType || (shootType === 'product' && !selectedTemplate)} onClick={handleCompleteStep2}>
               Continue to Style
             </Button>
           )}
@@ -751,6 +796,9 @@ const Studio = () => {
                 modelConfig={modelConfig}
                 setModelConfig={setModelConfig}
                 selectedModelData={selectedModelData}
+                selectedTemplate={selectedTemplate}
+                setSelectedTemplate={setSelectedTemplate}
+                templateCategory={templateCategory}
               />
             )}
             {activeStep === 3 && (
@@ -896,14 +944,22 @@ function Step1Config({ productImages, productUploadRef, onUpload, onRemove }: {
 }
 
 /* ── Step 2 Config (Left) ── */
-function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload }: {
+function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload, selectedTemplate, setSelectedTemplate, templateCategory, setTemplateCategory }: {
   shootType: 'product' | 'model' | null;
   setShootType: React.Dispatch<React.SetStateAction<'product' | 'model' | null>>;
   modelConfig: ModelConfig;
   setModelConfig: React.Dispatch<React.SetStateAction<ModelConfig>>;
   modelUploadRef: React.RefObject<HTMLInputElement>;
   onModelUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  selectedTemplate: string | null;
+  setSelectedTemplate: React.Dispatch<React.SetStateAction<string | null>>;
+  templateCategory: string;
+  setTemplateCategory: React.Dispatch<React.SetStateAction<string>>;
 }) {
+  const filteredTemplates = templateCategory === 'All'
+    ? PRODUCT_SHOOT_TEMPLATES
+    : PRODUCT_SHOOT_TEMPLATES.filter(t => t.category === templateCategory);
+
   return (
     <div className="space-y-4">
       <div>
@@ -935,10 +991,31 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
         </button>
       </div>
 
-      {/* Product shoot confirmation */}
+      {/* Product shoot — category filter */}
       {shootType === 'product' && (
-        <div className="rounded-lg border bg-muted/50 p-3 animate-in fade-in duration-200">
-          <p className="text-xs text-muted-foreground">Your product will be placed in professional studio scenes — no model needed.</p>
+        <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+          <Separator />
+          <p className="text-xs font-medium">Scene Template</p>
+          <div className="flex flex-wrap gap-1">
+            {TEMPLATE_CATEGORIES.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setTemplateCategory(cat)}
+                className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${
+                  templateCategory === cat
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-accent'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            {selectedTemplate
+              ? `Selected: ${PRODUCT_SHOOT_TEMPLATES.find(t => t.id === selectedTemplate)?.name}`
+              : 'Select a template from the grid on the right →'}
+          </p>
         </div>
       )}
 
@@ -1446,12 +1523,19 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
 }
 
 /* ── Step 2 Viewport ── */
-function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelData }: {
+function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelData, selectedTemplate, setSelectedTemplate, templateCategory }: {
   shootType: 'product' | 'model' | null;
   modelConfig: ModelConfig;
   setModelConfig: React.Dispatch<React.SetStateAction<ModelConfig>>;
   selectedModelData: typeof PLACEHOLDER_MODELS[0] | undefined;
+  selectedTemplate: string | null;
+  setSelectedTemplate: React.Dispatch<React.SetStateAction<string | null>>;
+  templateCategory: string;
 }) {
+  const filteredTemplates = templateCategory === 'All'
+    ? PRODUCT_SHOOT_TEMPLATES
+    : PRODUCT_SHOOT_TEMPLATES.filter(t => t.category === templateCategory);
+
   // No shoot type selected yet
   if (!shootType) {
     return (
@@ -1467,17 +1551,47 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
     );
   }
 
-  // Product shoot
+  // Product shoot — template grid
   if (shootType === 'product') {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 text-center animate-in fade-in duration-300">
-        <div className="h-20 w-20 rounded-2xl bg-muted flex items-center justify-center">
-          <Package className="h-10 w-10 text-muted-foreground" />
+      <div className="h-full flex flex-col animate-in fade-in duration-300">
+        <div className="shrink-0 mb-4">
+          <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Scene Templates</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {selectedTemplate
+              ? `Selected: ${PRODUCT_SHOOT_TEMPLATES.find(t => t.id === selectedTemplate)?.name}`
+              : 'Choose a scene template for your product shoot.'}
+          </p>
         </div>
-        <div>
-          <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Product Shoot</p>
-          <p className="text-sm text-muted-foreground mt-1">Your product will be placed in professional studio scenes.</p>
-        </div>
+        <ScrollArea className="flex-1">
+          <div className="grid grid-cols-4 gap-3 pb-4">
+            {filteredTemplates.map((t) => {
+              const isSelected = selectedTemplate === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setSelectedTemplate(prev => prev === t.id ? null : t.id)}
+                  className={`rounded-xl overflow-hidden border transition-all text-left ${
+                    isSelected ? 'ring-2 ring-primary ring-offset-2' : 'hover:border-primary/50 hover:shadow-md'
+                  }`}
+                >
+                  <div className="aspect-square flex items-center justify-center" style={{ background: t.color }}>
+                    {isSelected && (
+                      <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                        <Check className="h-4 w-4 text-primary-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-2">
+                    <p className="text-xs font-medium truncate">{t.name}</p>
+                    <p className="text-[10px] text-muted-foreground line-clamp-2 leading-tight">{t.description}</p>
+                    <Badge variant="outline" className="text-[8px] mt-1 px-1.5 py-0">{t.category}</Badge>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </ScrollArea>
       </div>
     );
   }
