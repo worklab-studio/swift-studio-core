@@ -189,16 +189,72 @@ const PRODUCT_SHOOT_TEMPLATES: ProductTemplate[] = [
 
 const TEMPLATE_CATEGORIES = ['All', 'Studio', 'E-commerce', 'Mystic', 'Showcase'] as const;
 
-/* ── Style presets ── */
-const STYLE_PRESETS = [
-  { id: 'classic', name: 'Classic', desc: 'Clean studio, neutral tones, timeless', img: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80' },
-  { id: 'minimalist', name: 'Minimalist', desc: 'Stark white, breathing room, pure product', img: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&q=80' },
-  { id: 'luxury', name: 'Luxury', desc: 'Dark surfaces, gold accents, soft shadow', img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&q=80' },
-  { id: 'loud-luxury', name: 'Loud Luxury', desc: 'Bold marble, dramatic lighting, opulence', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&q=80' },
-  { id: 'magazine', name: 'Magazine', desc: 'Editorial crops, sharp contrast, print-ready', img: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&q=80' },
-  { id: 'avant-garde', name: 'Avant Garde', desc: 'Unexpected angles, abstract props, art-forward', img: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&q=80' },
-  { id: 'influencer', name: 'Influencer', desc: 'Golden hour, warm tones, candid lifestyle', img: 'https://images.unsplash.com/photo-1504703395950-b89145a5425b?w=400&q=80' },
-  { id: 'lifestyle', name: 'Lifestyle', desc: 'Everyday environments, natural light, relatable', img: 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=400&q=80' },
+/* ── Style presets with product/model-specific settings ── */
+interface StyleSettings {
+  pose: string;
+  angle: string;
+  lighting: string;
+  composition: string;
+}
+
+interface StylePreset {
+  id: string;
+  name: string;
+  desc: string;
+  img: string;
+  product: StyleSettings;
+  model: StyleSettings;
+}
+
+const STYLE_PRESETS: StylePreset[] = [
+  {
+    id: 'classic', name: 'Classic', desc: 'Clean studio, neutral tones, timeless',
+    img: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80',
+    product: { pose: 'Centered hero placement, product facing camera at slight angle', angle: 'Eye-level front-facing, straight-on with minimal perspective distortion', lighting: 'Soft diffused three-point lighting, even illumination, subtle shadows', composition: 'Rule of thirds, generous negative space, clean isolation' },
+    model: { pose: 'Confident standing stance, one hand relaxed at side, slight hip shift', angle: 'Slightly low camera at 3/4 turn, medium full-body shot', lighting: 'Beauty dish key light with soft fill, gentle rim light for separation', composition: 'Full body centered frame, head space above, clean backdrop' },
+  },
+  {
+    id: 'minimalist', name: 'Minimalist', desc: 'Stark white, breathing room, pure product',
+    img: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&q=80',
+    product: { pose: 'Single hero product floating or resting on invisible surface', angle: 'Straight-on eye-level, perfectly symmetrical framing', lighting: 'Ultra-soft flat lighting, zero harsh shadows, bright and airy', composition: 'Extreme negative space, centered subject, minimal distractions' },
+    model: { pose: 'Still and poised, arms relaxed, minimal movement, serene expression', angle: 'Eye-level straight-on, clean symmetrical framing', lighting: 'Flat even lighting, very soft shadows, high-key bright', composition: 'Centered subject, vast white space, cropped at waist or full body' },
+  },
+  {
+    id: 'luxury', name: 'Luxury', desc: 'Dark surfaces, gold accents, soft shadow',
+    img: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&q=80',
+    product: { pose: 'Product on dark marble or velvet surface, angled to catch light', angle: 'Slightly elevated 30° overhead, looking down at product', lighting: 'Dramatic side lighting with deep shadows, warm gold accents, single key light', composition: 'Off-center placement, dark moody background, luxe props in periphery' },
+    model: { pose: 'Elegant pose, chin slightly elevated, one arm draped, sophisticated stance', angle: 'Low camera looking up slightly, 3/4 profile, waist-up or full body', lighting: 'Rembrandt lighting with warm tones, strong shadows on one side, gold reflector fill', composition: 'Dark backdrop, subject in warm light pool, cinematic crop' },
+  },
+  {
+    id: 'loud-luxury', name: 'Loud Luxury', desc: 'Bold marble, dramatic lighting, opulence',
+    img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&q=80',
+    product: { pose: 'Product elevated on marble pedestal or mirrored surface, bold angle', angle: 'Low dramatic angle looking up, wide lens for grandeur', lighting: 'High contrast split lighting, vivid color gels, specular highlights on surfaces', composition: 'Maximalist staging, rich textures (marble, gold, crystal), product as centerpiece' },
+    model: { pose: 'Power pose, wide stance, expressive hand placement, commanding presence', angle: 'Very low camera angle shooting upward, emphasizing stature and power', lighting: 'Split lighting with colored gels, strong backlight silhouette, dramatic shadows', composition: 'Full body with opulent surroundings, mirror reflections, bold visual impact' },
+  },
+  {
+    id: 'magazine', name: 'Magazine', desc: 'Editorial crops, sharp contrast, print-ready',
+    img: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&q=80',
+    product: { pose: 'Product styled with editorial props, artful arrangement, story-driven', angle: 'Varied angles — overhead flat lay or dramatic 45° perspective', lighting: 'Hard directional light with sharp shadows, high contrast, flash-like crispness', composition: 'Asymmetric editorial layout, text space consideration, bold crops' },
+    model: { pose: 'Dynamic fashion pose, movement in fabric, editorial expression, strong jawline', angle: 'Mixed — straight on for portraits, 3/4 for full body, Dutch angle for drama', lighting: 'Hard flash with sharp shadows, beauty lighting for face, contrast-heavy', composition: 'Tight editorial crops, dramatic framing, intentional negative space for text overlay' },
+  },
+  {
+    id: 'avant-garde', name: 'Avant Garde', desc: 'Unexpected angles, abstract props, art-forward',
+    img: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&q=80',
+    product: { pose: 'Product suspended, floating, or placed in surreal arrangement', angle: 'Extreme angles — very low, very high, or Dutch tilt for disorientation', lighting: 'Colored gels, neon accents, unconventional light placement, mixed color temperatures', composition: 'Rule-breaking composition, abstract backgrounds, layered textures, visual tension' },
+    model: { pose: 'Sculptural body position, unusual hand placement, contorted or geometric pose', angle: 'Extreme low or overhead, wide-angle distortion, close-up abstract crops', lighting: 'Multi-colored gels, harsh directional spots, theatrical shadow play', composition: 'Abstract framing, negative space as design element, fragmented body crops' },
+  },
+  {
+    id: 'influencer', name: 'Influencer', desc: 'Golden hour, warm tones, candid lifestyle',
+    img: 'https://images.unsplash.com/photo-1504703395950-b89145a5425b?w=400&q=80',
+    product: { pose: 'Product held casually in hand or placed in lifestyle setting, natural feel', angle: 'Slightly above eye level selfie angle, shallow depth of field, f/1.8 feel', lighting: 'Golden hour natural light, warm backlighting, soft lens flare', composition: 'Casual off-center framing, bokeh background, authentic lifestyle context' },
+    model: { pose: 'Casual candid mid-action — laughing, walking, hair toss, looking away from camera', angle: 'Slightly above eye level, close medium shot, shallow DOF with creamy bokeh', lighting: 'Golden hour backlight, warm natural fill, soft glowy skin tones', composition: 'Off-center subject, lifestyle environment in bokeh, Instagram-ready crop (4:5)' },
+  },
+  {
+    id: 'lifestyle', name: 'Lifestyle', desc: 'Everyday environments, natural light, relatable',
+    img: 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=400&q=80',
+    product: { pose: 'Product in natural use context — on a table, in a bag, being worn', angle: 'Natural eye-level perspective, as if viewer is in the scene', lighting: 'Window light or open shade, soft natural illumination, warm or neutral tones', composition: 'Environmental context, product integrated into scene, lifestyle props' },
+    model: { pose: 'Natural everyday movement — sitting, leaning, walking, genuine smile', angle: 'Eye-level conversational distance, medium shot, natural perspective', lighting: 'Soft window light or outdoor open shade, natural skin tones, even exposure', composition: 'Environmental portrait, lifestyle context visible, product naturally integrated' },
+  },
 ];
 
 /* ── Steps ── */
