@@ -105,7 +105,16 @@ const SHOT_LABEL_DISPLAY: Record<string, string> = {
   lifestyle: 'Lifestyle',
   alternate: 'Alternate Angle',
   editorial: 'Editorial',
+  flat_lay: 'Flat Lay',
 };
+
+const ASPECT_RATIOS = [
+  { value: '1:1', label: 'Square' },
+  { value: '4:3', label: 'Landscape' },
+  { value: '3:4', label: 'Portrait' },
+  { value: '16:9', label: 'Wide' },
+  { value: '9:16', label: 'Vertical' },
+];
 
 /* ── Placeholder models (40) with full metadata ── */
 const PLACEHOLDER_MODELS = [
