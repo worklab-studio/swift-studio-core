@@ -7,11 +7,14 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/layouts/AppLayout";
 import Auth from "./pages/Auth";
+import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import Assets from "./pages/Assets";
 import Studio from "./pages/Studio";
-import Placeholder from "./pages/Placeholder";
+import Billing from "./pages/Billing";
+import Integrations from "./pages/Integrations";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,7 +27,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<Navigate to="/app/dashboard" replace />} />
+            <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route index element={<Navigate to="dashboard" replace />} />
@@ -32,10 +35,9 @@ const App = () => (
               <Route path="projects" element={<Projects />} />
               <Route path="assets" element={<Assets />} />
               <Route path="projects/:id" element={<Studio />} />
-              {/* new-project route removed — handled by dialog */}
-              <Route path="billing" element={<Placeholder />} />
-              <Route path="integrations" element={<Placeholder />} />
-              <Route path="settings" element={<Placeholder />} />
+              <Route path="billing" element={<Billing />} />
+              <Route path="integrations" element={<Integrations />} />
+              <Route path="settings" element={<Settings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
