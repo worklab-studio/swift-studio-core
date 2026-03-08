@@ -13,14 +13,14 @@ import { Loader2, Camera, Video } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const CATEGORIES = [
-  { id: 'apparel', emoji: '👗', name: 'Apparel', subtitle: 'Clothing, kurtas, activewear' },
-  { id: 'jewellery', emoji: '💍', name: 'Jewellery', subtitle: 'Necklaces, rings, earrings' },
-  { id: 'bags', emoji: '👜', name: 'Bags', subtitle: 'Handbags, backpacks, luggage' },
-  { id: 'beauty', emoji: '✨', name: 'Beauty', subtitle: 'Makeup, fragrance, tools' },
-  { id: 'skincare', emoji: '🧴', name: 'Skincare', subtitle: 'Serums, moisturisers, SPF' },
-  { id: 'fmcg', emoji: '🥤', name: 'FMCG', subtitle: 'Food, beverages, snacks' },
-  { id: 'footwear', emoji: '👟', name: 'Footwear', subtitle: 'Sneakers, heels, sandals' },
-  { id: 'other', emoji: '📦', name: 'Other', subtitle: 'Anything else' },
+  { id: 'apparel', emoji: '👗', name: 'Apparel' },
+  { id: 'jewellery', emoji: '💍', name: 'Jewellery' },
+  { id: 'bags', emoji: '👜', name: 'Bags' },
+  { id: 'beauty', emoji: '✨', name: 'Beauty' },
+  { id: 'skincare', emoji: '🧴', name: 'Skincare' },
+  { id: 'fmcg', emoji: '🥤', name: 'FMCG' },
+  { id: 'footwear', emoji: '👟', name: 'Footwear' },
+  { id: 'other', emoji: '📦', name: 'Other' },
 ] as const;
 
 const NewProjectDialog = () => {
@@ -100,15 +100,14 @@ const NewProjectDialog = () => {
                   key={c.id}
                   onClick={() => setCategory(c.id)}
                   className={cn(
-                    'p-3 cursor-pointer transition-all hover:shadow-md',
+                    'px-3 py-2.5 cursor-pointer transition-all hover:shadow-md flex flex-col items-center justify-center text-center',
                     category === c.id
                       ? 'border-2 border-primary bg-primary/5'
                       : 'hover:border-muted-foreground/30'
                   )}
                 >
-                  <span className="text-xl">{c.emoji}</span>
-                  <p className="font-medium text-xs mt-1.5">{c.name}</p>
-                  <p className="text-[10px] text-muted-foreground leading-tight">{c.subtitle}</p>
+                  <span className="text-lg">{c.emoji}</span>
+                  <p className="font-medium text-xs mt-1">{c.name}</p>
                 </Card>
               ))}
             </div>
