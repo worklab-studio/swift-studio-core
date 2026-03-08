@@ -495,144 +495,143 @@ const Studio = () => {
           LEFT PANEL — Config
          ════════════════════════════════════════════ */}
       <div className="w-[340px] shrink-0 border-r border-border bg-card flex flex-col h-screen overflow-hidden">
-        {/* Project header */}
-        <div className="p-4 space-y-3 shrink-0">
-          <Button variant="ghost" size="sm" className="gap-1.5 -ml-2 text-muted-foreground" onClick={() => navigate('/app/projects')}>
-            <ArrowLeft className="h-4 w-4" /> Projects
-          </Button>
-          <div className="flex items-start gap-3">
-            {thumbnailUrl ? (
-              <img src={thumbnailUrl} alt={project.name} className="w-12 h-12 object-cover rounded-lg shrink-0" />
-            ) : (
-              <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                <Package className="h-5 w-5 text-muted-foreground" />
-              </div>
-            )}
-            <div className="min-w-0">
-              <p className="font-medium truncate">{project.name}</p>
-              <div className="flex gap-1.5 mt-1">
-                <Badge variant="outline" className="capitalize text-xs">{project.category}</Badge>
-                <Badge variant="secondary" className="text-xs">{SHOT_LABELS[project.shot_type] ?? project.shot_type}</Badge>
-              </div>
+        {/* ── Fixed Header ── */}
+        <div className="p-4 pb-3 space-y-4 shrink-0">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground" onClick={() => navigate('/app/projects')}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <p className="font-medium text-sm truncate flex-1">{project.name}</p>
+          </div>
+
+          {/* Horizontal step indicator */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-1">
+              {STEPS.map((step, i) => {
+                const isCompleted = completedSteps.has(step.id);
+                const isActive = activeStep === step.id;
+                const isClickable = isCompleted || isActive;
+                return (
+                  <button
+                    key={step.id}
+                    onClick={() => goToStep(step.id)}
+                    disabled={!isClickable}
+                    className="flex-1 group"
+                  >
+                    <div className={`h-1.5 rounded-full transition-all ${
+                      isCompleted
+                        ? 'bg-primary'
+                        : isActive
+                          ? 'bg-primary/60'
+                          : 'bg-border'
+                    } ${isClickable ? 'cursor-pointer group-hover:opacity-80' : 'cursor-default'}`} />
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium text-foreground">
+                {STEPS.find(s => s.id === activeStep)?.label}
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                Step {activeStep} of {STEPS.length}
+              </p>
             </div>
           </div>
         </div>
 
         <Separator />
 
-        {/* Scrollable config area */}
+        {/* ── Scrollable active-step content ── */}
         <ScrollArea className="flex-1">
-          <div className="p-4 space-y-1">
-            {/* Step tracker */}
-            {STEPS.map((step) => {
-              const isCompleted = completedSteps.has(step.id);
-              const isActive = activeStep === step.id;
-              const isClickable = isCompleted || isActive;
-
-              return (
-                <div key={step.id}>
-                  <button
-                    onClick={() => goToStep(step.id)}
-                    disabled={!isClickable}
-                    className={`w-full flex items-start gap-3 p-2 rounded-md text-left transition-colors ${
-                      isActive ? 'bg-accent' : isClickable ? 'hover:bg-accent/50' : ''
-                    } ${!isClickable ? 'opacity-50 cursor-default' : 'cursor-pointer'}`}
-                  >
-                    <div className={`mt-0.5 h-6 w-6 rounded-full flex items-center justify-center shrink-0 text-xs font-medium ${
-                      isCompleted
-                        ? 'bg-primary text-primary-foreground'
-                        : isActive
-                          ? 'border-2 border-primary text-primary'
-                          : 'border-2 border-border text-muted-foreground'
-                    }`}>
-                      {isCompleted ? <Check className="h-3.5 w-3.5" /> : step.id}
-                    </div>
-                    <div className="min-w-0">
-                      <p className={`text-sm ${isActive ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>{step.label}</p>
-                      {isCompleted && stepSummaries[step.id] && (
-                        <p className="text-xs text-muted-foreground truncate">{stepSummaries[step.id]}</p>
-                      )}
-                    </div>
-                  </button>
-
-                  {/* ── Inline config for active step ── */}
-                  {isActive && step.id === 1 && (
-                    <div className="ml-11 mt-2 mb-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                      <Step1Config
-                        productImages={productImages}
-                        productUploadRef={productUploadRef}
-                        onUpload={handleProductImageUpload}
-                        onRemove={handleRemoveProductImage}
-                        onContinue={handleCompleteStep1}
-                      />
-                    </div>
-                  )}
-
-                  {isActive && step.id === 2 && (
-                    <div className="ml-11 mt-2 mb-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                      <Step2Config
-                        project={project}
-                        modelConfig={modelConfig}
-                        setModelConfig={setModelConfig}
-                        modelUploadRef={modelUploadRef}
-                        onModelUpload={handleModelUpload}
-                        onContinue={handleCompleteStep2}
-                      />
-                    </div>
-                  )}
-
-                  {isActive && step.id === 3 && (
-                    <div className="ml-11 mt-2 mb-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                      <Step3Config
-                        selectedPreset={selectedPreset}
-                        setSelectedPreset={setSelectedPreset}
-                        referenceImage={referenceImage}
-                        setReferenceImage={setReferenceImage}
-                        referenceInputRef={referenceInputRef}
-                        onReferenceUpload={handleReferenceUpload}
-                        shotCount={shotCount}
-                        setShotCount={setShotCount}
-                        additionalContext={additionalContext}
-                        setAdditionalContext={setAdditionalContext}
-                        credits={credits}
-                        canGenerate={!!canGenerate}
-                        onGenerate={handleGenerate}
-                      />
-                    </div>
-                  )}
-
-                  {isActive && step.id === 4 && (
-                    <div className="ml-11 mt-2 mb-3">
-                      <p className="text-xs text-muted-foreground animate-pulse">{generationStage || 'Processing...'}</p>
-                      <button onClick={handleCancelGeneration} className="text-xs text-muted-foreground hover:text-foreground mt-1 transition-colors">
-                        Cancel
-                      </button>
-                    </div>
-                  )}
-
-                  {isActive && step.id === 5 && (
-                    <div className="ml-11 mt-2 mb-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                      <Step5Config
-                        shots={generatedShots}
-                        exportFormats={exportFormats}
-                        setExportFormats={setExportFormats}
-                        selectedShots={selectedExportShots}
-                        setSelectedShots={setSelectedExportShots}
-                        onDownload={handleDownload}
-                        generatedVideo={generatedVideo}
-                        onRegenerateAll={handleRegenerateAll}
-                      />
-                    </div>
-                  )}
+          <div className="p-4 animate-in fade-in slide-in-from-top-2 duration-200">
+            {activeStep === 1 && (
+              <Step1Config
+                productImages={productImages}
+                productUploadRef={productUploadRef}
+                onUpload={handleProductImageUpload}
+                onRemove={handleRemoveProductImage}
+              />
+            )}
+            {activeStep === 2 && (
+              <Step2Config
+                project={project}
+                modelConfig={modelConfig}
+                setModelConfig={setModelConfig}
+                modelUploadRef={modelUploadRef}
+                onModelUpload={handleModelUpload}
+              />
+            )}
+            {activeStep === 3 && (
+              <Step3Config
+                selectedPreset={selectedPreset}
+                setSelectedPreset={setSelectedPreset}
+                referenceImage={referenceImage}
+                setReferenceImage={setReferenceImage}
+                referenceInputRef={referenceInputRef}
+                onReferenceUpload={handleReferenceUpload}
+                shotCount={shotCount}
+                setShotCount={setShotCount}
+                additionalContext={additionalContext}
+                setAdditionalContext={setAdditionalContext}
+              />
+            )}
+            {activeStep === 4 && (
+              <div className="space-y-4 py-8">
+                <div className="flex flex-col items-center text-center gap-3">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  <div>
+                    <p className="text-sm font-medium">{generationStage || 'Processing...'}</p>
+                    <p className="text-xs text-muted-foreground mt-1">This may take a moment</p>
+                  </div>
+                  <Progress value={generationProgress} className="h-1.5 w-full max-w-[200px]" />
                 </div>
-              );
-            })}
+              </div>
+            )}
+            {activeStep === 5 && (
+              <Step5Config
+                shots={generatedShots}
+                exportFormats={exportFormats}
+                setExportFormats={setExportFormats}
+                selectedShots={selectedExportShots}
+                setSelectedShots={setSelectedExportShots}
+                generatedVideo={generatedVideo}
+                onRegenerateAll={handleRegenerateAll}
+              />
+            )}
           </div>
         </ScrollArea>
 
-        <Separator />
-        <div className="p-4 shrink-0">
-          <p className="text-xs text-muted-foreground">Credits remaining: {profile?.credits_remaining ?? 0}</p>
+        {/* ── Fixed Footer CTA ── */}
+        <div className="shrink-0 border-t border-border p-4 space-y-2 bg-card">
+          {activeStep === 1 && (
+            <Button className="w-full" disabled={productImages.length === 0} onClick={handleCompleteStep1}>
+              Continue
+            </Button>
+          )}
+          {activeStep === 2 && (
+            <Button className="w-full" onClick={handleCompleteStep2}>
+              Continue to Style
+            </Button>
+          )}
+          {activeStep === 3 && (
+            <Button className="w-full" disabled={!canGenerate} onClick={handleGenerate}>
+              Generate — {credits} credit{credits > 1 ? 's' : ''}
+            </Button>
+          )}
+          {activeStep === 4 && (
+            <Button variant="outline" className="w-full" onClick={handleCancelGeneration}>
+              Cancel
+            </Button>
+          )}
+          {activeStep === 5 && (
+            <Button className="w-full" onClick={handleDownload} disabled={selectedExportShots.size === 0}>
+              <Download className="h-4 w-4 mr-2" /> Download {selectedExportShots.size} shot{selectedExportShots.size !== 1 ? 's' : ''}
+            </Button>
+          )}
+          <p className="text-[10px] text-muted-foreground text-center">
+            {profile?.credits_remaining ?? 0} credits remaining
+          </p>
         </div>
       </div>
 
