@@ -24,6 +24,9 @@ const BEAUTY_REGEX =
 const FMCG_REGEX =
   /chips|biscuit|cookie|snack|cereal|juice|soda|water.bottle|energy.drink|coffee|tea|sauce|ketchup|jam|honey|protein.bar|granola|candy|chocolate|detergent|toothpaste|noodles|pasta|rice|flour|oil|vinegar|mustard|mayonnaise|pickle|chutney|spice|masala|mukhwas|namkeen|papad|atta|ghee|paneer|milk|curd|yogurt|butter|cheese/i;
 
+const FOOTWEAR_REGEX =
+  /sneaker|shoe|boot|sandal|slipper|loafer|oxford|derby|brogue|heel|stiletto|pump|flat|mule|clog|espadrille|mojari|jutti|kolhapuri|chappal|flip.flop|trainer|runner|basketball.shoe|hiking.boot|chelsea.boot|ankle.boot|wedge|platform|peep.toe|kitten.heel|monk.strap|penny.loafer|desert.boot|combat.boot|riding.boot|rain.boot|snow.boot/i;
+
 const APPAREL_CONSTRAINTS = `
 HARD CONSTRAINTS FOR APPAREL VIDEO — you MUST follow ALL of these:
 - Movement: ONLY subtle motion — gentle fabric sway, light material motion, slow walk, soft pose transitions. Nothing more.
@@ -124,6 +127,20 @@ HARD CONSTRAINTS FOR FMCG MODEL VIDEO — you MUST follow ALL of these:
 - Overall feel: warm lifestyle commercial, natural and inviting. Think premium FMCG brand campaign — Tropicana, Lay's, Cadbury.
 `;
 
+const FOOTWEAR_CONSTRAINTS = `
+HARD CONSTRAINTS FOR FOOTWEAR VIDEO — you MUST follow ALL of these:
+- Motion: slow confident walk on a clean surface — show the shoe in motion from multiple angles. Gentle step-plant-lift cycle. Nothing rushed.
+- MANDATORY sole shot: at least one prompt MUST show the outsole/tread pattern — model lifting foot, shoe tilted, or cross-ankle pose to reveal the bottom.
+- Detail shots: MANDATORY close-ups on stitching, sole edge, heel construction, lacing/buckle mechanism, material texture (leather grain, mesh weave, suede nap, knit stretch).
+- Camera: low-angle tracking shot following the feet during a slow walk. Smooth dolly at ankle/shoe level. Eye-level macro for construction details.
+- On-foot fit: show the shoe being worn — how it contours the foot, ankle gap, tongue position, heel cup fit. The shoe must look WORN, not floating.
+- BANNED: No full-body fashion poses that obscure the shoes. No fast running. No jumping or stomping. No 360 spins.
+- Lighting: directional light raking across material to reveal texture — leather shine, suede softness, knit stretch, rubber matte finish. Specular highlights on polished surfaces.
+- Background: clean floor surfaces (polished concrete, marble, hardwood, stone) that contrast with the shoe. Minimal distractions — the shoe is the hero.
+- Angles: show from multiple perspectives — front 3/4, side profile, back heel view, top-down on-foot, and low-angle walking shot. NO full 360 rotation.
+- Overall feel: premium footwear campaign — think Nike editorial or luxury shoe brand lookbook. Every frame sells the craftsmanship and fit.
+`;
+
 const GENERIC_CONSTRAINTS = `
 Write cinematic, visually compelling video prompts that showcase the product beautifully.
 Include varied camera movements and angles. Show the product from its best angles with professional lighting.
@@ -177,6 +194,7 @@ Deno.serve(async (req) => {
     const isBackpack = BACKPACK_REGEX.test(category || "") || BACKPACK_REGEX.test(productName || "");
     const isBeauty = BEAUTY_REGEX.test(category || "") || BEAUTY_REGEX.test(productName || "") || ["beauty", "skincare"].includes((category || "").toLowerCase());
     const isFmcg = !isBeauty && ((category || "").toLowerCase() === "fmcg" || FMCG_REGEX.test(category || "") || FMCG_REGEX.test(productName || ""));
+    const isFootwear = !isApparel && (FOOTWEAR_REGEX.test(category || "") || FOOTWEAR_REGEX.test(productName || "") || (category || "").toLowerCase() === "footwear");
 
     // Determine constraints based on category priority
     let constraints: string;
@@ -190,6 +208,8 @@ Deno.serve(async (req) => {
       constraints = beautyShootMode === "showcase" ? BEAUTY_SHOWCASE_CONSTRAINTS : BEAUTY_MODEL_CONSTRAINTS;
     } else if (isFmcg) {
       constraints = fmcgShootMode === "showcase" ? FMCG_SHOWCASE_CONSTRAINTS : FMCG_MODEL_CONSTRAINTS;
+    } else if (isFootwear) {
+      constraints = FOOTWEAR_CONSTRAINTS;
     } else {
       constraints = GENERIC_CONSTRAINTS;
     }
@@ -244,6 +264,16 @@ Every "Application" style prompt MUST include a clear dispensing moment before t
 - Barcode, batch info, or regulatory markings placement`
       : "";
 
+    const footwearGroundingCues = isFootwear
+      ? `
+- Sole type (flat, heeled, platform, wedge) and tread pattern visible
+- Material and finish (polished leather, matte suede, knit mesh, canvas, rubber, patent)
+- Closure system (laces, buckle, zip, slip-on, velcro, monk strap, toggle)
+- Heel height and shape (stiletto, block, kitten, stacked, wedge, flat)
+- Color blocking, branding placement, and decorative elements (perforations, stitching, hardware)
+- Shoe silhouette and toe shape (round, pointed, square, open-toe)`
+      : "";
+
     const imageGroundingInstruction = productImageUrl
       ? `
 IMPORTANT — IMAGE GROUNDING:
@@ -252,7 +282,7 @@ You are provided with the actual generated model/product image. Analyze it caref
 - The outfit/product details: fit, drape, color, pattern, styling
 - The expression and gaze direction
 - The background setting, lighting, and mood
-- Any props or accessories visible${jewelleryGroundingCues}${luggageGroundingCues}${beautyGroundingCues}${fmcgGroundingCues}
+- Any props or accessories visible${jewelleryGroundingCues}${luggageGroundingCues}${beautyGroundingCues}${fmcgGroundingCues}${footwearGroundingCues}
 
 Write your video prompts as a NATURAL CONTINUATION of this exact image. The video should feel like this still photo came to life. Do NOT write generic prompts — every prompt must reference what you see in the image.
 `
@@ -413,6 +443,7 @@ Include a short reason (1 sentence) explaining why this prompt suits the product
         isBackpack,
         isBeauty,
         isFmcg,
+        isFootwear,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
