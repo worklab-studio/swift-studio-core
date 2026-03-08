@@ -70,6 +70,11 @@ interface ProductInfo {
   suggestedShots: string[];
   description: string;
   productName: string;
+  garmentType: string | null;
+  outfitSuggestion: string | null;
+  hasModel: boolean;
+  hasWhiteBackground: boolean;
+  modelNote: string | null;
 }
 
 interface GeneratedVideo {
