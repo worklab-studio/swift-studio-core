@@ -1820,6 +1820,9 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
     );
   }
 
+  const existingCount = Object.keys(modelImages).length;
+  const allGenerated = existingCount >= PLACEHOLDER_MODELS.length;
+
   // Model shoot — grid with generate button
   return (
     <div className="h-full flex flex-col animate-in fade-in duration-300">
@@ -1828,25 +1831,27 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
           <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Choose an AI Model</p>
           <p className="text-sm text-muted-foreground mt-1">Select a model for your shoot. {selectedModelData ? `Selected: ${selectedModelData.name}` : 'Click to select.'}</p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-1.5 shrink-0"
-          disabled={generatingPortraits}
-          onClick={onGeneratePortraits}
-        >
-          {generatingPortraits ? (
-            <>
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              {portraitProgress}/{portraitTotal}
-            </>
-          ) : (
-            <>
-              <Sparkles className="h-3.5 w-3.5" />
-              Generate Portraits
-            </>
-          )}
-        </Button>
+        {!allGenerated && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 shrink-0"
+            disabled={generatingPortraits}
+            onClick={onGeneratePortraits}
+          >
+            {generatingPortraits ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                {portraitProgress}/{portraitTotal}
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-3.5 w-3.5" />
+                {existingCount > 0 ? 'Generate Missing Portraits' : 'Generate Portraits'}
+              </>
+            )}
+          </Button>
+        )}
       </div>
       {generatingPortraits && (
         <div className="shrink-0 mb-3">
