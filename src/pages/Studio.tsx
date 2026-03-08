@@ -941,14 +941,22 @@ function Step1Config({ productImages, productUploadRef, onUpload, onRemove }: {
 }
 
 /* ── Step 2 Config (Left) ── */
-function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload }: {
+function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload, selectedTemplate, setSelectedTemplate, templateCategory, setTemplateCategory }: {
   shootType: 'product' | 'model' | null;
   setShootType: React.Dispatch<React.SetStateAction<'product' | 'model' | null>>;
   modelConfig: ModelConfig;
   setModelConfig: React.Dispatch<React.SetStateAction<ModelConfig>>;
   modelUploadRef: React.RefObject<HTMLInputElement>;
   onModelUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  selectedTemplate: string | null;
+  setSelectedTemplate: React.Dispatch<React.SetStateAction<string | null>>;
+  templateCategory: string;
+  setTemplateCategory: React.Dispatch<React.SetStateAction<string>>;
 }) {
+  const filteredTemplates = templateCategory === 'All'
+    ? PRODUCT_SHOOT_TEMPLATES
+    : PRODUCT_SHOOT_TEMPLATES.filter(t => t.category === templateCategory);
+
   return (
     <div className="space-y-4">
       <div>
@@ -980,10 +988,31 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
         </button>
       </div>
 
-      {/* Product shoot confirmation */}
+      {/* Product shoot — category filter */}
       {shootType === 'product' && (
-        <div className="rounded-lg border bg-muted/50 p-3 animate-in fade-in duration-200">
-          <p className="text-xs text-muted-foreground">Your product will be placed in professional studio scenes — no model needed.</p>
+        <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+          <Separator />
+          <p className="text-xs font-medium">Scene Template</p>
+          <div className="flex flex-wrap gap-1">
+            {TEMPLATE_CATEGORIES.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setTemplateCategory(cat)}
+                className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${
+                  templateCategory === cat
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-accent'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            {selectedTemplate
+              ? `Selected: ${PRODUCT_SHOOT_TEMPLATES.find(t => t.id === selectedTemplate)?.name}`
+              : 'Select a template from the grid on the right →'}
+          </p>
         </div>
       )}
 
