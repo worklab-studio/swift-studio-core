@@ -2221,11 +2221,13 @@ function Step4Viewport({ progress, stage, shotCount }: {
       {/* Skeleton preview */}
       <div className="w-full max-w-2xl mt-4">
         {isCampaign ? (
-          <div className="grid grid-cols-2 gap-3">
-            <Skeleton className="aspect-[4/5] rounded-xl" />
-            <Skeleton className="aspect-[4/5] rounded-xl" />
-            <Skeleton className="aspect-[4/5] rounded-xl" />
-            <Skeleton className="aspect-[4/5] rounded-xl" />
+          <div className="grid grid-cols-3 gap-3">
+            <Skeleton className="aspect-square rounded-xl" />
+            <Skeleton className="aspect-square rounded-xl" />
+            <Skeleton className="aspect-square rounded-xl" />
+            <Skeleton className="aspect-square rounded-xl" />
+            <Skeleton className="aspect-square rounded-xl" />
+            <Skeleton className="aspect-square rounded-xl" />
           </div>
         ) : (
           <div className="max-w-xs mx-auto">
@@ -2270,13 +2272,10 @@ function Step5Viewport({ shots, shotCount, onEditShot, onUndoEdit, onCopyLink, u
 
       {/* Shot grid */}
       {isCampaign ? (
-        <div className="space-y-4">
-          {shots[0] && <ShotCard shot={shots[0]} index={0} wide onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />}
-          <div className="grid grid-cols-2 gap-4">
-            {shots.slice(1).map((shot, i) => (
-              <ShotCard key={shot.id} shot={shot} index={i + 1} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />
-            ))}
-          </div>
+        <div className="grid grid-cols-3 gap-4">
+          {shots.map((shot, i) => (
+            <ShotCard key={shot.id} shot={shot} index={i} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />
+          ))}
         </div>
       ) : (
         <div className="max-w-lg">
