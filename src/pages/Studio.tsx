@@ -41,6 +41,7 @@ interface ModelConfig {
   ethnicity: string;
   bodyType: string;
   background: string;
+  backgroundPrompt: string;
   aiEngine: string;
 }
 
@@ -257,6 +258,7 @@ const Studio = () => {
     ethnicity: '',
     bodyType: '',
     background: '',
+    backgroundPrompt: '',
     aiEngine: 'gemini',
   });
 
@@ -1037,6 +1039,41 @@ function Step1Config({ productImages, productUploadRef, onUpload, onRemove }: {
   );
 }
 
+/* ── Detailed background prompt builders ── */
+const BACKGROUND_PROMPTS: Record<string, (info?: ProductInfo | null) => string> = {
+  // Studio
+  'white-sweep': (info) => `Clean infinite white cyclorama sweep studio background with soft diffused overhead lighting, subtle floor reflection, professional e-commerce photography setup${info ? ` for a ${info.category} product in ${info.colors?.join(', ') || 'neutral tones'}, crafted from ${info.material || 'premium materials'}` : ''}, even shadowless illumination`,
+  'gray-seamless': (info) => `Seamless medium gray backdrop with controlled studio strobes, neutral tone that lets the product colors pop${info ? `, ideal for ${info.category} in ${info.material || 'mixed materials'}` : ''}, subtle gradient from lighter top to slightly darker bottom`,
+  'dark-studio': (info) => `Dark charcoal-black studio environment with dramatic rim lighting and subtle specular highlights, luxurious moody atmosphere${info ? ` showcasing ${info.category} with ${info.colors?.join(' and ') || 'rich'} tones on ${info.material || 'premium'} surface` : ''}, deep shadows with controlled fill light`,
+  'colored-gel': (info) => `Studio setup with vibrant colored gel lighting casting bold complementary hues${info?.colors?.length ? `, gels chosen to complement ${info.colors[0]}` : ', magenta and teal gels'}, creative fashion photography lighting, smooth gradient color wash on backdrop`,
+  'pastel-gradient': (info) => `Soft pastel gradient background transitioning from pale pink to lavender to baby blue, dreamy ethereal studio atmosphere${info ? ` perfect for ${info.category} beauty and skincare photography` : ''}, diffused butterfly lighting, clean and airy feel`,
+  'warm-beige': (info) => `Warm neutral beige linen backdrop with natural soft window-style lighting, organic earthy tones${info ? ` complementing ${info.material || 'natural'} ${info.category} product` : ''}, gentle shadows, artisanal handmade aesthetic`,
+  // Lifestyle
+  'café': (info) => `Warm ambient café interior with exposed brick walls, reclaimed wood tables, soft golden hour window light streaming in, shallow depth of field bokeh from hanging Edison bulbs${info ? `, lifestyle product photography for ${info.category} in ${info.material || 'everyday materials'}` : ''}, cozy inviting atmosphere`,
+  'street': (info) => `Urban street setting with textured concrete walls and subtle graffiti art, natural daylight with interesting shadow patterns${info ? `, street-style photography for ${info.category}` : ''}, raw authentic city vibe, slightly desaturated tones`,
+  'garden': (info) => `Lush botanical garden setting with dappled sunlight through green foliage, natural floral elements, soft bokeh of blooming flowers${info ? `, organic lifestyle photography for ${info.category}` : ''}, fresh vibrant greens, morning dew atmosphere`,
+  'beach': (info) => `Sandy beach setting with turquoise ocean waves in the background, golden hour warm sunlight, sea breeze atmosphere${info ? `, coastal lifestyle photography for ${info.category} in ${info.colors?.join(', ') || 'summery tones'}` : ''}, natural lens flare, relaxed vacation mood`,
+  'urban-rooftop': (info) => `Modern urban rooftop at golden hour with city skyline in the background, industrial elements mixed with contemporary style${info ? `, dynamic ${info.category} photography` : ''}, warm sunset backlight, architectural details, metropolitan energy`,
+  'living-room': (info) => `Stylish modern living room with designer furniture, natural light from large windows, curated interior design${info ? `, lifestyle home photography featuring ${info.category}` : ''}, warm neutral palette, Scandinavian minimalist aesthetic, soft area rug textures`,
+  'office': (info) => `Clean modern office space with minimalist desk setup, natural light, professional corporate atmosphere${info ? `, business-context photography for ${info.category}` : ''}, organized workspace, subtle tech elements, contemporary furniture`,
+  // E-commerce
+  'pure-white': (info) => `Pure #FFFFFF white background with perfectly even lighting from all angles, zero shadows, Amazon and Shopify compliant product photography${info ? ` for ${info.category}` : ''}, clinical precision, maximum color accuracy on the product`,
+  'light-gray': (info) => `Light gray (#F5F5F5) background with soft even illumination, subtle depth without harsh shadows${info ? `, clean e-commerce photography for ${info.category}` : ''}, professional marketplace-ready, neutral backdrop letting product details shine`,
+  'soft-shadow': (info) => `White background with a subtle natural drop shadow beneath the product, creating depth and grounding${info ? `, professional ${info.category} product photography` : ''}, soft diffused overhead light, contact shadow adds realism without clutter`,
+  // Mystic
+  'fog-mist': (info) => `Ethereal fog and mist swirling around the product, mysterious atmospheric haze with soft volumetric light rays piercing through${info ? `, otherworldly presentation of ${info.category}` : ''}, low-lying dry ice effect, cool blue-gray tones, magical floating sensation`,
+  'neon-glow': (info) => `Dark moody environment with vivid neon RGB accent lighting in cyan, magenta, and electric purple, reflective glossy black surface${info ? `, futuristic cyberpunk showcase for ${info.category} in ${info.colors?.join(' and ') || 'bold tones'}` : ''}, dramatic light trails, sci-fi atmosphere`,
+  'dark-moody': (info) => `Ultra-dark environment with a single dramatic spotlight creating chiaroscuro contrast, rich deep shadows${info ? `, premium high-end presentation of ${info.category} in ${info.material || 'luxurious materials'}` : ''}, Rembrandt lighting, gallery exhibition feel`,
+  'ethereal-light': (info) => `Soft ethereal backlighting creating a luminous halo glow effect, dreamy overexposed highlights blending into the background${info ? `, angelic presentation of ${info.category}` : ''}, lens bloom, heavenly atmosphere, pastel light leaks`,
+};
+
+function buildBackgroundPrompt(backgroundKey: string, productInfo?: ProductInfo | null): string {
+  const builder = BACKGROUND_PROMPTS[backgroundKey];
+  if (builder) return builder(productInfo);
+  // Fallback for unknown keys
+  return `${backgroundKey.replace(/-/g, ' ')} background, professional product photography${productInfo ? ` for ${productInfo.category}` : ''}`;
+}
+
 /* ── Background category mapping by product type ── */
 const BACKGROUND_SUGGESTIONS: Record<string, string> = {
   'Apparel': 'white-sweep',
@@ -1117,6 +1154,13 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
       setModelConfig(prev => ({ ...prev, background: suggested }));
     }
   }, [productInfo?.category]);
+
+  // Auto-compute detailed background prompt whenever background or productInfo changes
+  useEffect(() => {
+    if (!modelConfig.background) return;
+    const prompt = buildBackgroundPrompt(modelConfig.background, productInfo);
+    setModelConfig(prev => prev.backgroundPrompt === prompt ? prev : ({ ...prev, backgroundPrompt: prompt }));
+  }, [modelConfig.background, productInfo]);
 
   return (
     <div className="space-y-4">
