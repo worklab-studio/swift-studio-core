@@ -827,6 +827,9 @@ const Studio = () => {
       setSelectedExportShots(new Set(shots.map(s => s.id)));
       completeStep(4, `${shots.length} shot${shots.length > 1 ? 's' : ''}`, 5);
       setShowExportPanel(true);
+      // Refresh product labels for toolbar dropdown
+      const pLabel = productInfo?.productName || productName || 'Untitled';
+      setProjectProducts(prev => prev.includes(pLabel) ? prev : [...prev, pLabel]);
     } catch {
       clearInterval(progressInterval);
       toast({ title: 'Generation failed', description: 'Network error', variant: 'destructive' });
@@ -1147,13 +1150,32 @@ const Studio = () => {
             )}
           </button>
           <div className="w-px h-5 bg-border" />
-          <button
-            onClick={() => setActiveStep(1)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors max-w-[160px]"
-          >
-            <Tag className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">{productInfo?.productName || productName || 'No product'}</span>
-          </button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors max-w-[180px]"
+              >
+                <Tag className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{productInfo?.productName || productName || 'Products'}</span>
+                <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-52 p-1" align="center">
+              {projectProducts.length === 0 ? (
+                <p className="text-xs text-muted-foreground px-3 py-2">No products yet</p>
+              ) : (
+                projectProducts.map((label) => (
+                  <button
+                    key={label}
+                    onClick={() => loadProductAssets(label)}
+                    className="w-full text-left px-3 py-1.5 text-xs rounded-sm hover:bg-accent transition-colors truncate"
+                  >
+                    {label}
+                  </button>
+                ))
+              )}
+            </PopoverContent>
+          </Popover>
           <div className="w-px h-5 bg-border" />
           <button
             onClick={resetWorkspace}

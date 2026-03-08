@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Download, Link, Images } from 'lucide-react';
 
-const assetTypes = ['All', 'Catalog', 'Lifestyle', 'Model', 'Video'];
+const assetTypes = ['All', 'Original', 'Generated', 'Video'];
 
 interface Asset {
   id: string;
@@ -22,7 +22,9 @@ const Assets = () => {
     if (!user) return;
     const fetchAssets = async () => {
       let query = supabase.from('assets').select('*, projects!inner(user_id)').eq('projects.user_id', user.id);
-      if (filter !== 'All') query = query.eq('asset_type', filter.toLowerCase());
+      if (filter === 'Original') query = query.eq('asset_type', 'original');
+      else if (filter === 'Generated') query = query.eq('asset_type', 'ai_generated');
+      else if (filter === 'Video') query = query.eq('asset_type', 'video');
       const { data } = await query;
       setAssets(data ?? []);
     };
