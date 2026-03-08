@@ -655,7 +655,8 @@ const Studio = () => {
             )}
             {activeStep === 2 && (
               <Step2Config
-                project={project}
+                shootType={shootType}
+                setShootType={setShootType}
                 modelConfig={modelConfig}
                 setModelConfig={setModelConfig}
                 modelUploadRef={modelUploadRef}
@@ -710,7 +711,7 @@ const Studio = () => {
             </Button>
           )}
           {activeStep === 2 && (
-            <Button className="w-full" onClick={handleCompleteStep2}>
+            <Button className="w-full" disabled={!shootType} onClick={handleCompleteStep2}>
               Continue to Style
             </Button>
           )}
@@ -746,8 +747,9 @@ const Studio = () => {
           <div className="p-8 min-h-full overflow-y-auto h-full">
             {activeStep === 2 && (
               <Step2Viewport
-                project={project}
+                shootType={shootType}
                 modelConfig={modelConfig}
+                setModelConfig={setModelConfig}
                 selectedModelData={selectedModelData}
               />
             )}
