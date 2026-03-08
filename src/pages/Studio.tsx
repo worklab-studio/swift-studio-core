@@ -362,6 +362,10 @@ const Studio = () => {
   const [analysisPhase, setAnalysisPhase] = useState<'idle' | 'analyzing' | 'done'>('idle');
   const [productName, setProductName] = useState('');
 
+  // Model detection choice
+  const [modelChoice, setModelChoice] = useState<'remove' | 'keep' | null>(null);
+  const [removingBackground, setRemovingBackground] = useState(false);
+
   // Shoot type selection (Step 2)
   const [shootType, setShootType] = useState<'product' | 'model' | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
@@ -573,7 +577,58 @@ const Studio = () => {
 
   const handleCompleteStep1 = () => {
     if (productImages.length === 0) return;
-    completeStep(1, `${productImages.length} image${productImages.length > 1 ? 's' : ''}`, 2);
+    // If model detected and no choice made, don't proceed
+    if (productInfo?.hasModel && !modelChoice) {
+      toast({ title: 'Choose an option', description: 'Please select "Remove Background" or "Keep Model" before continuing.', variant: 'destructive' });
+      return;
+    }
+    completeStep(1, `${productImages.length} image${productImages.length > 1 ? 's' : ''}${modelChoice === 'keep' ? ' · Keep Model' : ''}`, 2);
+  };
+
+  /* ── Remove background handler ── */
+  const handleRemoveBackground = async () => {
+    if (!productImages[0] || !id) return;
+    setRemovingBackground(true);
+    try {
+      const response = await fetch(productImages[0]);
+      const blob = await response.blob();
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+
+      const { data, error } = await supabase.functions.invoke('remove-background', {
+        body: { image: base64, projectId: id },
+      });
+
+      if (error || !data?.url) {
+        toast({ title: 'Background removal failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
+        setRemovingBackground(false);
+        return;
+      }
+
+      // Replace primary image with cleaned version
+      setProductImages(prev => {
+        const updated = [...prev];
+        updated[0] = data.url;
+        return updated;
+      });
+      setModelChoice('remove');
+      // Re-analyze the cleaned image
+      analyzeProduct(data.url);
+      toast({ title: 'Background removed', description: 'Product image cleaned successfully.' });
+    } catch (e) {
+      console.error('Remove background error:', e);
+      toast({ title: 'Background removal failed', description: 'Network error', variant: 'destructive' });
+    }
+    setRemovingBackground(false);
+  };
+
+  const handleKeepModel = () => {
+    setModelChoice('keep');
+    setShootType('model');
+    toast({ title: 'Model kept', description: 'Shots will be generated with the same model.' });
   };
 
   /* ── Step navigation ── */
@@ -700,6 +755,7 @@ const Studio = () => {
           stylePrompt: stylePrompt || undefined,
           productImageUrl,
           aspectRatio,
+          keepOriginalModel: modelChoice === 'keep',
         },
       });
       clearInterval(progressInterval);
@@ -1026,7 +1082,7 @@ const Studio = () => {
          ════════════════════════════════════════════ */}
       <div className="flex-1 overflow-hidden bg-muted/30 h-screen relative canvas-dots">
         {activeStep === 1 && (
-          <Step1Viewport productImages={productImages} productInfo={productInfo} analyzingProduct={analyzingProduct} analysisPhase={analysisPhase} productName={productName} setProductName={setProductName} />
+          <Step1Viewport productImages={productImages} productInfo={productInfo} analyzingProduct={analyzingProduct} analysisPhase={analysisPhase} productName={productName} setProductName={setProductName} modelChoice={modelChoice} removingBackground={removingBackground} onRemoveBackground={handleRemoveBackground} onKeepModel={handleKeepModel} />
         )}
         {activeStep !== 1 && (
           <div className="p-8 min-h-full overflow-y-auto h-full">
@@ -1787,13 +1843,17 @@ function Step5Config({ shots, exportFormats, setExportFormats, selectedShots, se
    ════════════════════════════════════════════════════════════════ */
 
 /* ── Step 1 Viewport ── */
-function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisPhase, productName, setProductName }: { 
+function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisPhase, productName, setProductName, modelChoice, removingBackground, onRemoveBackground, onKeepModel }: { 
   productImages: string[]; 
   productInfo: ProductInfo | null;
   analyzingProduct: boolean;
   analysisPhase: 'idle' | 'analyzing' | 'done';
   productName: string;
   setProductName: (name: string) => void;
+  modelChoice: 'remove' | 'keep' | null;
+  removingBackground: boolean;
+  onRemoveBackground: () => void;
+  onKeepModel: () => void;
 }) {
   const ANALYSIS_TEXTS = [
     'Analyzing image...',
@@ -1965,8 +2025,53 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
               </Badge>
             </div>
 
+            {/* Model choice action cards */}
+            {productInfo.hasModel && !modelChoice && (
+              <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <p className="text-[11px] font-semibold text-foreground">What would you like to do?</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={onRemoveBackground}
+                    disabled={removingBackground}
+                    className="rounded-xl border border-border bg-card p-3 text-left transition-all hover:border-primary/50 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {removingBackground ? (
+                      <Loader2 className="h-5 w-5 animate-spin text-primary mb-1.5" />
+                    ) : (
+                      <ImageIcon className="h-5 w-5 text-muted-foreground mb-1.5" />
+                    )}
+                    <p className="text-xs font-semibold">{removingBackground ? 'Removing...' : 'Remove Background'}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">Extract product only, remove model & background</p>
+                  </button>
+                  <button
+                    onClick={onKeepModel}
+                    disabled={removingBackground}
+                    className="rounded-xl border border-border bg-card p-3 text-left transition-all hover:border-primary/50 hover:shadow-md disabled:opacity-50"
+                  >
+                    <Eye className="h-5 w-5 text-muted-foreground mb-1.5" />
+                    <p className="text-xs font-semibold">Keep Model</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">Generate all shots with the same model</p>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Model choice confirmation */}
+            {modelChoice === 'keep' && (
+              <div className="rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 flex items-center gap-2">
+                <Check className="h-4 w-4 text-primary shrink-0" />
+                <p className="text-xs text-foreground">Will generate with detected model across all shots</p>
+              </div>
+            )}
+            {modelChoice === 'remove' && (
+              <div className="rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 flex items-center gap-2">
+                <Check className="h-4 w-4 text-primary shrink-0" />
+                <p className="text-xs text-foreground">Background removed — product-only image ready</p>
+              </div>
+            )}
+
             {/* Model note */}
-            {productInfo.modelNote && (
+            {productInfo.modelNote && !modelChoice && (
               <p className="text-[10px] text-muted-foreground italic">{productInfo.modelNote}</p>
             )}
 

@@ -39,7 +39,7 @@ serve(async (req) => {
     }
     const userId = user.id;
 
-    const { projectId, preset, shotCount, additionalContext, category, shotType, modelConfig, stylePrompt, productImageUrl, aspectRatio } = await req.json();
+    const { projectId, preset, shotCount, additionalContext, category, shotType, modelConfig, stylePrompt, productImageUrl, aspectRatio, keepOriginalModel } = await req.json();
 
     if (!projectId || !preset || !shotCount) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -104,8 +104,11 @@ serve(async (req) => {
 
     // Build prompts for each shot
     const ratioInstruction = aspectRatio ? `Image aspect ratio: ${aspectRatio}.` : "";
+    const keepModelInstruction = keepOriginalModel
+      ? " Use the EXACT same model visible in the reference product image. Maintain the same person, face, body type, and styling across all shots."
+      : "";
     const consistencyInstruction = shotType === "model_shot"
-      ? "IMPORTANT: Every image MUST show ONLY the model wearing/holding the product. Do NOT show the product alone without a model."
+      ? `IMPORTANT: Every image MUST show ONLY the model wearing/holding the product. Do NOT show the product alone without a model.${keepModelInstruction}`
       : "IMPORTANT: Every image MUST show ONLY the product. Do NOT include any human model in the image.";
 
     const shotPrompts = labels.map((label) => {
