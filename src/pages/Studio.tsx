@@ -870,12 +870,13 @@ function Step2Config({ project, modelConfig, setModelConfig, modelUploadRef, onM
           <ToggleGroupItem value="runway" className="px-3 h-7 text-xs">Runway</ToggleGroupItem>
         </ToggleGroup>
         <p className="text-[10px] text-muted-foreground">Gemini is faster. Runway has better lighting.</p>
+      </div>
     </div>
   );
 }
 
 /* ── Step 3 Config (Left) ── */
-function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, additionalContext, setAdditionalContext, credits, canGenerate, onGenerate }: {
+function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, additionalContext, setAdditionalContext }: {
   selectedPreset: string | null;
   setSelectedPreset: (v: string | null) => void;
   referenceImage: string | null;
@@ -886,15 +887,11 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
   setShotCount: (v: string) => void;
   additionalContext: string;
   setAdditionalContext: (v: string) => void;
-  credits: number;
-  canGenerate: boolean;
-  onGenerate: () => void;
 }) {
   return (
-    <div className="space-y-3">
-      {/* Preset grid — 2 col compact */}
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Style preset</p>
-      <div className="grid grid-cols-2 gap-1.5">
+    <div className="space-y-4">
+      <p className="text-sm font-semibold text-foreground">Style preset</p>
+      <div className="grid grid-cols-2 gap-2">
         {STYLE_PRESETS.map(p => (
           <button
             key={p.id}
