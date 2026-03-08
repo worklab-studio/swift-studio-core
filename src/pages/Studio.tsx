@@ -159,9 +159,13 @@ const Studio = () => {
   const [project, setProject] = useState<Project | null>(null);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeStep, setActiveStep] = useState(2);
-  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set([1]));
+  const [activeStep, setActiveStep] = useState(1);
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [stepSummaries, setStepSummaries] = useState<Record<number, string>>({});
+
+  // Product images (Step 1)
+  const [productImages, setProductImages] = useState<string[]>([]);
+  const productUploadRef = useRef<HTMLInputElement>(null);
 
   // Model config
   const [modelConfig, setModelConfig] = useState<ModelConfig>({
@@ -233,7 +237,30 @@ const Studio = () => {
     fetchData();
   }, [user, id]);
 
-  const thumbnailUrl = assets[0]?.url ?? null;
+  const thumbnailUrl = productImages[0] ?? assets[0]?.url ?? null;
+
+  /* ── Step 1 handlers ── */
+  const handleProductImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    const newUrls = Array.from(files).map(f => URL.createObjectURL(f));
+    setProductImages(prev => [...prev, ...newUrls]);
+    e.target.value = '';
+  };
+
+  const handleRemoveProductImage = (index: number) => {
+    setProductImages(prev => {
+      const next = [...prev];
+      URL.revokeObjectURL(next[index]);
+      next.splice(index, 1);
+      return next;
+    });
+  };
+
+  const handleCompleteStep1 = () => {
+    if (productImages.length === 0) return;
+    completeStep(1, `${productImages.length} image${productImages.length > 1 ? 's' : ''}`, 2);
+  };
 
   /* ── Step navigation ── */
   const goToStep = (step: number) => {
@@ -529,6 +556,18 @@ const Studio = () => {
                   </button>
 
                   {/* ── Inline config for active step ── */}
+                  {isActive && step.id === 1 && (
+                    <div className="ml-11 mt-2 mb-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <Step1Config
+                        productImages={productImages}
+                        productUploadRef={productUploadRef}
+                        onUpload={handleProductImageUpload}
+                        onRemove={handleRemoveProductImage}
+                        onContinue={handleCompleteStep1}
+                      />
+                    </div>
+                  )}
+
                   {isActive && step.id === 2 && (
                     <div className="ml-11 mt-2 mb-3 animate-in fade-in slide-in-from-top-2 duration-200">
                       <Step2Config
@@ -602,6 +641,9 @@ const Studio = () => {
          ════════════════════════════════════════════ */}
       <div className="flex-1 overflow-y-auto bg-muted/30 h-screen">
         <div className="p-8 min-h-full">
+          {activeStep === 1 && (
+            <Step1Viewport productImages={productImages} />
+          )}
           {activeStep === 2 && (
             <Step2Viewport
               project={project}
@@ -654,6 +696,55 @@ const Studio = () => {
 /* ════════════════════════════════════════════════════════════════
    LEFT PANEL CONFIG COMPONENTS
    ════════════════════════════════════════════════════════════════ */
+
+/* ── Step 1 Config (Left) ── */
+function Step1Config({ productImages, productUploadRef, onUpload, onRemove, onContinue }: {
+  productImages: string[];
+  productUploadRef: React.RefObject<HTMLInputElement>;
+  onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onRemove: (index: number) => void;
+  onContinue: () => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Add Product Images</p>
+      <p className="text-[11px] text-muted-foreground">Upload photos of your product from different angles.</p>
+
+      <input ref={productUploadRef} type="file" accept="image/*" multiple className="hidden" onChange={onUpload} />
+
+      <button
+        onClick={() => productUploadRef.current?.click()}
+        className="w-full h-20 rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center gap-1.5 hover:border-primary/50 hover:bg-accent/30 transition-colors"
+      >
+        <Upload className="h-5 w-5 text-muted-foreground" />
+        <p className="text-xs text-muted-foreground">Click to upload · Multiple files</p>
+      </button>
+
+      {productImages.length > 0 && (
+        <div className="grid grid-cols-2 gap-1.5">
+          {productImages.map((url, i) => (
+            <div key={i} className="relative group rounded-lg overflow-hidden border aspect-square">
+              <img src={url} alt={`Product angle ${i + 1}`} className="w-full h-full object-cover" />
+              <button
+                onClick={() => onRemove(i)}
+                className="absolute top-1 right-1 h-5 w-5 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <X className="h-3 w-3" />
+              </button>
+              <div className="absolute bottom-1 left-1 bg-background/70 backdrop-blur-sm rounded px-1.5 py-0.5">
+                <p className="text-[9px] font-medium text-foreground">Angle {i + 1}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Button className="w-full" size="sm" disabled={productImages.length === 0} onClick={onContinue}>
+        Continue to Model Setup →
+      </Button>
+    </div>
+  );
+}
 
 /* ── Step 2 Config (Left) ── */
 function Step2Config({ project, modelConfig, setModelConfig, modelUploadRef, onModelUpload, onContinue }: {
@@ -999,6 +1090,41 @@ function Step5Config({ shots, exportFormats, setExportFormats, selectedShots, se
 /* ════════════════════════════════════════════════════════════════
    RIGHT PANEL VIEWPORT COMPONENTS
    ════════════════════════════════════════════════════════════════ */
+
+/* ── Step 1 Viewport ── */
+function Step1Viewport({ productImages }: { productImages: string[] }) {
+  if (productImages.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 text-center animate-in fade-in duration-300">
+        <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center">
+          <Upload className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <div>
+          <p className="font-medium">Upload product images</p>
+          <p className="text-sm text-muted-foreground mt-1">Add photos from different angles to get started.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="animate-in fade-in duration-300 space-y-4">
+      {/* Hero image */}
+      <div className="max-w-2xl mx-auto">
+        <img src={productImages[0]} alt="Product main" className="w-full rounded-2xl shadow-lg object-cover aspect-[4/3]" />
+      </div>
+      {/* Additional angles */}
+      {productImages.length > 1 && (
+        <div className="flex gap-3 justify-center flex-wrap">
+          {productImages.slice(1).map((url, i) => (
+            <img key={i} src={url} alt={`Angle ${i + 2}`} className="h-28 w-28 rounded-xl object-cover border shadow-sm" />
+          ))}
+        </div>
+      )}
+      <p className="text-sm text-muted-foreground text-center">{productImages.length} image{productImages.length > 1 ? 's' : ''} uploaded</p>
+    </div>
+  );
+}
 
 /* ── Step 2 Viewport ── */
 function Step2Viewport({ project, modelConfig, selectedModelData }: {
