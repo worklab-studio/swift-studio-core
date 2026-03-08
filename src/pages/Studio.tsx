@@ -318,6 +318,11 @@ const Studio = () => {
     aiEngine: 'gemini',
   });
 
+  // Style settings (auto-computed from preset or reference AI)
+  const [styleSettings, setStyleSettings] = useState<StyleSettings | null>(null);
+  const [stylePrompt, setStylePrompt] = useState('');
+  const [analyzingStyle, setAnalyzingStyle] = useState(false);
+
   // Style config
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
