@@ -1446,65 +1446,79 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
 }
 
 /* ── Step 2 Viewport ── */
-function Step2Viewport({ project, modelConfig, selectedModelData }: {
-  project: Project;
+function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelData }: {
+  shootType: 'product' | 'model' | null;
   modelConfig: ModelConfig;
+  setModelConfig: React.Dispatch<React.SetStateAction<ModelConfig>>;
   selectedModelData: typeof PLACEHOLDER_MODELS[0] | undefined;
 }) {
-  if (project.shot_type === 'product_showcase') {
+  // No shoot type selected yet
+  if (!shootType) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 text-center animate-in fade-in duration-300">
+        <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center">
+          <Camera className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <div>
+          <p className="font-medium">Choose a shoot type</p>
+          <p className="text-sm text-muted-foreground mt-1">Select Product Shoot or Model Shoot on the left to continue.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Product shoot
+  if (shootType === 'product') {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-center animate-in fade-in duration-300">
         <div className="h-20 w-20 rounded-2xl bg-muted flex items-center justify-center">
           <Package className="h-10 w-10 text-muted-foreground" />
         </div>
         <div>
-          <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Product Showcase</p>
-          <p className="text-sm text-muted-foreground mt-1">Your product will be placed in professional scenes.</p>
+          <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Product Shoot</p>
+          <p className="text-sm text-muted-foreground mt-1">Your product will be placed in professional studio scenes.</p>
         </div>
       </div>
     );
   }
 
-  // Show uploaded model
-  if (modelConfig.uploadedModelUrl) {
-    return (
-      <div className="flex items-center justify-center h-full animate-in fade-in duration-300">
-        <div className="max-w-md w-full">
-          <img src={modelConfig.uploadedModelUrl} alt="Custom model" className="w-full rounded-2xl shadow-lg object-cover aspect-[3/4]" />
-          <p className="text-sm text-muted-foreground text-center mt-4">Custom uploaded model</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show selected model
-  if (selectedModelData) {
-    return (
-      <div className="flex items-center justify-center h-full animate-in fade-in duration-300">
-        <div className="max-w-sm w-full">
-          <div className="aspect-[3/4] rounded-2xl overflow-hidden shadow-lg" style={{ background: selectedModelData.color }}>
-            <div className="h-full flex flex-col items-center justify-end p-6">
-              <div className="bg-background/90 backdrop-blur-sm rounded-xl p-4 w-full text-center">
-                <p className="font-semibold text-lg">{selectedModelData.name}</p>
-                <p className="text-sm text-muted-foreground">{selectedModelData.attrs}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Empty state
+  // Model shoot — show 40-model grid
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-4 text-center animate-in fade-in duration-300">
-      <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center">
-        <ImageIcon className="h-8 w-8 text-muted-foreground" />
+    <div className="h-full flex flex-col animate-in fade-in duration-300">
+      <div className="shrink-0 mb-4">
+        <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Choose an AI Model</p>
+        <p className="text-sm text-muted-foreground mt-1">Select a model for your shoot. {selectedModelData ? `Selected: ${selectedModelData.name}` : 'Click to select.'}</p>
       </div>
-      <div>
-        <p className="font-medium">Select a model</p>
-        <p className="text-sm text-muted-foreground mt-1">Choose from our library or upload your own to preview here.</p>
-      </div>
+      <ScrollArea className="flex-1">
+        <div className="grid grid-cols-5 gap-3 pb-4">
+          {PLACEHOLDER_MODELS.map((m) => {
+            const isSelected = modelConfig.selectedModel === m.id;
+            return (
+              <button
+                key={m.id}
+                onClick={() => setModelConfig(prev => ({ ...prev, selectedModel: prev.selectedModel === m.id ? null : m.id, uploadedModelUrl: null }))}
+                className={`rounded-xl overflow-hidden border transition-all text-left ${
+                  isSelected ? 'ring-2 ring-primary ring-offset-2' : 'hover:border-primary/50 hover:shadow-md'
+                }`}
+              >
+                <div className="aspect-[3/4]" style={{ background: m.color }}>
+                  {isSelected && (
+                    <div className="h-full flex items-center justify-center">
+                      <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                        <Check className="h-4 w-4 text-primary-foreground" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="p-2">
+                  <p className="text-xs font-medium truncate">{m.name}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{m.attrs}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </ScrollArea>
     </div>
   );
 }
