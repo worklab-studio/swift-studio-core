@@ -695,7 +695,7 @@ const Studio = () => {
       <div className="flex-1 overflow-y-auto bg-muted/30 h-screen">
         <div className="p-8 min-h-full">
           {activeStep === 1 && (
-            <Step1Viewport productImages={productImages} />
+            <Step1Viewport productImages={productImages} productInfo={productInfo} analyzingProduct={analyzingProduct} />
           )}
           {activeStep === 2 && (
             <Step2Viewport
@@ -757,41 +757,90 @@ function Step1Config({ productImages, productUploadRef, onUpload, onRemove }: {
   onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemove: (index: number) => void;
 }) {
+  const TOTAL_SLOTS = 7;
+  const slots = Array.from({ length: TOTAL_SLOTS }, (_, i) => productImages[i] ?? null);
+
   return (
     <div className="space-y-4">
       <div>
-        <p className="text-sm font-semibold text-foreground">Add Product Images</p>
-        <p className="text-xs text-muted-foreground mt-1">Upload photos of your product from different angles.</p>
+        <p className="text-sm font-semibold text-foreground">Product Images</p>
+        <p className="text-xs text-muted-foreground mt-1">Add your product photos to get started.</p>
       </div>
 
       <input ref={productUploadRef} type="file" accept="image/*" multiple className="hidden" onChange={onUpload} />
 
       <button
         onClick={() => productUploadRef.current?.click()}
-        className="w-full h-24 rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 hover:border-primary/50 hover:bg-accent/30 transition-colors"
+        className="w-full h-20 rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center gap-1.5 hover:border-primary/50 hover:bg-accent/30 transition-colors"
       >
         <Upload className="h-5 w-5 text-muted-foreground" />
         <p className="text-xs text-muted-foreground">Click to upload · Multiple files</p>
       </button>
 
-      {productImages.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
-          {productImages.map((url, i) => (
-            <div key={i} className="relative group rounded-lg overflow-hidden border aspect-square">
-              <img src={url} alt={`Product angle ${i + 1}`} className="w-full h-full object-cover" />
-              <button
-                onClick={() => onRemove(i)}
-                className="absolute top-1 right-1 h-5 w-5 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <X className="h-3 w-3" />
-              </button>
-              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-background/70 to-transparent p-1.5">
-                <p className="text-[9px] font-medium text-foreground text-center">Angle {i + 1}</p>
-              </div>
+      <p className="text-[11px] text-muted-foreground text-center">
+        Upload different angles and shots for better results
+      </p>
+
+      {/* Hero slot — first image */}
+      <div
+        onClick={() => !slots[0] && productUploadRef.current?.click()}
+        className={`relative w-full aspect-[4/3] rounded-lg overflow-hidden border-2 transition-colors ${
+          slots[0] ? 'border-border' : 'border-dashed border-border hover:border-primary/40 cursor-pointer'
+        }`}
+      >
+        {slots[0] ? (
+          <>
+            <img src={slots[0]} alt="Main product" className="w-full h-full object-cover" />
+            <button
+              onClick={(e) => { e.stopPropagation(); onRemove(0); }}
+              className="absolute top-1.5 right-1.5 h-5 w-5 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity group-hover:opacity-100"
+              style={{ opacity: 1 }}
+            >
+              <X className="h-3 w-3" />
+            </button>
+            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-background/70 to-transparent px-2 py-1.5">
+              <p className="text-[10px] font-medium text-foreground">Main Shot</p>
             </div>
-          ))}
-        </div>
-      )}
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full gap-1">
+            <Camera className="h-6 w-6 text-muted-foreground/40" />
+            <p className="text-[10px] text-muted-foreground/60">Main product shot</p>
+          </div>
+        )}
+      </div>
+
+      {/* Grid — slots 2-7 */}
+      <div className="grid grid-cols-3 gap-1.5">
+        {slots.slice(1).map((url, i) => {
+          const slotIndex = i + 1;
+          return (
+            <div
+              key={slotIndex}
+              onClick={() => !url && productUploadRef.current?.click()}
+              className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-colors ${
+                url ? 'border-border' : 'border-dashed border-border hover:border-primary/40 cursor-pointer'
+              }`}
+            >
+              {url ? (
+                <>
+                  <img src={url} alt={`Angle ${slotIndex + 1}`} className="w-full h-full object-cover" />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onRemove(slotIndex); }}
+                    className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <ImageIcon className="h-4 w-4 text-muted-foreground/30" />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -1126,7 +1175,11 @@ function Step5Config({ shots, exportFormats, setExportFormats, selectedShots, se
    ════════════════════════════════════════════════════════════════ */
 
 /* ── Step 1 Viewport ── */
-function Step1Viewport({ productImages }: { productImages: string[] }) {
+function Step1Viewport({ productImages, productInfo, analyzingProduct }: { 
+  productImages: string[]; 
+  productInfo: ProductInfo | null;
+  analyzingProduct: boolean;
+}) {
   if (productImages.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-center animate-in fade-in duration-300">
@@ -1142,11 +1195,84 @@ function Step1Viewport({ productImages }: { productImages: string[] }) {
   }
 
   return (
-    <div className="animate-in fade-in duration-300 space-y-4">
+    <div className="animate-in fade-in duration-300 max-w-3xl mx-auto space-y-8">
       {/* Hero image */}
-      <div className="max-w-2xl mx-auto">
+      <div>
         <img src={productImages[0]} alt="Product main" className="w-full rounded-2xl shadow-lg object-cover aspect-[4/3]" />
       </div>
+
+      {/* AI Product Recognition */}
+      <div className="rounded-xl border bg-card p-6 space-y-5">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-primary" />
+          <p className="text-sm font-semibold text-foreground">AI Product Recognition</p>
+          {analyzingProduct && (
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground ml-auto" />
+          )}
+        </div>
+
+        {analyzingProduct && !productInfo && (
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <div className="flex gap-2">
+              <Skeleton className="h-6 w-16 rounded-full" />
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-6 w-14 rounded-full" />
+            </div>
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        )}
+
+        {productInfo && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Category</p>
+                <p className="text-sm font-medium text-foreground">{productInfo.category}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Material</p>
+                <p className="text-sm font-medium text-foreground">{productInfo.material}</p>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Detected Colors</p>
+              <div className="flex flex-wrap gap-1.5">
+                {productInfo.colors.map((color, i) => (
+                  <Badge key={i} variant="secondary" className="text-[11px]">
+                    {color}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Suggested Shots</p>
+              <div className="flex flex-wrap gap-1.5">
+                {productInfo.suggestedShots.map((shot, i) => (
+                  <Badge key={i} variant="outline" className="text-[11px]">
+                    <Camera className="h-3 w-3 mr-1" />
+                    {shot}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Description</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">{productInfo.description}</p>
+            </div>
+          </div>
+        )}
+
+        {!analyzingProduct && !productInfo && (
+          <p className="text-xs text-muted-foreground">Analysis could not be completed. Try uploading a clearer image.</p>
+        )}
+      </div>
+
       {/* Additional angles */}
       {productImages.length > 1 && (
         <div className="flex gap-3 justify-center flex-wrap">
@@ -1155,7 +1281,6 @@ function Step1Viewport({ productImages }: { productImages: string[] }) {
           ))}
         </div>
       )}
-      <p className="text-sm text-muted-foreground text-center">{productImages.length} image{productImages.length > 1 ? 's' : ''} uploaded</p>
     </div>
   );
 }
