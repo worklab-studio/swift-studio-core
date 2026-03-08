@@ -6,6 +6,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { FolderOpen } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useNewProjectDialog } from '@/contexts/NewProjectContext';
 
 const categories = ['All', 'Jewellery', 'Apparel', 'Beauty', 'FMCG', 'Footwear', 'Bags'];
@@ -23,6 +24,7 @@ interface Project {
 
 const Projects = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { openDialog } = useNewProjectDialog();
   const [projects, setProjects] = useState<Project[]>([]);
   const [filter, setFilter] = useState('All');
@@ -86,7 +88,7 @@ const Projects = () => {
                     {p.shot_type && <Badge variant="outline" className="text-xs">{SHOT_LABELS[p.shot_type] ?? p.shot_type}</Badge>}
                   </div>
                 </TableCell>
-                <TableCell><Button variant="outline" size="sm">Open</Button></TableCell>
+                <TableCell><Button variant="outline" size="sm" onClick={() => navigate(`/app/projects/${p.id}`)}>Open</Button></TableCell>
               </TableRow>
             ))}
           </TableBody>

@@ -129,7 +129,7 @@ const Dashboard = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Button variant="outline" size="sm">Open</Button>
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/app/projects/${p.id}`)}>Open</Button>
                     </TableCell>
                   </TableRow>
                 ))}
