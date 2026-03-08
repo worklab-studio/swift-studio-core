@@ -12,6 +12,12 @@ const APPAREL_REGEX =
 const JEWELLERY_REGEX =
   /ring|necklace|bracelet|bangle|earring|pendant|chain|choker|anklet|brooch|cufflink|tiara|maang.tikka|jhumka|kundan|polki|temple.jewellery|mangalsutra|nose.ring|toe.ring|armlet|kamarbandh|haathphool|studs|hoops|solitaire|charm|locket/i;
 
+const LUGGAGE_REGEX =
+  /suitcase|trolley|luggage|travel.bag|duffel|carry.on|cabin.bag|rolling.bag/i;
+
+const BACKPACK_REGEX =
+  /backpack|rucksack|daypack|school.bag|knapsack|hiking.pack|book.bag/i;
+
 const APPAREL_CONSTRAINTS = `
 HARD CONSTRAINTS FOR APPAREL VIDEO — you MUST follow ALL of these:
 - Movement: ONLY subtle motion — gentle fabric sway, light material motion, slow walk, soft pose transitions. Nothing more.
