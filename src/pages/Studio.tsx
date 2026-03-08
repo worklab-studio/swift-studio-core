@@ -582,14 +582,69 @@ const Studio = () => {
     }
   };
 
-  const handleReferenceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleReferenceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setReferenceImage(url);
-      setSelectedPreset('custom');
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setReferenceImage(url);
+    setSelectedPreset('custom');
+    setStyleSettings(null);
+    setStylePrompt('');
+
+    // Analyze reference image via AI
+    setAnalyzingStyle(true);
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+
+      const { data, error } = await supabase.functions.invoke('analyze-style-reference', {
+        body: { image: base64, shootType: shootType || 'product', productCategory: productInfo?.category || project?.category },
+      });
+
+      if (!error && data) {
+        setStyleSettings({
+          pose: data.pose || '',
+          angle: data.angle || '',
+          lighting: data.lighting || '',
+          composition: data.composition || '',
+        });
+        setStylePrompt(data.fullPrompt || '');
+      }
+    } catch (err) {
+      console.error('Style reference analysis failed:', err);
     }
+    setAnalyzingStyle(false);
   };
+
+  /* ── Build style prompt from preset ── */
+  const buildStylePrompt = useCallback((preset: StylePreset, isModel: boolean, info?: ProductInfo | null): string => {
+    const settings = isModel ? preset.model : preset.product;
+    const productDesc = info
+      ? `${info.category} product (${info.colors?.join(', ') || 'neutral tones'}, ${info.material || 'premium materials'})`
+      : 'product';
+    const garmentInfo = info?.garmentType ? ` — specifically a ${info.garmentType}` : '';
+    const outfitInfo = isModel && info?.outfitSuggestion ? ` Styled with: ${info.outfitSuggestion}.` : '';
+
+    return `${preset.name} style photography for a ${productDesc}${garmentInfo}. ` +
+      `Pose: ${settings.pose}. ` +
+      `Camera angle: ${settings.angle}. ` +
+      `Lighting: ${settings.lighting}. ` +
+      `Composition: ${settings.composition}.${outfitInfo}`;
+  }, []);
+
+  // Auto-compute stylePrompt + styleSettings when preset changes
+  useEffect(() => {
+    if (!selectedPreset || selectedPreset === 'custom') return;
+    const preset = STYLE_PRESETS.find(p => p.id === selectedPreset);
+    if (!preset) return;
+    const isModel = shootType === 'model';
+    const settings = isModel ? preset.model : preset.product;
+    setStyleSettings(settings);
+    setStylePrompt(buildStylePrompt(preset, isModel, productInfo));
+  }, [selectedPreset, shootType, productInfo, buildStylePrompt]);
 
   /* ── Generation ── */
   const handleGenerate = async () => {
