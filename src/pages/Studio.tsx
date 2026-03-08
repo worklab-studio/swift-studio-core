@@ -1082,7 +1082,7 @@ const Studio = () => {
          ════════════════════════════════════════════ */}
       <div className="flex-1 overflow-hidden bg-muted/30 h-screen relative canvas-dots">
         {activeStep === 1 && (
-          <Step1Viewport productImages={productImages} productInfo={productInfo} analyzingProduct={analyzingProduct} analysisPhase={analysisPhase} productName={productName} setProductName={setProductName} />
+          <Step1Viewport productImages={productImages} productInfo={productInfo} analyzingProduct={analyzingProduct} analysisPhase={analysisPhase} productName={productName} setProductName={setProductName} modelChoice={modelChoice} removingBackground={removingBackground} onRemoveBackground={handleRemoveBackground} onKeepModel={handleKeepModel} />
         )}
         {activeStep !== 1 && (
           <div className="p-8 min-h-full overflow-y-auto h-full">
