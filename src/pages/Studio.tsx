@@ -14,7 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
-import { Check, Package, Upload, X, Loader2, ArrowLeft, Download, Link2, Pencil, RotateCcw, Undo2 } from 'lucide-react';
+import { Check, Package, Upload, X, Loader2, ArrowLeft, Download, Link2, Pencil, RotateCcw, Undo2, Play, Share2, RefreshCw } from 'lucide-react';
 
 /* ── Types ── */
 interface Project {
@@ -54,6 +54,33 @@ interface GeneratedShot {
   previousUrl: string | null;
   showUndo: boolean;
 }
+
+interface VideoConfig {
+  baseImageId: string;
+  duration: number;
+  resolution: string;
+  engine: string;
+}
+
+interface GeneratedVideo {
+  id: string;
+  url: string;
+  duration: number;
+  resolution: string;
+  engine: string;
+}
+
+const VIDEO_STAGES = [
+  'Analysing your shot...',
+  'Building the scene...',
+  'Rendering motion...',
+  'Almost there...',
+];
+
+const calculateVideoCreditCost = (duration: number, resolution: string) => {
+  const resMultiplier = resolution === '1080p' ? 2 : 1;
+  return Math.ceil((duration / 2) * resMultiplier);
+};
 
 const SHOT_LABELS: Record<string, string> = { model_shot: 'Model Shot', product_showcase: 'Product Showcase' };
 const SHOT_LABEL_DISPLAY: Record<string, string> = {
