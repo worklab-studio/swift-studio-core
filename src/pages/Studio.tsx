@@ -558,6 +558,7 @@ const Studio = () => {
             setSelectedShots={setSelectedExportShots}
             onDownload={handleDownload}
             onBackToSteps={() => setShowExportPanel(false)}
+            generatedVideo={generatedVideo}
           />
         ) : (
           <div className="p-4 flex-1">
@@ -642,6 +643,17 @@ const Studio = () => {
             onRegenerateAll={handleRegenerateAll}
             onGenerate={handleGenerate}
             updateShot={updateShot}
+            videoExpanded={videoExpanded}
+            setVideoExpanded={setVideoExpanded}
+            videoConfig={videoConfig}
+            setVideoConfig={setVideoConfig}
+            videoGenerating={videoGenerating}
+            videoStage={videoStage}
+            generatedVideo={generatedVideo}
+            onGenerateVideo={handleGenerateVideo}
+            onCancelVideo={handleCancelVideo}
+            setGeneratedVideo={setGeneratedVideo}
+            creditsRemaining={profile?.credits_remaining ?? 0}
           />
         )}
       </div>
