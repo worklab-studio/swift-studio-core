@@ -896,134 +896,150 @@ function Step1Config({ productImages, productUploadRef, onUpload, onRemove }: {
 }
 
 /* ── Step 2 Config (Left) ── */
-function Step2Config({ project, modelConfig, setModelConfig, modelUploadRef, onModelUpload }: {
-  project: Project;
+function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload }: {
+  shootType: 'product' | 'model' | null;
+  setShootType: React.Dispatch<React.SetStateAction<'product' | 'model' | null>>;
   modelConfig: ModelConfig;
   setModelConfig: React.Dispatch<React.SetStateAction<ModelConfig>>;
   modelUploadRef: React.RefObject<HTMLInputElement>;
   onModelUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
-  if (project.shot_type === 'product_showcase') {
-    return (
-      <div className="space-y-4">
-        <div className="rounded-lg border bg-muted/50 p-4 flex items-center gap-3">
-          <Package className="h-5 w-5 text-muted-foreground shrink-0" />
-          <p className="text-sm text-muted-foreground">Product Showcase — no model needed.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
-      <p className="text-sm font-semibold text-foreground">Select model</p>
-      <div className="grid grid-cols-2 gap-1.5 max-h-[200px] overflow-y-auto pr-1">
-        {PLACEHOLDER_MODELS.map((m) => (
-          <button
-            key={m.id}
-            onClick={() => setModelConfig(prev => ({ ...prev, selectedModel: m.id, uploadedModelUrl: null }))}
-            className={`rounded-lg overflow-hidden border transition-all text-left ${
-              modelConfig.selectedModel === m.id ? 'ring-2 ring-primary ring-offset-1' : 'hover:border-primary/50'
-            }`}
-          >
-            <div className="aspect-[3/2]" style={{ background: m.color }} />
-            <div className="p-1.5">
-              <p className="text-[11px] font-medium">{m.name}</p>
-              <p className="text-[9px] text-muted-foreground">{m.attrs}</p>
-            </div>
-          </button>
-        ))}
+      <div>
+        <p className="text-sm font-semibold text-foreground">Shoot Type</p>
+        <p className="text-xs text-muted-foreground mt-1">Choose how your product will be presented.</p>
       </div>
 
-      {/* Upload */}
-      <input ref={modelUploadRef} type="file" accept="image/jpeg,image/png" className="hidden" onChange={onModelUpload} />
-      {modelConfig.uploadedModelUrl ? (
-        <div className="relative w-20 h-24 rounded-lg overflow-hidden border">
-          <img src={modelConfig.uploadedModelUrl} alt="Custom model" className="w-full h-full object-cover" />
-          <button onClick={() => setModelConfig(prev => ({ ...prev, uploadedModelUrl: null }))} className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-background/80 flex items-center justify-center">
-            <X className="h-2.5 w-2.5" />
-          </button>
-        </div>
-      ) : (
-        <button onClick={() => modelUploadRef.current?.click()} className="w-full h-16 rounded-lg border-2 border-dashed border-border flex items-center justify-center gap-2 hover:border-primary/50 transition-colors">
-          <Upload className="h-4 w-4 text-muted-foreground" />
-          <p className="text-xs text-muted-foreground">Upload custom model</p>
+      {/* Shoot type cards */}
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          onClick={() => setShootType('product')}
+          className={`rounded-lg border p-4 text-left transition-all ${
+            shootType === 'product' ? 'ring-2 ring-primary ring-offset-1' : 'hover:border-primary/50'
+          }`}
+        >
+          <Package className="h-5 w-5 text-muted-foreground mb-2" />
+          <p className="text-xs font-semibold">Product Shoot</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">Clean product-only shots</p>
         </button>
+        <button
+          onClick={() => setShootType('model')}
+          className={`rounded-lg border p-4 text-left transition-all ${
+            shootType === 'model' ? 'ring-2 ring-primary ring-offset-1' : 'hover:border-primary/50'
+          }`}
+        >
+          <ImageIcon className="h-5 w-5 text-muted-foreground mb-2" />
+          <p className="text-xs font-semibold">Model Shoot</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">Product on AI model</p>
+        </button>
+      </div>
+
+      {/* Product shoot confirmation */}
+      {shootType === 'product' && (
+        <div className="rounded-lg border bg-muted/50 p-3 animate-in fade-in duration-200">
+          <p className="text-xs text-muted-foreground">Your product will be placed in professional studio scenes — no model needed.</p>
+        </div>
       )}
 
-      <Separator />
+      {/* Model shoot settings */}
+      {shootType === 'model' && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+          <Separator />
 
-      {/* Attributes */}
-      <div className="space-y-2">
-        <div className="space-y-1">
-          <label className="text-xs font-medium">Gender</label>
-          <Select value={modelConfig.gender} onValueChange={v => setModelConfig(prev => ({ ...prev, gender: v }))}>
-            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Female">Female</SelectItem>
-              <SelectItem value="Male">Male</SelectItem>
-              <SelectItem value="Non-binary">Non-binary</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-medium">Ethnicity</label>
-          <Select value={modelConfig.ethnicity} onValueChange={v => setModelConfig(prev => ({ ...prev, ethnicity: v }))}>
-            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-            <SelectContent>
-              {['South Asian', 'East Asian', 'Southeast Asian', 'Black / African', 'White / Caucasian', 'Latina / Hispanic', 'Middle Eastern', 'Mixed', 'Other'].map(e => (
-                <SelectItem key={e} value={e}>{e}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-medium">Body Type</label>
-          <Select value={modelConfig.bodyType} onValueChange={v => setModelConfig(prev => ({ ...prev, bodyType: v }))}>
-            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-            <SelectContent>
-              {['Slim', 'Athletic', 'Average', 'Curvy', 'Plus Size'].map(b => (
-                <SelectItem key={b} value={b}>{b}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-medium">Background</label>
-          <Select value={modelConfig.background} onValueChange={v => setModelConfig(prev => ({ ...prev, background: v }))}>
-            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectLabel>Lifestyle</SelectLabel>
-                <SelectItem value="café">Café</SelectItem>
-                <SelectItem value="street">Street</SelectItem>
-                <SelectItem value="garden">Garden</SelectItem>
-                <SelectItem value="beach">Beach</SelectItem>
-                <SelectItem value="urban">Urban rooftop</SelectItem>
-              </SelectGroup>
-              <SelectGroup>
-                <SelectLabel>Studio</SelectLabel>
-                <SelectItem value="white-sweep">White sweep</SelectItem>
-                <SelectItem value="gray-seamless">Gray seamless</SelectItem>
-                <SelectItem value="dark-studio">Dark studio</SelectItem>
-                <SelectItem value="colored-gel">Colored gel</SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+          {/* Upload */}
+          <input ref={modelUploadRef} type="file" accept="image/jpeg,image/png" className="hidden" onChange={onModelUpload} />
+          {modelConfig.uploadedModelUrl ? (
+            <div className="relative w-20 h-24 rounded-lg overflow-hidden border">
+              <img src={modelConfig.uploadedModelUrl} alt="Custom model" className="w-full h-full object-cover" />
+              <button onClick={() => setModelConfig(prev => ({ ...prev, uploadedModelUrl: null }))} className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-background/80 flex items-center justify-center">
+                <X className="h-2.5 w-2.5" />
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => modelUploadRef.current?.click()} className="w-full h-16 rounded-lg border-2 border-dashed border-border flex items-center justify-center gap-2 hover:border-primary/50 transition-colors">
+              <Upload className="h-4 w-4 text-muted-foreground" />
+              <p className="text-xs text-muted-foreground">Upload custom model</p>
+            </button>
+          )}
 
-      <Separator />
+          <Separator />
 
-      {/* AI Engine */}
-      <div className="space-y-1">
-        <label className="text-xs font-medium">AI Engine</label>
-        <ToggleGroup type="single" value={modelConfig.aiEngine} onValueChange={v => v && setModelConfig(prev => ({ ...prev, aiEngine: v }))} className="justify-start">
-          <ToggleGroupItem value="gemini" className="px-3 h-7 text-xs">Gemini</ToggleGroupItem>
-          <ToggleGroupItem value="runway" className="px-3 h-7 text-xs">Runway</ToggleGroupItem>
-        </ToggleGroup>
-        <p className="text-[10px] text-muted-foreground">Gemini is faster. Runway has better lighting.</p>
-      </div>
+          {/* Attributes */}
+          <div className="space-y-2">
+            <div className="space-y-1">
+              <label className="text-xs font-medium">Gender</label>
+              <Select value={modelConfig.gender} onValueChange={v => setModelConfig(prev => ({ ...prev, gender: v }))}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Female">Female</SelectItem>
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Non-binary">Non-binary</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium">Ethnicity</label>
+              <Select value={modelConfig.ethnicity} onValueChange={v => setModelConfig(prev => ({ ...prev, ethnicity: v }))}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  {['South Asian', 'East Asian', 'Southeast Asian', 'Black / African', 'White / Caucasian', 'Latina / Hispanic', 'Middle Eastern', 'Mixed', 'Other'].map(e => (
+                    <SelectItem key={e} value={e}>{e}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium">Body Type</label>
+              <Select value={modelConfig.bodyType} onValueChange={v => setModelConfig(prev => ({ ...prev, bodyType: v }))}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  {['Slim', 'Athletic', 'Average', 'Curvy', 'Plus Size'].map(b => (
+                    <SelectItem key={b} value={b}>{b}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium">Background</label>
+              <Select value={modelConfig.background} onValueChange={v => setModelConfig(prev => ({ ...prev, background: v }))}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Lifestyle</SelectLabel>
+                    <SelectItem value="café">Café</SelectItem>
+                    <SelectItem value="street">Street</SelectItem>
+                    <SelectItem value="garden">Garden</SelectItem>
+                    <SelectItem value="beach">Beach</SelectItem>
+                    <SelectItem value="urban">Urban rooftop</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Studio</SelectLabel>
+                    <SelectItem value="white-sweep">White sweep</SelectItem>
+                    <SelectItem value="gray-seamless">Gray seamless</SelectItem>
+                    <SelectItem value="dark-studio">Dark studio</SelectItem>
+                    <SelectItem value="colored-gel">Colored gel</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* AI Engine */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium">AI Engine</label>
+            <ToggleGroup type="single" value={modelConfig.aiEngine} onValueChange={v => v && setModelConfig(prev => ({ ...prev, aiEngine: v }))} className="justify-start">
+              <ToggleGroupItem value="gemini" className="px-3 h-7 text-xs">Gemini</ToggleGroupItem>
+              <ToggleGroupItem value="runway" className="px-3 h-7 text-xs">Runway</ToggleGroupItem>
+            </ToggleGroup>
+            <p className="text-[10px] text-muted-foreground">Gemini is faster. Runway has better lighting.</p>
+          </div>
+
+          <p className="text-[10px] text-muted-foreground">Select a model from the grid on the right →</p>
+        </div>
+      )}
     </div>
   );
 }
