@@ -1,0 +1,1 @@
+UPDATE public.profiles SET credits_remaining = 50 WHERE credits_remaining < 50;
