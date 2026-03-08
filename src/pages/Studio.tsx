@@ -755,6 +755,7 @@ const Studio = () => {
           stylePrompt: stylePrompt || undefined,
           productImageUrl,
           aspectRatio,
+          keepOriginalModel: modelChoice === 'keep',
         },
       });
       clearInterval(progressInterval);
