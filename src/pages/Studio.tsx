@@ -284,13 +284,9 @@ const GENERATION_STAGES = [
 ];
 
 const EXPORT_FORMATS = [
-  { id: 'original', label: 'Original resolution (PNG)', default: true },
-  { id: 'web', label: 'Web optimized (JPG, 80%)', default: true },
-  { id: 'amazon', label: 'Amazon listing (2000×2000)', default: false },
-  { id: 'shopify', label: 'Shopify product image', default: false },
-  { id: 'ig-square', label: 'Instagram 1:1', default: false },
-  { id: 'ig-portrait', label: 'Instagram 4:5', default: false },
-  { id: 'ig-story', label: 'Instagram 16:9', default: false },
+  { id: 'png', label: 'PNG', default: true },
+  { id: 'webp', label: 'WebP', default: false },
+  { id: 'jpeg', label: 'JPEG', default: false },
 ];
 
 const EDIT_SUGGESTIONS = [
@@ -1879,7 +1875,7 @@ function Step5Config({ shots, exportFormats, setExportFormats, selectedShots, se
 
   return (
     <div className="space-y-4">
-      <p className="text-sm font-semibold text-foreground">Export formats</p>
+      <p className="text-sm font-semibold text-foreground">File format</p>
       <div className="space-y-1.5">
         {EXPORT_FORMATS.map(f => (
           <label key={f.id} className="flex items-center gap-2 text-xs cursor-pointer">
