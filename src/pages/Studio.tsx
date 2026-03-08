@@ -2749,4 +2749,157 @@ function ShotCard({ shot, index, onEdit, onUndo, onCopyLink, updateShot }: {
   );
 }
 
+
+/* ════════════════════════════════════════════════
+   Assets Viewport
+   ════════════════════════════════════════════════ */
+function AssetsViewport({ assets, onCopyLink }: {
+  assets: ProjectAsset[];
+  onCopyLink: (url: string) => void;
+}) {
+  if (assets.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] gap-4 text-center animate-in fade-in duration-300">
+        <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center">
+          <LayoutGrid className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <div>
+          <p className="font-medium">No assets yet</p>
+          <p className="text-sm text-muted-foreground mt-1">Generate some shots from the Studio to see them here.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4 animate-in fade-in duration-300">
+      <div>
+        <h2 className="text-xl font-medium" style={{ fontFamily: "'Instrument Serif', serif" }}>All Assets</h2>
+        <p className="text-sm text-muted-foreground mt-1">{assets.length} image{assets.length !== 1 ? 's' : ''} in this project</p>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 2xl:grid-cols-5 gap-4">
+        {assets.map((a) => (
+          <div key={a.id} className="group relative">
+            <div className="aspect-square rounded-xl overflow-hidden bg-muted border">
+              <img src={a.url} alt={a.product_label || ''} className="h-full w-full object-cover" />
+              <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
+                <a href={a.url} download target="_blank" rel="noopener noreferrer">
+                  <button className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Download className="h-4 w-4" /></button>
+                </a>
+                <button onClick={() => onCopyLink(a.url)} className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Link2 className="h-4 w-4" /></button>
+              </div>
+            </div>
+            <div className="mt-1.5 flex items-center gap-1.5">
+              <Badge variant="outline" className="text-[9px] px-1.5 py-0">{a.asset_type === 'original' ? 'Original' : a.asset_type === 'ai_generated' ? 'Generated' : a.asset_type}</Badge>
+              {a.product_label && <p className="text-[10px] text-muted-foreground truncate">{a.product_label}</p>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════
+   Products Viewport
+   ════════════════════════════════════════════════ */
+function ProductsViewport({ assets, productLabels, selectedLabel, onSelectLabel, onCopyLink, onLoadProduct }: {
+  assets: ProjectAsset[];
+  productLabels: string[];
+  selectedLabel: string | null;
+  onSelectLabel: (label: string | null) => void;
+  onCopyLink: (url: string) => void;
+  onLoadProduct: (label: string) => void;
+}) {
+  if (productLabels.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] gap-4 text-center animate-in fade-in duration-300">
+        <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center">
+          <Tag className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <div>
+          <p className="font-medium">No products yet</p>
+          <p className="text-sm text-muted-foreground mt-1">Generate shots in the Studio to create product entries.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If a product is selected, show its images
+  if (selectedLabel) {
+    const productAssets = assets.filter(a => a.product_label === selectedLabel && a.asset_type === 'ai_generated');
+    return (
+      <div className="space-y-4 animate-in fade-in duration-300">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => onSelectLabel(null)}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h2 className="text-xl font-medium" style={{ fontFamily: "'Instrument Serif', serif" }}>{selectedLabel}</h2>
+            <p className="text-sm text-muted-foreground">{productAssets.length} generated image{productAssets.length !== 1 ? 's' : ''}</p>
+          </div>
+          <Button variant="outline" size="sm" className="ml-auto" onClick={() => onLoadProduct(selectedLabel)}>
+            Open in Studio
+          </Button>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          {productAssets.map((a) => (
+            <div key={a.id} className="group relative">
+              <div className="aspect-square rounded-xl overflow-hidden bg-muted border">
+                <img src={a.url} alt={a.shot_label || ''} className="h-full w-full object-cover" />
+                <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
+                  <a href={a.url} download target="_blank" rel="noopener noreferrer">
+                    <button className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Download className="h-4 w-4" /></button>
+                  </a>
+                  <button onClick={() => onCopyLink(a.url)} className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Link2 className="h-4 w-4" /></button>
+                </div>
+              </div>
+              {a.shot_label && (
+                <p className="mt-1 text-xs text-muted-foreground">{SHOT_LABEL_DISPLAY[a.shot_label] || a.shot_label}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Product cards list
+  return (
+    <div className="space-y-4 animate-in fade-in duration-300">
+      <div>
+        <h2 className="text-xl font-medium" style={{ fontFamily: "'Instrument Serif', serif" }}>Products</h2>
+        <p className="text-sm text-muted-foreground mt-1">{productLabels.length} product{productLabels.length !== 1 ? 's' : ''} in this project</p>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-4 gap-4">
+        {productLabels.map((label) => {
+          const productAssets = assets.filter(a => a.product_label === label && a.asset_type === 'ai_generated');
+          const thumbnail = productAssets[0]?.url;
+          return (
+            <button
+              key={label}
+              onClick={() => onSelectLabel(label)}
+              className="rounded-xl border bg-card overflow-hidden text-left transition-all hover:border-primary/50 hover:shadow-md"
+            >
+              <div className="aspect-[4/3] bg-muted overflow-hidden">
+                {thumbnail ? (
+                  <img src={thumbnail} alt={label} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <Package className="h-8 w-8 text-muted-foreground/30" />
+                  </div>
+                )}
+              </div>
+              <div className="p-3">
+                <p className="text-sm font-medium truncate">{label}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{productAssets.length} generated image{productAssets.length !== 1 ? 's' : ''}</p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default Studio;
