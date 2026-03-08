@@ -258,6 +258,7 @@ const Studio = () => {
     ethnicity: '',
     bodyType: '',
     background: '',
+    backgroundPrompt: '',
     aiEngine: 'gemini',
   });
 
