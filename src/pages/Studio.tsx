@@ -1197,7 +1197,7 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
   analysisPhase: 'idle' | 'analyzing' | 'done';
   productName: string;
   setProductName: (name: string) => void;
-}) {
+) {
   const ANALYSIS_TEXTS = [
     'Analyzing image...',
     'Detecting materials...',
@@ -1206,6 +1206,7 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
     'Recognizing product type...',
   ];
   const [cycleIndex, setCycleIndex] = useState(0);
+  const [selectedThumbIndex, setSelectedThumbIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (analysisPhase !== 'analyzing') return;
@@ -1215,6 +1216,13 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
     }, 2000);
     return () => clearInterval(interval);
   }, [analysisPhase]);
+
+  // Reset selection when images change
+  useEffect(() => {
+    setSelectedThumbIndex(null);
+  }, [productImages.length]);
+
+  const displayImage = selectedThumbIndex !== null ? productImages[selectedThumbIndex] : productImages[0];
 
   // Empty state
   if (productImages.length === 0) {
@@ -1264,14 +1272,14 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
     );
   }
 
-  // Phase 2: Done — smaller image, editable name, no suggested shots
+  // Phase 2: Done — left-aligned image, selectable thumbnails, uniform badges
   return (
     <div className="h-full w-full overflow-hidden p-6 flex flex-col">
-      {/* Top row: main image + angle thumbnails */}
+      {/* Top row: main image on left + thumbnails on right */}
       <div className="flex gap-4 flex-1 min-h-0">
-        <div className="flex-1 min-w-0 flex items-center justify-center animate-in slide-in-from-bottom-4 duration-500">
+        <div className="flex-1 min-w-0 flex items-start animate-in slide-in-from-bottom-4 duration-500">
           <img
-            src={productImages[0]}
+            src={displayImage}
             alt="Product main"
             className="max-h-[50vh] max-w-full rounded-2xl shadow-lg object-contain"
           />
@@ -1279,14 +1287,23 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
 
         {productImages.length > 1 && (
           <div className="shrink-0 flex flex-col gap-2 animate-stagger-in" style={{ animationDelay: '0.3s' }}>
-            {productImages.slice(1).map((url, i) => (
-              <img
-                key={i}
-                src={url}
-                alt={`Angle ${i + 2}`}
-                className="h-16 w-16 rounded-lg object-cover border border-border shadow-sm hover:ring-2 hover:ring-primary/30 transition-all cursor-pointer"
-              />
-            ))}
+            {productImages.slice(1).map((url, i) => {
+              const thumbIdx = i + 1;
+              const isSelected = selectedThumbIndex === thumbIdx;
+              return (
+                <img
+                  key={i}
+                  src={url}
+                  alt={`Angle ${i + 2}`}
+                  onClick={() => setSelectedThumbIndex(isSelected ? null : thumbIdx)}
+                  className={`h-20 w-20 rounded-lg object-cover border shadow-sm transition-all cursor-pointer ${
+                    isSelected
+                      ? 'ring-2 ring-primary border-primary'
+                      : 'border-border hover:ring-2 hover:ring-primary/30'
+                  }`}
+                />
+              );
+            })}
           </div>
         )}
       </div>
@@ -1313,24 +1330,24 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
               />
             </div>
 
-            {/* Category + Garment Type + Material + Colors inline */}
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="rounded-xl border border-border bg-card px-3 py-1.5 space-y-0.5">
+            {/* Category + Garment Type + Material + Colors inline — uniform height */}
+            <div className="flex flex-wrap items-stretch gap-3">
+              <div className="rounded-xl border border-border bg-card px-3 py-2 flex flex-col justify-center min-h-[52px]">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Category</p>
                 <p className="text-xs font-semibold text-foreground">{productInfo.category}</p>
                 {productInfo.garmentType && (
                   <p className="text-[10px] text-muted-foreground">{productInfo.garmentType}</p>
                 )}
               </div>
-              <div className="rounded-xl border border-border bg-card px-3 py-1.5 space-y-0.5">
+              <div className="rounded-xl border border-border bg-card px-3 py-2 flex flex-col justify-center min-h-[52px]">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Material</p>
                 <p className="text-xs font-semibold text-foreground">{productInfo.material}</p>
               </div>
-              <div className="rounded-xl border border-border bg-card px-3 py-1.5 space-y-1">
+              <div className="rounded-xl border border-border bg-card px-3 py-2 flex flex-col justify-center min-h-[52px]">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Colors</p>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1 mt-0.5">
                   {productInfo.colors.map((color, i) => (
-                    <Badge key={i} variant="secondary" className="text-[10px] gap-1 px-2 py-0">
+                    <Badge key={i} variant="secondary" className="text-[10px] gap-1 px-2 py-0.5">
                       <Palette className="h-2.5 w-2.5" />
                       {color}
                     </Badge>
