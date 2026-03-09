@@ -2751,7 +2751,7 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
                     <div className="flex items-center gap-2 mb-2">
                       <Badge variant="outline" className="text-[10px] px-2 py-0">{prompt.style}</Badge>
                       {videoConfig.selectedPrompt?.text === prompt.text && (
-                        <Check className="h-3.5 w-3.5 text-accent" />
+                        <Check className="h-3.5 w-3.5 text-primary" />
                       )}
                     </div>
                     <p className="text-sm leading-relaxed">{prompt.text}</p>
