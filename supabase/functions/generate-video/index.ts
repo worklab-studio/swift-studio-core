@@ -26,7 +26,22 @@ function pemToArrayBuffer(pem: string): ArrayBuffer {
 }
 
 async function getVertexAccessToken(serviceAccountJson: string): Promise<{ token: string; projectId: string }> {
-  const sa = JSON.parse(serviceAccountJson);
+  // Defensive parsing: handle double-encoded or quote-wrapped JSON
+  let cleaned = serviceAccountJson.trim();
+  if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+    try {
+      cleaned = JSON.parse(cleaned); // unwrap double-encoded string
+    } catch (_) {
+      // If unwrapping fails, try as-is
+    }
+  }
+  let sa: Record<string, string>;
+  try {
+    sa = JSON.parse(cleaned);
+  } catch (e) {
+    console.error("[Veo] Failed to parse service account JSON. First 20 chars:", cleaned.substring(0, 20));
+    throw new Error("Invalid GOOGLE_SERVICE_ACCOUNT_KEY format — please re-enter the service account JSON");
+  }
   const now = Math.floor(Date.now() / 1000);
 
   const header = base64url(new TextEncoder().encode(JSON.stringify({ alg: "RS256", typ: "JWT" })));
