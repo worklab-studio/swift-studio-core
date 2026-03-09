@@ -854,13 +854,20 @@ const Studio = () => {
       setGenerationStage('Done!');
       await new Promise(r => setTimeout(r, 600));
 
-      const shots: GeneratedShot[] = data.assets.map((a: any) => ({
+      const newShots: GeneratedShot[] = data.assets.map((a: any) => ({
         id: a.id, url: a.url, shotLabel: a.shot_label || 'hero', promptUsed: a.prompt_used || '',
         isEditing: false, editPrompt: '', isRegenerating: false, previousUrl: null, showUndo: false,
       }));
-      setGeneratedShots(shots);
-      setSelectedExportShots(new Set(shots.map(s => s.id)));
-      completeStep(4, `${shots.length} shot${shots.length > 1 ? 's' : ''}`, 5);
+      if (mode === 'campaign_add') {
+        const allShots = [...generatedShots, ...newShots];
+        setGeneratedShots(allShots);
+        setSelectedExportShots(new Set(allShots.map(s => s.id)));
+        completeStep(4, `${allShots.length} shot${allShots.length > 1 ? 's' : ''}`, 5);
+      } else {
+        setGeneratedShots(newShots);
+        setSelectedExportShots(new Set(newShots.map(s => s.id)));
+        completeStep(4, `${newShots.length} shot${newShots.length > 1 ? 's' : ''}`, 5);
+      }
       setShowExportPanel(true);
       // Refresh product labels for toolbar dropdown
       const pLabel = productInfo?.productName || productName || 'Untitled';
