@@ -2606,6 +2606,7 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
   setGeneratedVideo: React.Dispatch<React.SetStateAction<GeneratedVideo | null>>;
   creditsRemaining: number;
   onGenerate: () => void;
+  onGenerateCampaignAdd: () => void;
   videoPrompts: VideoPrompt[];
   videoPromptsLoading: boolean;
   videoPromptStep: 'config' | 'prompts' | 'generating' | 'done';
