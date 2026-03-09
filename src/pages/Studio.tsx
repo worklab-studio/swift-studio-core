@@ -809,7 +809,7 @@ const Studio = () => {
   }, [selectedPreset, shootType, productInfo, buildStylePrompt]);
 
   /* ── Generation ── */
-  const handleGenerate = async () => {
+  const handleGenerate = async (mode?: 'single' | 'campaign_add') => {
     if (!project || !selectedPreset) return;
     const presetName = STYLE_PRESETS.find(p => p.id === selectedPreset)?.name || selectedPreset;
     completeStep(3, presetName, 4);
