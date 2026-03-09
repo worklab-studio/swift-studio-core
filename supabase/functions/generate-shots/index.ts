@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 const SHOT_LABELS_CAMPAIGN = ["hero", "detail", "lifestyle", "alternate", "editorial", "flat_lay"];
+const SHOT_LABELS_CAMPAIGN_ADD = ["detail", "lifestyle", "alternate", "editorial", "flat_lay"];
 const SHOT_LABELS_SINGLE = ["hero"];
 
 serve(async (req) => {
