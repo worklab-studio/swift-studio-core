@@ -2744,8 +2744,8 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
                     onClick={() => setVideoConfig(prev => ({ ...prev, selectedPrompt: prompt }))}
                     className={`w-full text-left p-4 rounded-xl border transition-all ${
                       videoConfig.selectedPrompt?.text === prompt.text
-                        ? 'ring-2 ring-accent border-accent bg-accent/5'
-                        : 'hover:border-accent/50 bg-card'
+                        ? 'ring-2 ring-primary border-primary bg-primary/5'
+                        : 'hover:border-primary/30 bg-card'
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-2">
