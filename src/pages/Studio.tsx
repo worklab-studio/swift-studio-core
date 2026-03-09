@@ -1190,7 +1190,7 @@ const Studio = () => {
                 </Button>
               )}
               {activeStep === 3 && (
-                <Button className="w-full" disabled={!canGenerate} onClick={handleGenerate}>
+                <Button className="w-full" disabled={!canGenerate} onClick={() => handleGenerate()}>
                   Generate — {credits} credit{credits > 1 ? 's' : ''}
                 </Button>
               )}
