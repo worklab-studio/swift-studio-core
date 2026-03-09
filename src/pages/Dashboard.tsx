@@ -216,9 +216,9 @@ const Dashboard = () => {
       )}
 
       {/* Recent Projects + Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
         {/* Recent Projects */}
-        <div className="lg:col-span-3 space-y-3">
+        <div className="lg:col-span-3 flex flex-col space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-lg font-medium">Recent Projects</p>
             <button
@@ -291,7 +291,7 @@ const Dashboard = () => {
         </div>
 
         {/* Recent Activity */}
-        <div className="lg:col-span-2 space-y-3">
+        <div className="lg:col-span-2 flex flex-col space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-lg font-medium">Recent Activity</p>
             <button
@@ -303,30 +303,45 @@ const Dashboard = () => {
           </div>
 
           {loading ? (
-            <Card>
-              <CardContent className="p-4 space-y-4">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <Skeleton className="h-8 w-8 rounded-full" />
-                    <div className="flex-1 space-y-1">
-                      <Skeleton className="h-4 w-40" />
-                      <Skeleton className="h-3 w-24" />
+            <Card className="flex-1 flex flex-col">
+              <CardContent className="p-4 flex flex-col flex-1">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i}>
+                    <div className="flex items-center gap-3 py-3">
+                      <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                      <div className="flex-1 space-y-1.5">
+                        <Skeleton className="h-3.5 w-36" />
+                        <Skeleton className="h-3 w-20" />
+                      </div>
+                      <Skeleton className="h-3.5 w-10 shrink-0" />
                     </div>
-                    <Skeleton className="h-4 w-12" />
+                    {i < 4 && <Separator />}
                   </div>
                 ))}
               </CardContent>
             </Card>
           ) : transactions.length === 0 ? (
-            <Card className="border-dashed">
-              <CardContent className="p-8 text-center">
-                <ImageIcon className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">No activity yet.</p>
+            <Card className="flex-1 flex flex-col">
+              <CardContent className="p-4 flex flex-col flex-1">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i}>
+                    <div className="flex items-center gap-3 py-3 opacity-40">
+                      <div className="h-8 w-8 rounded-full bg-muted shrink-0" />
+                      <div className="flex-1 space-y-1.5">
+                        <div className="h-3.5 w-36 rounded bg-muted" />
+                        <div className="h-3 w-20 rounded bg-muted" />
+                      </div>
+                      <div className="h-3.5 w-10 rounded bg-muted shrink-0" />
+                    </div>
+                    {i < 4 && <Separator />}
+                  </div>
+                ))}
+                <p className="text-xs text-muted-foreground text-center mt-auto pt-4">No activity yet</p>
               </CardContent>
             </Card>
           ) : (
-            <Card>
-              <CardContent className="p-4">
+            <Card className="flex-1 flex flex-col">
+              <CardContent className="p-4 flex-1">
                 {transactions.map((tx, i) => {
                   const isDebit = tx.transaction_type === 'debit' || tx.amount < 0;
                   return (
