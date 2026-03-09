@@ -1352,7 +1352,8 @@ const Studio = () => {
                     onCancelVideo={handleCancelVideo}
                     setGeneratedVideo={setGeneratedVideo}
                     creditsRemaining={profile?.credits_remaining ?? 0}
-                    onGenerate={handleGenerate}
+                    onGenerate={() => handleGenerate()}
+                    onGenerateCampaignAdd={() => handleGenerate('campaign_add')}
                     videoPrompts={videoPrompts}
                     videoPromptsLoading={videoPromptsLoading}
                     videoPromptStep={videoPromptStep}
