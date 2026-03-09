@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
 interface Transaction {
   created_at: string;
@@ -60,7 +61,7 @@ export const CreditHeatmap = ({ transactions }: CreditHeatmapProps) => {
 
     let totalSpent = 0;
     for (const t of transactions) {
-      if (t.amount < 0) totalSpent += Math.abs(t.amount);
+      totalSpent += Math.abs(t.amount);
     }
 
     return { grid: weeks, monthLabels: labels, total: totalSpent };
@@ -87,19 +88,26 @@ export const CreditHeatmap = ({ transactions }: CreditHeatmapProps) => {
         </div>
 
         {/* Grid */}
-        <div className="flex w-full gap-[2px]">
-          {grid.map((week, wi) => (
-            <div key={wi} className="flex-1 flex flex-col gap-[2px]">
-              {week.map((day, di) => (
-                <div
-                  key={di}
-                  className={`w-full aspect-square rounded-[2px] ${getIntensityClass(day.count)}`}
-                  title={`${day.date.toLocaleDateString()}: ${day.count} credits`}
-                />
-              ))}
-            </div>
-          ))}
-        </div>
+        <TooltipProvider delayDuration={0}>
+          <div className="flex w-full gap-[2px]">
+            {grid.map((week, wi) => (
+              <div key={wi} className="flex-1 flex flex-col gap-[2px]">
+                {week.map((day, di) => (
+                  <Tooltip key={di}>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={`w-full aspect-square rounded-[2px] ${getIntensityClass(day.count)}`}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      <p>{day.date.toLocaleDateString()}: {day.count} credits</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+            ))}
+          </div>
+        </TooltipProvider>
 
         {/* Footer */}
         <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
