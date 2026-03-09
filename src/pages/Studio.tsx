@@ -809,7 +809,7 @@ const Studio = () => {
   }, [selectedPreset, shootType, productInfo, buildStylePrompt]);
 
   /* ── Generation ── */
-  const handleGenerate = async () => {
+  const handleGenerate = async (mode?: 'single' | 'campaign_add') => {
     if (!project || !selectedPreset) return;
     const presetName = STYLE_PRESETS.find(p => p.id === selectedPreset)?.name || selectedPreset;
     completeStep(3, presetName, 4);
@@ -829,9 +829,10 @@ const Studio = () => {
 
     try {
       const productImageUrl = productImages[0] || assets[0]?.url || null;
+      const effectiveShotCount = mode === 'campaign_add' ? 'campaign_add' : mode === 'single' ? 'single' : shotCount;
       const { data, error } = await supabase.functions.invoke('generate-shots', {
           body: {
-          projectId: project.id, preset: selectedPreset, shotCount, additionalContext,
+          projectId: project.id, preset: selectedPreset, shotCount: effectiveShotCount, additionalContext,
           category: project.category, shotType: shootType === 'model' ? 'model_shot' : 'product_showcase',
           modelConfig: shootType === 'model' ? modelConfig : null,
           stylePrompt: stylePrompt || undefined,
@@ -853,13 +854,20 @@ const Studio = () => {
       setGenerationStage('Done!');
       await new Promise(r => setTimeout(r, 600));
 
-      const shots: GeneratedShot[] = data.assets.map((a: any) => ({
+      const newShots: GeneratedShot[] = data.assets.map((a: any) => ({
         id: a.id, url: a.url, shotLabel: a.shot_label || 'hero', promptUsed: a.prompt_used || '',
         isEditing: false, editPrompt: '', isRegenerating: false, previousUrl: null, showUndo: false,
       }));
-      setGeneratedShots(shots);
-      setSelectedExportShots(new Set(shots.map(s => s.id)));
-      completeStep(4, `${shots.length} shot${shots.length > 1 ? 's' : ''}`, 5);
+      if (mode === 'campaign_add') {
+        const allShots = [...generatedShots, ...newShots];
+        setGeneratedShots(allShots);
+        setSelectedExportShots(new Set(allShots.map(s => s.id)));
+        completeStep(4, `${allShots.length} shot${allShots.length > 1 ? 's' : ''}`, 5);
+      } else {
+        setGeneratedShots(newShots);
+        setSelectedExportShots(new Set(newShots.map(s => s.id)));
+        completeStep(4, `${newShots.length} shot${newShots.length > 1 ? 's' : ''}`, 5);
+      }
       setShowExportPanel(true);
       // Refresh product labels for toolbar dropdown
       const pLabel = productInfo?.productName || productName || 'Untitled';
@@ -1182,7 +1190,7 @@ const Studio = () => {
                 </Button>
               )}
               {activeStep === 3 && (
-                <Button className="w-full" disabled={!canGenerate} onClick={handleGenerate}>
+                <Button className="w-full" disabled={!canGenerate} onClick={() => handleGenerate()}>
                   Generate — {credits} credit{credits > 1 ? 's' : ''}
                 </Button>
               )}
@@ -1344,7 +1352,8 @@ const Studio = () => {
                     onCancelVideo={handleCancelVideo}
                     setGeneratedVideo={setGeneratedVideo}
                     creditsRemaining={profile?.credits_remaining ?? 0}
-                    onGenerate={handleGenerate}
+                    onGenerate={() => handleGenerate()}
+                    onGenerateCampaignAdd={() => handleGenerate('campaign_add')}
                     videoPrompts={videoPrompts}
                     videoPromptsLoading={videoPromptsLoading}
                     videoPromptStep={videoPromptStep}
@@ -2577,7 +2586,7 @@ function Step4Viewport({ progress, stage, shotCount, aspectRatio }: {
 }
 
 /* ── Step 5 Viewport (Results) ── */
-function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, onCopyLink, updateShot, videoExpanded, setVideoExpanded, videoConfig, setVideoConfig, videoGenerating, videoStage, generatedVideo, onGenerateVideo, onCancelVideo, setGeneratedVideo, creditsRemaining, onGenerate, videoPrompts, videoPromptsLoading, videoPromptStep, setVideoPromptStep, onGenerateVideoPrompts }: {
+function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, onCopyLink, updateShot, videoExpanded, setVideoExpanded, videoConfig, setVideoConfig, videoGenerating, videoStage, generatedVideo, onGenerateVideo, onCancelVideo, setGeneratedVideo, creditsRemaining, onGenerate, onGenerateCampaignAdd, videoPrompts, videoPromptsLoading, videoPromptStep, setVideoPromptStep, onGenerateVideoPrompts }: {
   shots: GeneratedShot[];
   shotCount: string;
   aspectRatio: string;
@@ -2597,6 +2606,7 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
   setGeneratedVideo: React.Dispatch<React.SetStateAction<GeneratedVideo | null>>;
   creditsRemaining: number;
   onGenerate: () => void;
+  onGenerateCampaignAdd: () => void;
   videoPrompts: VideoPrompt[];
   videoPromptsLoading: boolean;
   videoPromptStep: 'config' | 'prompts' | 'generating' | 'done';
@@ -2632,7 +2642,7 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
           <Button variant="outline" className="w-full" onClick={onGenerate}>
             Generate another variation — 1 credit
           </Button>
-          <Button className="w-full" onClick={onGenerate}>
+          <Button className="w-full" onClick={onGenerateCampaignAdd}>
             Add 5 more for a Campaign Set — 5 credits
           </Button>
         </div>

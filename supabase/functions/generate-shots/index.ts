@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 const SHOT_LABELS_CAMPAIGN = ["hero", "detail", "lifestyle", "alternate", "editorial", "flat_lay"];
+const SHOT_LABELS_CAMPAIGN_ADD = ["detail", "lifestyle", "alternate", "editorial", "flat_lay"];
 const SHOT_LABELS_SINGLE = ["hero"];
 
 serve(async (req) => {
@@ -64,8 +65,9 @@ serve(async (req) => {
     }
 
     const isCampaign = shotCount === "campaign";
-    const creditCost = isCampaign ? 6 : 1;
-    const labels = isCampaign ? SHOT_LABELS_CAMPAIGN : SHOT_LABELS_SINGLE;
+    const isCampaignAdd = shotCount === "campaign_add";
+    const creditCost = isCampaign ? 6 : isCampaignAdd ? 5 : 1;
+    const labels = isCampaign ? SHOT_LABELS_CAMPAIGN : isCampaignAdd ? SHOT_LABELS_CAMPAIGN_ADD : SHOT_LABELS_SINGLE;
 
     // Check credits
     const { data: profileData, error: profileErr } = await supabase
