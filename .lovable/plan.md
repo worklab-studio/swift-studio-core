@@ -1,55 +1,49 @@
 
 
-# Plan: Integrate Veo 3.1 and Runway ML Video APIs
+# Plan: Integrate Veo 3.1 (Vertex AI) and Runway ML Video APIs
 
-## Current State
-The UI already offers **Veo 3.1** and **Runway 4.5** as engine options in both the video generation panel and model config. However, the `generate-video` edge function currently returns **placeholder sample videos** (lines 96–106) with a fake 3-second delay — no real API calls are made.
+## Authentication Approach
 
-## What's Needed
-Both Google Veo 3.1 and Runway ML are **external APIs not available through Lovable AI**. Each requires its own API key.
+- **Veo 3.1 (Google Vertex AI)**: Service account private key → sign JWT → exchange for OAuth2 bearer token → call Vertex AI `predict` endpoint. Requires storing the full service account JSON key as a secret (`GOOGLE_SERVICE_ACCOUNT_KEY`).
+- **Runway ML**: Standard API key auth. Requires storing `RUNWAY_API_KEY` as a secret.
 
-### API Keys Required
-1. **Google Veo 3.1** — Requires a Google Cloud API key with Vertex AI / Imagen Video API enabled. Obtain from Google Cloud Console → APIs & Services → Credentials.
-2. **Runway ML** — Requires a Runway API key. Obtain from [Runway's developer dashboard](https://app.runwayml.com/).
+## Secrets Needed
 
-Before proceeding with implementation, I need to securely store these keys as backend secrets.
+1. **`GOOGLE_SERVICE_ACCOUNT_KEY`** — Full JSON service account key from Google Cloud Console (with Vertex AI API enabled)
+2. **`RUNWAY_API_KEY`** — API key from Runway's developer dashboard
 
-## Implementation Plan
+## Changes to `supabase/functions/generate-video/index.ts`
 
-### 1. Add API Secrets
-Use the secrets tool to request both keys from you:
-- `GOOGLE_VEO_API_KEY` — for Veo 3.1
-- `RUNWAY_API_KEY` — for Runway ML
+Replace placeholder logic (lines 96–106) with real API calls:
 
-### 2. Update `generate-video` Edge Function
-Replace the placeholder logic (lines 96–130) with real API calls branching on the `engine` parameter:
+### Veo 3.1 (Vertex AI) Flow
+1. Parse the service account JSON from `GOOGLE_SERVICE_ACCOUNT_KEY`
+2. Build a JWT with `iss` = service account email, `aud` = `https://oauth2.googleapis.com/token`, `scope` = `https://www.googleapis.com/auth/cloud-platform`
+3. Sign the JWT using RS256 with the private key (using Deno's `crypto.subtle` for RSA signing)
+4. Exchange JWT for access token via `POST https://oauth2.googleapis.com/token`
+5. Call Vertex AI Veo endpoint: `POST https://us-central1-aiplatform.googleapis.com/v1/projects/{project}/locations/us-central1/publishers/google/models/veo-3.1:predictLongRunning`
+6. Poll the returned operation ID until complete
+7. Download the video, upload to `originals` storage bucket, use the public URL
 
-**For `engine === "veo"`:**
-- Call Google's Veo 3.1 API (Vertex AI video generation endpoint)
-- Pass the source image URL + prompt + duration + aspect ratio
-- Poll for completion (Veo is async — returns an operation ID, then poll until done)
-- Download the resulting video and upload to the `originals` storage bucket
+### Runway ML Flow
+1. Call `POST https://api.dev.runwayml.com/v1/image_to_video` with Bearer token auth
+2. Pass the source image URL, prompt, duration, aspect ratio
+3. Poll `GET https://api.dev.runwayml.com/v1/tasks/{id}` until status is `SUCCEEDED`
+4. Download the output video, upload to `originals` bucket
 
-**For `engine === "runway"`:**
-- Call Runway ML's Gen-3/Gen-4 image-to-video API
-- Pass the source image + prompt + duration
-- Poll for completion (Runway is also async — returns a task ID)
-- Download the resulting video and upload to storage
+### Shared Logic (unchanged)
+- Auth verification, credit check/deduction, asset ownership validation, asset record insertion
 
-**Shared logic (kept as-is):**
-- Auth verification, credit check/deduction, asset ownership validation, inserting the video asset record
+### Error Handling
+- Timeout after ~3 minutes of polling
+- Surface API-specific errors (quota, invalid key, content policy) back to client
+- If video generation fails, do NOT deduct credits
 
-### 3. Polling Strategy
-Both APIs are asynchronous. The edge function will:
-- Submit the generation request
-- Poll every 5 seconds (up to ~2 minutes timeout) for completion
-- Return the final video URL or an error if it times out
+## Implementation Order
+1. Request both secrets from you
+2. Rewrite the edge function with both engine branches
+3. No UI changes needed — engine toggle already sends `"veo"` or `"runway"`
 
-### 4. Files Changed
-- `supabase/functions/generate-video/index.ts` — full rewrite of the generation logic
-
-No UI changes needed — the engine toggle already sends `"veo"` or `"runway"` to the function.
-
-## Next Step
-I need you to provide both API keys so I can store them as secrets before implementing the edge function changes. Do you have a **Google Cloud API key** (with Veo/Vertex AI enabled) and a **Runway ML API key**?
+## Files Changed
+- `supabase/functions/generate-video/index.ts` — full rewrite of generation logic
 
