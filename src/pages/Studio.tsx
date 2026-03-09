@@ -2586,7 +2586,7 @@ function Step4Viewport({ progress, stage, shotCount, aspectRatio }: {
 }
 
 /* ── Step 5 Viewport (Results) ── */
-function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, onCopyLink, updateShot, videoExpanded, setVideoExpanded, videoConfig, setVideoConfig, videoGenerating, videoStage, generatedVideo, onGenerateVideo, onCancelVideo, setGeneratedVideo, creditsRemaining, onGenerate, videoPrompts, videoPromptsLoading, videoPromptStep, setVideoPromptStep, onGenerateVideoPrompts }: {
+function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, onCopyLink, updateShot, videoExpanded, setVideoExpanded, videoConfig, setVideoConfig, videoGenerating, videoStage, generatedVideo, onGenerateVideo, onCancelVideo, setGeneratedVideo, creditsRemaining, onGenerate, onGenerateCampaignAdd, videoPrompts, videoPromptsLoading, videoPromptStep, setVideoPromptStep, onGenerateVideoPrompts }: {
   shots: GeneratedShot[];
   shotCount: string;
   aspectRatio: string;
