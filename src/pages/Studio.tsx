@@ -829,9 +829,10 @@ const Studio = () => {
 
     try {
       const productImageUrl = productImages[0] || assets[0]?.url || null;
+      const effectiveShotCount = mode === 'campaign_add' ? 'campaign_add' : mode === 'single' ? 'single' : shotCount;
       const { data, error } = await supabase.functions.invoke('generate-shots', {
           body: {
-          projectId: project.id, preset: selectedPreset, shotCount, additionalContext,
+          projectId: project.id, preset: selectedPreset, shotCount: effectiveShotCount, additionalContext,
           category: project.category, shotType: shootType === 'model' ? 'model_shot' : 'product_showcase',
           modelConfig: shootType === 'model' ? modelConfig : null,
           stylePrompt: stylePrompt || undefined,
