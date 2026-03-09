@@ -2642,7 +2642,7 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
           <Button variant="outline" className="w-full" onClick={onGenerate}>
             Generate another variation — 1 credit
           </Button>
-          <Button className="w-full" onClick={onGenerate}>
+          <Button className="w-full" onClick={onGenerateCampaignAdd}>
             Add 5 more for a Campaign Set — 5 credits
           </Button>
         </div>
