@@ -1900,6 +1900,33 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
         ))}
       </div>
 
+      {/* Plain Background color picker */}
+      {selectedPreset === 'plain-bg' && (
+        <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+          <p className="text-xs font-medium">Background Color</p>
+          <div className="flex flex-wrap gap-2">
+            {PLAIN_BG_COLORS.map(c => (
+              <button
+                key={c.name}
+                onClick={() => setPlainBgColor(c.name)}
+                className={`flex flex-col items-center gap-1 group`}
+                title={c.name}
+              >
+                <div
+                  className={`w-8 h-8 rounded-full transition-all ${
+                    plainBgColor === c.name ? 'ring-2 ring-primary ring-offset-2' : 'hover:ring-2 hover:ring-muted-foreground/30 hover:ring-offset-1'
+                  } ${c.border ? 'border border-border' : ''}`}
+                  style={{ backgroundColor: c.color }}
+                />
+                <span className={`text-[9px] ${plainBgColor === c.name ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                  {c.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Reference upload */}
       <input ref={referenceInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onReferenceUpload} />
       {referenceImage ? (
