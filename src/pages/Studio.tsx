@@ -1159,6 +1159,8 @@ const Studio = () => {
                     setAdditionalContext={setAdditionalContext}
                     styleSettings={styleSettings}
                     analyzingStyle={analyzingStyle}
+                    plainBgColor={plainBgColor}
+                    setPlainBgColor={setPlainBgColor}
                   />
                 )}
                 {activeStep === 4 && (
