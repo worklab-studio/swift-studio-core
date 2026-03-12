@@ -1192,6 +1192,8 @@ const Studio = () => {
                     analyzingStyle={analyzingStyle}
                     plainBgColor={plainBgColor}
                     setPlainBgColor={setPlainBgColor}
+                    shootType={shootType}
+                    selectedTemplate={selectedTemplate}
                   />
                 )}
                 {activeStep === 4 && (
