@@ -1692,7 +1692,73 @@ const BACKGROUND_SUGGESTIONS: Record<string, string> = {
   'Fitness': 'urban-rooftop',
 };
 
-/* ── Step 2 Config (Left) ── */
+/* ── Beauty: Application-area-specific model shoot backgrounds ── */
+const MODEL_SHOOT_BEAUTY_BACKGROUNDS: Record<string, string[]> = {
+  hair: ['Bright modern bathroom with large mirror and soft daylight', 'Luxury hair salon with warm pendant lighting', 'Spa treatment room with bamboo accents and steam', 'Sun-drenched balcony with flowing white curtains', 'Minimalist white bathroom with monstera plant'],
+  face: ['Clean skincare clinic with soft diffused lighting', 'Bright bathroom vanity with ring light glow', 'Morning bedroom with golden window light on skin', 'Spa facial room with calming blue-green tones', 'Modern apartment with floor-to-ceiling windows'],
+  lips: ['Glamorous dressing room with Hollywood mirror lights', 'Candlelit evening lounge with deep velvet tones', 'Fashion backstage with dramatic directional lighting', 'Rooftop cocktail bar at golden hour', 'Minimalist studio with a single warm spotlight'],
+  eyes: ['Soft-focus morning bedroom with pastel curtains', 'Elegant vanity table with ornate mirror', 'Fashion editorial studio with cool-toned lighting', 'Airy greenhouse with dappled botanical light', 'Luxurious powder room with marble surfaces'],
+  body: ['Tropical spa with open-air bamboo pavilion', 'Scandinavian bathroom with freestanding tub and candles', 'Beach cabana with sheer white drapes and ocean breeze', 'Yoga studio with warm wood floors and soft backlighting', 'Resort poolside with turquoise water reflections'],
+  fragrance: ['Luxury bedroom with silk sheets and candlelight', 'Evening cocktail terrace with city skyline bokeh', 'Parisian balcony at dusk with wrought iron railings', 'Opulent dressing room with crystal decanters', 'Moonlit garden with jasmine and warm lantern glow'],
+  nails: ['Chic nail salon with pastel decor and soft lighting', 'Bright café table with floral arrangement', 'Fashion-forward studio with bold colored backdrop', 'Poolside lounge with tropical leaves', 'Elegant brunch setting with champagne and florals'],
+};
+
+/* ── Beauty: Showcase backgrounds ── */
+const SHOWCASE_MYSTIC_BACKGROUNDS = [
+  'Lush moss-covered rocks in enchanted forest with dew drops and golden dappled light',
+  'Crystal cave with amethyst formations reflecting prismatic light',
+  'Zen temple courtyard with still water reflection and cherry blossoms',
+  'Volcanic black sand with wisps of steam and warm amber backlighting',
+  'Ancient stone steps in misty bamboo grove with firefly-like particles',
+  'Aurora borealis sky reflected on a still alpine lake surface',
+  'Sacred garden with floating lotus flowers and ethereal morning mist',
+];
+
+const SHOWCASE_SIMPLE_BACKGROUNDS = [
+  'Polished wood slab with neutral linen backdrop',
+  'White marble surface with soft gradient background',
+  'Terrazzo pedestal with clean studio lighting',
+  'Frosted glass shelf with diffused backlight',
+  'Raw concrete surface with minimal styling and side light',
+];
+
+/* ── FMCG: Model shoot backgrounds ── */
+const FMCG_MODEL_SHOOT_BACKGROUNDS: Record<string, string[]> = {
+  'Kitchen / Home': ['Bright modern kitchen counter with morning sunlight streaming in', 'Cozy breakfast table with family-friendly warmth', 'Organized pantry shelf with warm ambient lighting', 'Farmhouse kitchen with rustic wood surfaces and herbs'],
+  'Outdoor / Lifestyle': ['Sunny picnic blanket in a lush green park', 'Beach cooler setup with ocean waves in background', 'Camping scene with fire pit and mountain backdrop', 'Farmer\'s market stall with fresh produce and bunting'],
+  'Studio / Commercial': ['Clean white studio with product-forward commercial lighting', 'Bright colored pop-art backdrop for bold packaging', 'Grocery aisle perspective with shallow depth of field', 'Modern minimalist counter with geometric props'],
+};
+
+/* ── FMCG: Showcase backgrounds ── */
+const FMCG_SHOWCASE_BACKGROUNDS: Record<string, string[]> = {
+  'Clean / Minimal': ['White marble surface with soft overhead lighting', 'Light wood tabletop with clean neutral backdrop', 'Frosted glass platform with even diffused light', 'Pure white seamless background with soft drop shadow'],
+  'Styled / Contextual': ['Rustic wooden table with scattered raw ingredients nearby', 'Breakfast spread scene with complementary food items', 'Kitchen marble counter with fresh herbs and cutting board', 'Picnic basket setting with natural outdoor light'],
+  'Premium / Editorial': ['Black slate with dramatic side lighting and condensation droplets', 'Dark wood surface with single spotlight from above', 'Brushed copper tray with moody chiaroscuro lighting', 'Textured concrete with bold color accent lighting'],
+};
+
+/* ── Skincare: Outfit options by gender + application area ── */
+const SKINCARE_OUTFIT_OPTIONS: Record<string, Record<string, string[]>> = {
+  Female: {
+    hair: ['White towel wrap with hair exposed flowing down', 'Silk bathrobe, hair down in natural waves', 'Off-shoulder cotton top showing neck and shoulders', 'Spa headband with strapless tube top'],
+    face: ['White spa robe, dewy clean skin', 'Simple cotton tank top, minimal makeup', 'Off-shoulder knit sweater, natural glow', 'Strapless towel wrap, fresh-faced'],
+    lips: ['Elegant evening gown, bold lip', 'Silk slip dress with delicate jewelry', 'Classic black turtleneck, statement lip color', 'Sheer blouse with subtle glam styling'],
+    eyes: ['Soft cashmere sweater, natural eye look', 'White button-down shirt, editorial styling', 'Cozy knit cardigan, morning skincare routine look', 'Minimalist silk top, clean beauty aesthetic'],
+    body: ['White fluffy bathrobe, spa setting', 'Linen wrap dress, beachy relaxed vibe', 'Athletic crop top and leggings, post-workout', 'Simple cotton sundress, natural lifestyle'],
+    fragrance: ['Elegant evening gown, sophisticated styling', 'Silk slip dress with lace details', 'Tailored blazer with nothing underneath, editorial', 'Sheer flowing maxi dress, ethereal mood'],
+    nails: ['Casual chic outfit with hands prominently visible', 'Elegant bracelet-stacked wrists, manicured hands', 'White cotton top, hands resting artfully', 'Minimalist outfit, focus on hand positioning'],
+  },
+  Male: {
+    hair: ['White crew-neck t-shirt, damp styled hair', 'Open terry cloth robe, grooming routine', 'Fitted henley shirt, natural hair texture', 'Athletic tank top, post-shower look'],
+    face: ['White crew-neck t-shirt, clean-shaven or groomed beard', 'Open collar linen shirt, natural skin', 'Classic navy polo, fresh-faced', 'Henley with rolled sleeves, morning routine'],
+    lips: ['Smart casual button-down shirt', 'Minimal black t-shirt, editorial mood', 'Crisp white shirt, groomed appearance', 'Casual sweater, natural look'],
+    eyes: ['Classic crewneck sweater, editorial', 'White t-shirt, focused eye area', 'Casual oxford shirt, clean look', 'Minimalist athletic top, fresh morning'],
+    body: ['Athletic shorts, shirtless, post-workout', 'Open bathrobe, spa aesthetic', 'Swim trunks, beach/pool context', 'Comfortable lounge pants, relaxed home setting'],
+    fragrance: ['Tailored dark suit, sophisticated', 'Open white linen shirt, Mediterranean vibe', 'Leather jacket, evening editorial', 'Classic tuxedo, black-tie elegance'],
+    nails: ['Smart casual with visible hands, groomed nails', 'Relaxed shirt with hands resting on surface', 'Business casual with attention to groomed hands', 'Casual outfit with natural hand positioning'],
+  },
+};
+
+
 function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload, selectedTemplate, setSelectedTemplate, templateCategory, setTemplateCategory, selectedModelData, modelImages, productInfo, activeTemplates, loadingTemplates }: {
   shootType: 'product' | 'model' | null;
   setShootType: React.Dispatch<React.SetStateAction<'product' | 'model' | null>>;
