@@ -75,7 +75,7 @@ Product details: ${productContext}`;
             type: "function",
             function: {
               name: "return_scene_templates",
-              description: "Return 12 tailored scene templates for product photography",
+              description: "Return 20 tailored scene templates for product photography",
               parameters: {
                 type: "object",
                 properties: {
