@@ -418,9 +418,14 @@ const Studio = () => {
   const [analysisPhase, setAnalysisPhase] = useState<'idle' | 'analyzing' | 'done'>('idle');
   const [productName, setProductName] = useState('');
 
+  // View detection
+  const [imageViews, setImageViews] = useState<Record<string, string>>({});
+  const [detectingViews, setDetectingViews] = useState(false);
+
   // Model detection choice
   const [modelChoice, setModelChoice] = useState<'remove' | 'keep' | null>(null);
   const [removingBackground, setRemovingBackground] = useState(false);
+  const [removingBgIndex, setRemovingBgIndex] = useState<number | null>(null);
 
   // Shoot type selection (Step 2)
   const [shootType, setShootType] = useState<'product' | 'model' | null>(null);
