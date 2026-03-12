@@ -833,9 +833,16 @@ const Studio = () => {
 
   /* ── Generation ── */
   const handleGenerate = async (mode?: 'single' | 'campaign_add') => {
-    if (!project || !selectedPreset) return;
-    const presetName = STYLE_PRESETS.find(p => p.id === selectedPreset)?.name || selectedPreset;
-    completeStep(3, presetName, 4);
+    if (!project) return;
+    // For product shoot with template, we don't need selectedPreset
+    const isProductWithTemplate = shootType === 'product' && selectedTemplate;
+    if (!isProductWithTemplate && !selectedPreset) return;
+
+    const tpl = isProductWithTemplate ? PRODUCT_SHOOT_TEMPLATES.find(t => t.id === selectedTemplate) : null;
+    const stepLabel = isProductWithTemplate
+      ? tpl?.name || 'Product Shoot'
+      : STYLE_PRESETS.find(p => p.id === selectedPreset)?.name || selectedPreset || '';
+    completeStep(3, stepLabel, 4);
     generationAbortRef.current = false;
     setGenerationProgress(0);
     setGenerationStage(GENERATION_STAGES[0].label);
@@ -853,16 +860,28 @@ const Studio = () => {
     try {
       const productImageUrl = productImages[0] || assets[0]?.url || null;
       const effectiveShotCount = mode === 'campaign_add' ? 'campaign_add' : mode === 'single' ? 'single' : shotCount;
+
+      // Build stylePrompt for product shoot with template
+      let effectiveStylePrompt = stylePrompt || undefined;
+      if (isProductWithTemplate && tpl) {
+        let templatePrompt = tpl.description;
+        if (tpl.id === 'pt-plain-bg') {
+          templatePrompt += `. CRITICAL: The background MUST be a pure solid ${plainBgColor} color. No texture, no gradient, no patterns, no props — completely clean flat ${plainBgColor} backdrop.`;
+        }
+        effectiveStylePrompt = templatePrompt;
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-shots', {
           body: {
-          projectId: project.id, preset: selectedPreset, shotCount: effectiveShotCount, additionalContext,
+          projectId: project.id, preset: selectedPreset || 'template', shotCount: effectiveShotCount, additionalContext,
           category: project.category, shotType: shootType === 'model' ? 'model_shot' : 'product_showcase',
           modelConfig: shootType === 'model' ? modelConfig : null,
-          stylePrompt: stylePrompt || undefined,
+          stylePrompt: effectiveStylePrompt,
           productImageUrl,
           aspectRatio,
           keepOriginalModel: modelChoice === 'keep',
           productLabel: productInfo?.productName || productName || 'Untitled',
+          sceneTemplate: isProductWithTemplate ? { id: tpl!.id, description: tpl!.description, name: tpl!.name } : undefined,
         },
       });
       clearInterval(progressInterval);
