@@ -370,6 +370,7 @@ const Studio = () => {
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [shotCount, setShotCount] = useState<string>('campaign');
   const [aspectRatio, setAspectRatio] = useState<string>('1:1');
+  const [plainBgColor, setPlainBgColor] = useState<string>('White');
   const [additionalContext, setAdditionalContext] = useState('');
 
   // Generation state
