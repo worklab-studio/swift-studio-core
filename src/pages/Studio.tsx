@@ -2245,7 +2245,7 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
           {isPlainBgTemplate && (
             <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
               <p className="text-xs font-medium">Background Color</p>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-8 gap-1.5">
                 {PLAIN_BG_COLORS.map(c => (
                   <button
                     key={c.name}
@@ -2279,7 +2279,7 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
                 onClick={() => { setSelectedPreset(p.id); setReferenceImage(null); }}
                 className={`rounded-lg overflow-hidden border text-left transition-all ${
                   selectedPreset === p.id ? 'ring-2 ring-primary ring-offset-1' : 'hover:border-primary/50'
-                }`}
+                } ${p.id === 'plain-bg' ? 'col-span-2' : ''}`}
               >
                 <div className="aspect-[4/3] overflow-hidden bg-muted">
                   <img src={p.img} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
@@ -2296,7 +2296,7 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
           {selectedPreset === 'plain-bg' && (
             <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
               <p className="text-xs font-medium">Background Color</p>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-8 gap-1.5">
                 {PLAIN_BG_COLORS.map(c => (
                   <button
                     key={c.name}
@@ -2361,13 +2361,13 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
                 </p>
                 <div className="space-y-1.5">
                   {[
-                    { label: 'Pose', value: styleSettings.pose, icon: '🎯' },
-                    { label: 'Angle', value: styleSettings.angle, icon: '📐' },
-                    { label: 'Lighting', value: styleSettings.lighting, icon: '💡' },
-                    { label: 'Composition', value: styleSettings.composition, icon: '🖼' },
+                    { label: 'Pose', value: styleSettings.pose },
+                    { label: 'Angle', value: styleSettings.angle },
+                    { label: 'Lighting', value: styleSettings.lighting },
+                    { label: 'Composition', value: styleSettings.composition },
                   ].map(item => (
                     <div key={item.label} className="rounded-md border bg-muted/50 p-2">
-                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{item.icon} {item.label}</p>
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{item.label}</p>
                       <p className="text-[11px] text-foreground mt-0.5 leading-snug">{item.value}</p>
                     </div>
                   ))}
