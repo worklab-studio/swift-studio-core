@@ -999,6 +999,8 @@ const Studio = () => {
           modelConfig: shootType === 'model' ? modelConfig : null,
           stylePrompt: effectiveStylePrompt,
           productImageUrl,
+          productImages: productImages.length > 1 ? productImages : undefined,
+          imageViews: Object.keys(imageViews).length > 0 ? imageViews : undefined,
           aspectRatio,
           keepOriginalModel: modelChoice === 'keep',
           productLabel: productInfo?.productName || productName || 'Untitled',
