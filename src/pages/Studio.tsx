@@ -419,6 +419,7 @@ const Studio = () => {
   const [showExportPanel, setShowExportPanel] = useState(false);
   const [exportFormat, setExportFormat] = useState<string>('png');
   const [selectedExportShots, setSelectedExportShots] = useState<Set<string>>(new Set());
+  const [isAddingMore, setIsAddingMore] = useState(false);
   const generationAbortRef = useRef(false);
 
   // Video state
