@@ -3472,6 +3472,7 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
 }) {
   const isCampaign = shots.length > 1 || isAddingMore;
   const videoCreditCost = calculateVideoCreditCost(videoConfig.duration, videoConfig.resolution);
+  const [viewingUrl, setViewingUrl] = useState<string | null>(null);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
