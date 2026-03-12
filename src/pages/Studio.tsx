@@ -3487,7 +3487,7 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
       {isCampaign ? (
         <div className="grid grid-cols-3 gap-4">
           {shots.map((shot, i) => (
-            <ShotCard key={shot.id} shot={shot} index={i} aspectRatio={aspectRatio} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />
+            <ShotCard key={shot.id} shot={shot} index={i} aspectRatio={aspectRatio} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} onView={setViewingUrl} />
           ))}
           {isAddingMore && Array.from({ length: 5 }).map((_, i) => (
             <div key={`skeleton-${i}`} className="rounded-xl overflow-hidden border bg-card animate-in fade-in duration-300" style={{ animationDelay: `${i * 80}ms` }}>
