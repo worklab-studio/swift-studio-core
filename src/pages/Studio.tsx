@@ -1646,6 +1646,7 @@ const Studio = () => {
                     videoPromptStep={videoPromptStep}
                     setVideoPromptStep={setVideoPromptStep}
                     onGenerateVideoPrompts={handleGenerateVideoPrompts}
+                    isAddingMore={isAddingMore}
                   />
                 )}
               </div>
