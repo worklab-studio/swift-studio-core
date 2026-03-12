@@ -790,19 +790,22 @@ const Studio = () => {
   };
 
   /* ── Build style prompt from preset ── */
-  const buildStylePrompt = useCallback((preset: StylePreset, isModel: boolean, info?: ProductInfo | null): string => {
+  const buildStylePrompt = useCallback((preset: StylePreset, isModel: boolean, info?: ProductInfo | null, bgColor?: string): string => {
     const settings = isModel ? preset.model : preset.product;
     const productDesc = info
       ? `${info.category} product (${info.colors?.join(', ') || 'neutral tones'}, ${info.material || 'premium materials'})`
       : 'product';
     const garmentInfo = info?.garmentType ? ` — specifically a ${info.garmentType}` : '';
     const outfitInfo = isModel && info?.outfitSuggestion ? ` Styled with: ${info.outfitSuggestion}.` : '';
+    const plainBgInstruction = preset.id === 'plain-bg' && bgColor
+      ? ` CRITICAL: The background MUST be a pure solid ${bgColor} color. No texture, no gradient, no patterns, no props, no environment — completely clean flat ${bgColor} backdrop filling the entire background.`
+      : '';
 
     return `${preset.name} style photography for a ${productDesc}${garmentInfo}. ` +
       `Pose: ${settings.pose}. ` +
       `Camera angle: ${settings.angle}. ` +
       `Lighting: ${settings.lighting}. ` +
-      `Composition: ${settings.composition}.${outfitInfo}`;
+      `Composition: ${settings.composition}.${outfitInfo}${plainBgInstruction}`;
   }, []);
 
   // Auto-compute stylePrompt + styleSettings when preset changes
