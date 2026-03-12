@@ -882,6 +882,13 @@ const Studio = () => {
           keepOriginalModel: modelChoice === 'keep',
           productLabel: productInfo?.productName || productName || 'Untitled',
           sceneTemplate: isProductWithTemplate ? { id: tpl!.id, description: tpl!.description, name: tpl!.name } : undefined,
+          productInfo: productInfo ? {
+            colors: productInfo.colors,
+            material: productInfo.material,
+            description: productInfo.description,
+            productName: productInfo.productName,
+            garmentType: productInfo.garmentType,
+          } : undefined,
         },
       });
       clearInterval(progressInterval);
