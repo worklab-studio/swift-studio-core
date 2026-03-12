@@ -1228,6 +1228,8 @@ const Studio = () => {
                     selectedModelData={selectedModelData}
                     modelImages={modelImages}
                     productInfo={productInfo}
+                    activeTemplates={dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES}
+                    loadingTemplates={loadingTemplates}
                   />
                 )}
                 {activeStep === 3 && (
