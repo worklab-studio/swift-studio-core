@@ -1080,8 +1080,9 @@ const Studio = () => {
       setProjectProducts(prev => prev.includes(pLabel) ? prev : [...prev, pLabel]);
     } catch {
       clearInterval(progressInterval);
+      setIsAddingMore(false);
       toast({ title: 'Generation failed', description: 'Network error', variant: 'destructive' });
-      setActiveStep(3);
+      if (mode !== 'campaign_add') setActiveStep(3);
     }
   };
 
