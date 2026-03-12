@@ -1644,8 +1644,10 @@ function Step1Config({ productImages, productUploadRef, onUpload, onRemove, imag
             >
               <X className="h-3 w-3" />
             </button>
-            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-background/70 to-transparent px-2 py-1.5">
-              <p className="text-[10px] font-medium text-foreground">Main Shot</p>
+            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-background/70 to-transparent px-2 py-1.5 flex items-center justify-between">
+              <p className="text-[10px] font-medium text-foreground">
+                {imageViews[slots[0]!] ? VIEW_LABEL_SHORT[imageViews[slots[0]!]] || imageViews[slots[0]!] : 'Main Shot'}
+              </p>
             </div>
           </>
         ) : (
