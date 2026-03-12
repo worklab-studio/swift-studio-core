@@ -33,7 +33,7 @@ serve(async (req) => {
       ? `Product: "${productInfo.productName || "Unknown"}". Category: ${category || productInfo.category || "General"}. Colors: ${(productInfo.colors || []).join(", ")}. Material: ${productInfo.material || "unknown"}. Description: ${productInfo.description || "N/A"}.`
       : `Category: ${category || "General"}.`;
 
-    const systemPrompt = `You are a world-class creative director for product photography. Given a product image and its details, generate 12 unique, tailored scene templates for photographing THIS SPECIFIC product.
+    const systemPrompt = `You are a world-class creative director for product photography. Given a product image and its details, generate 20 unique, tailored scene templates for photographing THIS SPECIFIC product.
 
 CRITICAL RULES:
 - Every template MUST be specifically designed for this product type. A lipstick should never get "Ghost Mannequin" or "Hanging on Rail". A ring should never get "Folded Stack".
