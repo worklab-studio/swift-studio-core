@@ -677,19 +677,57 @@ IMPORTANT: Each of the 6 shots MUST have a distinctly different pose and body po
       return `${shotTypeDesc[label] || label}. ${baseStyle}. Category: ${category}. ${modelDesc}${beautyPosing}${outfitDirective}${scaleDirective} ${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}. ${ratioInstruction} Professional commercial photography, high resolution, no text, no watermarks.`;
     });
 
+    // ── View-to-shot mapping for multi-reference selection ──
+    const VIEW_SHOT_MAP: Record<string, string[]> = {
+      hero: ["front", "3/4-front"],
+      alternate: ["back", "3/4-back"],
+      detail: ["detail-closeup", "front"],
+      lifestyle: ["3/4-front", "front"],
+      editorial: ["left-side", "right-side", "3/4-front"],
+      flat_lay: ["flat-lay", "top", "front"],
+    };
+
+    function selectReferenceImage(label: string): string | null {
+      if (!allProductImages || !imageViews || allProductImages.length < 2) return productImageUrl;
+      const preferredViews = VIEW_SHOT_MAP[label] || ["front"];
+      for (const view of preferredViews) {
+        const match = allProductImages.find((url: string) => imageViews[url] === view);
+        if (match) return match;
+      }
+      return productImageUrl; // fallback to primary
+    }
+
     // Generate images in parallel batches
     const insertedAssets: any[] = [];
 
     async function generateSingleShot(label: string, prompt: string): Promise<any | null> {
       const isShowcase = showcaseType && isProductShootWithTemplate && productDescription;
+      const primaryRef = selectReferenceImage(label);
       const messageContent: any[] = [{ type: "text", text: prompt }];
-      if (productImageUrl) {
-        messageContent.push({ type: "image_url", image_url: { url: productImageUrl } });
+      
+      // Add view context to prompt if we have multi-image refs
+      if (allProductImages && imageViews && primaryRef && primaryRef !== productImageUrl) {
+        const viewLabel = imageViews[primaryRef];
+        if (viewLabel) {
+          messageContent[0] = { type: "text", text: `${prompt}\n\nREFERENCE IMAGE VIEW: This reference shows the product from the ${viewLabel} angle. Maintain exact product details, colors, textures, and branding from this reference.` };
+        }
+      }
+      
+      if (primaryRef) {
+        messageContent.push({ type: "image_url", image_url: { url: primaryRef } });
+      }
+      // Add secondary reference for cross-checking fidelity
+      if (allProductImages && allProductImages.length > 1 && primaryRef) {
+        const secondary = allProductImages.find((url: string) => url !== primaryRef);
+        if (secondary) {
+          messageContent.push({ type: "image_url", image_url: { url: secondary } });
+        }
       }
 
       const callAI = async (overridePrompt?: string) => {
+        const refImages = primaryRef ? [{ type: "image_url", image_url: { url: primaryRef } }] : [];
         const content = overridePrompt
-          ? [{ type: "text", text: overridePrompt }, ...(productImageUrl ? [{ type: "image_url", image_url: { url: productImageUrl } }] : [])]
+          ? [{ type: "text", text: overridePrompt }, ...refImages]
           : messageContent;
 
         const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
