@@ -2759,7 +2759,7 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
                 <p className="text-[11px] font-semibold text-foreground">What would you like to do?</p>
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={onRemoveBackground}
+                    onClick={() => onRemoveBackground(0)}
                     disabled={removingBackground}
                     className="rounded-xl border border-border bg-card p-3 text-left transition-all hover:border-primary/50 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                   >
