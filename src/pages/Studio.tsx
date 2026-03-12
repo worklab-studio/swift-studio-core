@@ -3501,7 +3501,7 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
         </div>
       ) : (
         <div className="max-w-lg">
-          {shots[0] && <ShotCard shot={shots[0]} index={0} aspectRatio={aspectRatio} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />}
+          {shots[0] && <ShotCard shot={shots[0]} index={0} aspectRatio={aspectRatio} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} onView={setViewingUrl} />}
         </div>
       )}
 
