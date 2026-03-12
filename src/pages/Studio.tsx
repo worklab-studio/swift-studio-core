@@ -507,6 +507,20 @@ const Studio = () => {
     }
   }, [shootType, productInfo, templatesCached]);
 
+  // Auto-populate beauty/FMCG fields from productInfo
+  useEffect(() => {
+    if (!productInfo) return;
+    if (productInfo.beautyApplication && !beautyApplication) {
+      setBeautyApplication(productInfo.beautyApplication);
+    }
+    if (productInfo.beautySize && !productSize) {
+      setProductSize(productInfo.beautySize);
+    }
+    if (productInfo.fmcgSize && !productSize) {
+      setProductSize(productInfo.fmcgSize);
+    }
+  }, [productInfo]);
+
   /* ── Generate all model portraits (skip existing) ── */
   const handleGeneratePortraits = useCallback(async () => {
     // Filter out models that already have portraits
