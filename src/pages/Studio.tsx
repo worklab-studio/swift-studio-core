@@ -1267,6 +1267,12 @@ const Studio = () => {
                     productInfo={productInfo}
                     activeTemplates={dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES}
                     loadingTemplates={loadingTemplates}
+                    beautyApplication={beautyApplication}
+                    setBeautyApplication={setBeautyApplication}
+                    productSize={productSize}
+                    setProductSize={setProductSize}
+                    selectedOutfit={selectedOutfit}
+                    setSelectedOutfit={setSelectedOutfit}
                   />
                 )}
                 {activeStep === 3 && (
