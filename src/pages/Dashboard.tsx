@@ -122,7 +122,7 @@ const Dashboard = () => {
 
       setProjects(recentProjects ?? []);
       setTransactions(recentTx ?? []);
-      setHeatmapData(yearTx ?? []);
+      setHeatmapData(allTx ?? []);
 
       // Fetch asset counts per project
       if (recentProjects && recentProjects.length > 0) {
