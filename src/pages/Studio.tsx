@@ -2568,7 +2568,7 @@ function Step5Config({ shots, exportFormat, setExportFormat, selectedShots, setS
    ════════════════════════════════════════════════════════════════ */
 
 /* ── Step 1 Viewport ── */
-function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisPhase, productName, setProductName, modelChoice, removingBackground, onRemoveBackground, onKeepModel }: { 
+function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisPhase, productName, setProductName, modelChoice, removingBackground, removingBgIndex, onRemoveBackground, onKeepModel, imageViews, detectingViews }: { 
   productImages: string[]; 
   productInfo: ProductInfo | null;
   analyzingProduct: boolean;
@@ -2577,8 +2577,11 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
   setProductName: (name: string) => void;
   modelChoice: 'remove' | 'keep' | null;
   removingBackground: boolean;
-  onRemoveBackground: () => void;
+  removingBgIndex: number | null;
+  onRemoveBackground: (index?: number) => void;
   onKeepModel: () => void;
+  imageViews: Record<string, string>;
+  detectingViews: boolean;
 }) {
   const ANALYSIS_TEXTS = [
     'Analyzing image...',
