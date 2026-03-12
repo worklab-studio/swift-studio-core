@@ -280,6 +280,12 @@ const STYLE_PRESETS: StylePreset[] = [
     product: { pose: 'Product in natural use context — on a table, in a bag, being worn', angle: 'Natural eye-level perspective, as if viewer is in the scene', lighting: 'Window light or open shade, soft natural illumination, warm or neutral tones', composition: 'Environmental context, product integrated into scene, lifestyle props' },
     model: { pose: 'Natural everyday movement — sitting, leaning, walking, genuine smile', angle: 'Eye-level conversational distance, medium shot, natural perspective', lighting: 'Soft window light or outdoor open shade, natural skin tones, even exposure', composition: 'Environmental portrait, lifestyle context visible, product naturally integrated' },
   },
+  {
+    id: 'plain-bg', name: 'Plain Background', desc: 'Solid color backdrop, pure product focus',
+    img: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80',
+    product: { pose: 'Product centered, clean isolation, no props, floating on solid color', angle: 'Straight-on eye-level, perfectly symmetrical', lighting: 'Even diffused lighting from all sides, zero harsh shadows, shadowless', composition: 'Dead center placement, maximum negative space, pure solid background' },
+    model: { pose: 'Standing straight, relaxed natural pose, facing camera directly', angle: 'Eye-level straight-on, full body or 3/4 crop', lighting: 'Even flat lighting, soft fill from all directions, no dramatic shadows', composition: 'Centered subject, pure solid color background, no props or distractions' },
+  },
 ];
 
 /* ── Steps ── */
@@ -364,6 +370,7 @@ const Studio = () => {
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [shotCount, setShotCount] = useState<string>('campaign');
   const [aspectRatio, setAspectRatio] = useState<string>('1:1');
+  const [plainBgColor, setPlainBgColor] = useState<string>('White');
   const [additionalContext, setAdditionalContext] = useState('');
 
   // Generation state
@@ -560,6 +567,7 @@ const Studio = () => {
     setReferenceImage(null);
     setShotCount('campaign');
     setAspectRatio('1:1');
+    setPlainBgColor('White');
     setAdditionalContext('');
     setGenerationProgress(0);
     setGenerationStage('');
@@ -782,19 +790,22 @@ const Studio = () => {
   };
 
   /* ── Build style prompt from preset ── */
-  const buildStylePrompt = useCallback((preset: StylePreset, isModel: boolean, info?: ProductInfo | null): string => {
+  const buildStylePrompt = useCallback((preset: StylePreset, isModel: boolean, info?: ProductInfo | null, bgColor?: string): string => {
     const settings = isModel ? preset.model : preset.product;
     const productDesc = info
       ? `${info.category} product (${info.colors?.join(', ') || 'neutral tones'}, ${info.material || 'premium materials'})`
       : 'product';
     const garmentInfo = info?.garmentType ? ` — specifically a ${info.garmentType}` : '';
     const outfitInfo = isModel && info?.outfitSuggestion ? ` Styled with: ${info.outfitSuggestion}.` : '';
+    const plainBgInstruction = preset.id === 'plain-bg' && bgColor
+      ? ` CRITICAL: The background MUST be a pure solid ${bgColor} color. No texture, no gradient, no patterns, no props, no environment — completely clean flat ${bgColor} backdrop filling the entire background.`
+      : '';
 
     return `${preset.name} style photography for a ${productDesc}${garmentInfo}. ` +
       `Pose: ${settings.pose}. ` +
       `Camera angle: ${settings.angle}. ` +
       `Lighting: ${settings.lighting}. ` +
-      `Composition: ${settings.composition}.${outfitInfo}`;
+      `Composition: ${settings.composition}.${outfitInfo}${plainBgInstruction}`;
   }, []);
 
   // Auto-compute stylePrompt + styleSettings when preset changes
@@ -805,8 +816,8 @@ const Studio = () => {
     const isModel = shootType === 'model';
     const settings = isModel ? preset.model : preset.product;
     setStyleSettings(settings);
-    setStylePrompt(buildStylePrompt(preset, isModel, productInfo));
-  }, [selectedPreset, shootType, productInfo, buildStylePrompt]);
+    setStylePrompt(buildStylePrompt(preset, isModel, productInfo, plainBgColor));
+  }, [selectedPreset, shootType, productInfo, buildStylePrompt, plainBgColor]);
 
   /* ── Generation ── */
   const handleGenerate = async (mode?: 'single' | 'campaign_add') => {
@@ -1148,6 +1159,8 @@ const Studio = () => {
                     setAdditionalContext={setAdditionalContext}
                     styleSettings={styleSettings}
                     analyzingStyle={analyzingStyle}
+                    plainBgColor={plainBgColor}
+                    setPlainBgColor={setPlainBgColor}
                   />
                 )}
                 {activeStep === 4 && (
@@ -1836,7 +1849,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
 }
 
 /* ── Step 3 Config (Left) ── */
-function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, aspectRatio, setAspectRatio, additionalContext, setAdditionalContext, styleSettings, analyzingStyle }: {
+function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, aspectRatio, setAspectRatio, additionalContext, setAdditionalContext, styleSettings, analyzingStyle, plainBgColor, setPlainBgColor }: {
   selectedPreset: string | null;
   setSelectedPreset: (v: string | null) => void;
   referenceImage: string | null;
@@ -1851,7 +1864,19 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
   setAdditionalContext: (v: string) => void;
   styleSettings: StyleSettings | null;
   analyzingStyle: boolean;
+  plainBgColor: string;
+  setPlainBgColor: (v: string) => void;
 }) {
+  const PLAIN_BG_COLORS = [
+    { name: 'White', color: '#FFFFFF', border: true },
+    { name: 'Light Gray', color: '#F0F0F0', border: false },
+    { name: 'Beige', color: '#F5F0E8', border: false },
+    { name: 'Cream', color: '#FFFDD0', border: false },
+    { name: 'Soft Pink', color: '#FDE8E8', border: false },
+    { name: 'Light Blue', color: '#E0EEFF', border: false },
+    { name: 'Sage Green', color: '#E0EBE0', border: false },
+    { name: 'Black', color: '#1A1A1A', border: false },
+  ];
   return (
     <div className="space-y-4">
       <p className="text-sm font-semibold text-foreground">Style preset</p>
@@ -1874,6 +1899,33 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
           </button>
         ))}
       </div>
+
+      {/* Plain Background color picker */}
+      {selectedPreset === 'plain-bg' && (
+        <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+          <p className="text-xs font-medium">Background Color</p>
+          <div className="flex flex-wrap gap-2">
+            {PLAIN_BG_COLORS.map(c => (
+              <button
+                key={c.name}
+                onClick={() => setPlainBgColor(c.name)}
+                className={`flex flex-col items-center gap-1 group`}
+                title={c.name}
+              >
+                <div
+                  className={`w-8 h-8 rounded-full transition-all ${
+                    plainBgColor === c.name ? 'ring-2 ring-primary ring-offset-2' : 'hover:ring-2 hover:ring-muted-foreground/30 hover:ring-offset-1'
+                  } ${c.border ? 'border border-border' : ''}`}
+                  style={{ backgroundColor: c.color }}
+                />
+                <span className={`text-[9px] ${plainBgColor === c.name ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                  {c.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Reference upload */}
       <input ref={referenceInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onReferenceUpload} />

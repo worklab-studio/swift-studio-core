@@ -116,12 +116,12 @@ serve(async (req) => {
     const shotPrompts = labels.map((label) => {
       const baseStyle = stylePrompt || `${preset} style photography`;
       const shotTypeDesc: Record<string, string> = {
-        hero: "Hero shot — primary product showcase, clean and striking, the definitive product image",
-        detail: "Close-up detail shot — macro-style focus on texture, stitching, material quality, fine details",
-        lifestyle: "Lifestyle shot — product in natural use context, environmental storytelling, aspirational setting",
-        alternate: "Alternate angle — different perspective showing product from side or back, revealing hidden details",
-        editorial: "Editorial shot — magazine-worthy composition, artistic styling, fashion-forward presentation",
-        flat_lay: "Flat lay — top-down bird's eye view, styled arrangement on a clean surface with complementary props",
+        hero: "Hero shot — front-facing, full body or full product visible, hands relaxed at sides or product centered, straight-on camera at eye level, clean symmetrical framing, the definitive primary product image. The model/product should be still, poised, and directly engaging the camera.",
+        detail: "Close-up detail shot — extreme macro-style focus on texture, stitching, material quality, fine craftsmanship details. Tight crop on a specific area (fabric weave, hardware, logo, seam). Shallow depth of field, f/2.8 macro lens feel.",
+        lifestyle: "Lifestyle shot — candid mid-action pose: walking, turning, reaching, or adjusting the product naturally. Shot from a 3/4 angle (not straight-on). Environmental context with props and setting that tell a story. Slight sense of movement and energy, natural body language, relaxed authentic expression. The scene should feel aspirational and relatable.",
+        alternate: "Alternate angle — show the product from the back or side view, over-the-shoulder perspective or profile angle. Reveal hidden details, back panel, side seams, or structural elements not visible in the hero shot. Different body orientation than hero (if hero is front, this is back/side).",
+        editorial: "Editorial shot — high-fashion dramatic pose with strong angles: a confident lean, crossed arms, or asymmetric weight shift. Shot from a low camera angle or slight Dutch tilt for drama. Strong directional lighting with deep shadows on one side. Asymmetric composition with intentional negative space. Magazine cover worthy, fashion-forward, artistic and bold. Completely different mood from the hero shot.",
+        flat_lay: "Flat lay — top-down bird's eye view from directly above, product laid flat on a clean surface, styled arrangement with complementary props (accessories, fabrics, botanicals), organized grid or artful scatter composition. No model visible.",
       };
       const modelDesc = shotType === "model_shot" && modelConfig
         ? `The product is worn/held by a ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""} model with ${modelConfig.bodyType || "average"} build. Background: ${modelConfig.backgroundPrompt || modelConfig.background || "studio"}.`
