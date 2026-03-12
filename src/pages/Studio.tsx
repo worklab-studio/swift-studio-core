@@ -1938,7 +1938,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
 
   // Auto-compute detailed background prompt whenever background or productInfo changes
   useEffect(() => {
-    if (!modelConfig.background) return;
+    if (!modelConfig.background || modelConfig.background === 'custom') return;
     const prompt = buildBackgroundPrompt(modelConfig.background, productInfo);
     setModelConfig(prev => prev.backgroundPrompt === prompt ? prev : ({ ...prev, backgroundPrompt: prompt }));
   }, [modelConfig.background, productInfo]);
@@ -2239,13 +2239,24 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                     <SelectItem value="dark-moody">Dark moody</SelectItem>
                     <SelectItem value="ethereal-light">Ethereal light</SelectItem>
                   </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Custom</SelectLabel>
+                    <SelectItem value="custom">Custom prompt</SelectItem>
+                  </SelectGroup>
                 </SelectContent>
               </Select>
-              {productInfo?.category && (
+              {modelConfig.background === 'custom' ? (
+                <Textarea
+                  className="mt-2 text-xs min-h-[60px]"
+                  placeholder="Describe your background scene..."
+                  value={modelConfig.backgroundPrompt}
+                  onChange={(e) => setModelConfig(prev => ({ ...prev, backgroundPrompt: e.target.value }))}
+                />
+              ) : productInfo?.category ? (
                 <p className="text-[10px] text-muted-foreground mt-0.5">
                   Auto-suggested for {productInfo.category}
                 </p>
-              )}
+              ) : null}
             </div>
           </div>
 
