@@ -280,6 +280,12 @@ const STYLE_PRESETS: StylePreset[] = [
     product: { pose: 'Product in natural use context — on a table, in a bag, being worn', angle: 'Natural eye-level perspective, as if viewer is in the scene', lighting: 'Window light or open shade, soft natural illumination, warm or neutral tones', composition: 'Environmental context, product integrated into scene, lifestyle props' },
     model: { pose: 'Natural everyday movement — sitting, leaning, walking, genuine smile', angle: 'Eye-level conversational distance, medium shot, natural perspective', lighting: 'Soft window light or outdoor open shade, natural skin tones, even exposure', composition: 'Environmental portrait, lifestyle context visible, product naturally integrated' },
   },
+  {
+    id: 'plain-bg', name: 'Plain Background', desc: 'Solid color backdrop, pure product focus',
+    img: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80',
+    product: { pose: 'Product centered, clean isolation, no props, floating on solid color', angle: 'Straight-on eye-level, perfectly symmetrical', lighting: 'Even diffused lighting from all sides, zero harsh shadows, shadowless', composition: 'Dead center placement, maximum negative space, pure solid background' },
+    model: { pose: 'Standing straight, relaxed natural pose, facing camera directly', angle: 'Eye-level straight-on, full body or 3/4 crop', lighting: 'Even flat lighting, soft fill from all directions, no dramatic shadows', composition: 'Centered subject, pure solid color background, no props or distractions' },
+  },
 ];
 
 /* ── Steps ── */
