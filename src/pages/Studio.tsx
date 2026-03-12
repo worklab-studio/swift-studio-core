@@ -1705,22 +1705,93 @@ const Studio = () => {
    LEFT PANEL CONFIG COMPONENTS
    ════════════════════════════════════════════════════════════════ */
 
+/* ── View options for tagging ── */
+const VIEW_OPTIONS = [
+  { value: 'front', label: 'Front' },
+  { value: 'back', label: 'Back' },
+  { value: 'left-side', label: 'Left' },
+  { value: 'right-side', label: 'Right' },
+  { value: 'detail-closeup', label: 'Detail' },
+  { value: 'top', label: 'Top' },
+  { value: 'bottom', label: 'Bottom' },
+  { value: '3/4-front', label: '¾ Front' },
+  { value: '3/4-back', label: '¾ Back' },
+  { value: 'flat-lay', label: 'Flat Lay' },
+] as const;
+
+const VIEW_LABEL_SHORT: Record<string, string> = {
+  'front': 'Front', 'back': 'Back', 'left-side': 'Left', 'right-side': 'Right',
+  'detail-closeup': 'Detail', 'top': 'Top', 'bottom': 'Bottom',
+  '3/4-front': '¾ F', '3/4-back': '¾ B', 'flat-lay': 'Flat',
+};
+
+/* ── Clickable view tag popover ── */
+function ViewTagPopover({ url, currentView, onSetView, size = 'sm' }: {
+  url: string;
+  currentView: string | null;
+  onSetView: (url: string, view: string) => void;
+  size?: 'sm' | 'xs';
+}) {
+  const [open, setOpen] = useState(false);
+  const label = currentView ? (VIEW_LABEL_SHORT[currentView] || currentView) : null;
+  const isSm = size === 'sm';
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          onClick={(e) => { e.stopPropagation(); setOpen(true); }}
+          className={`flex items-center gap-0.5 rounded-full px-1.5 py-0.5 transition-colors cursor-pointer ${
+            label
+              ? 'bg-background/80 backdrop-blur-sm hover:bg-background/95'
+              : 'bg-primary/80 backdrop-blur-sm hover:bg-primary/95 text-primary-foreground'
+          }`}
+        >
+          {label ? (
+            <>
+              <span className={`font-semibold ${isSm ? 'text-[10px]' : 'text-[8px]'} text-foreground`}>{label}</span>
+              <PenLine className={`${isSm ? 'h-2.5 w-2.5' : 'h-2 w-2'} text-muted-foreground`} />
+            </>
+          ) : (
+            <>
+              <Tag className={`${isSm ? 'h-2.5 w-2.5' : 'h-2 w-2'}`} />
+              <span className={`font-semibold ${isSm ? 'text-[10px]' : 'text-[8px]'}`}>Tag view</span>
+              <ChevronDown className={`${isSm ? 'h-2.5 w-2.5' : 'h-2 w-2'}`} />
+            </>
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-36 p-1" align="start" side="bottom" sideOffset={4}>
+        <div className="flex flex-col">
+          {VIEW_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={(e) => { e.stopPropagation(); onSetView(url, opt.value); setOpen(false); }}
+              className={`flex items-center gap-2 px-2 py-1.5 text-xs rounded-sm transition-colors hover:bg-accent ${
+                currentView === opt.value ? 'bg-accent font-semibold text-accent-foreground' : 'text-foreground'
+              }`}
+            >
+              {currentView === opt.value && <Check className="h-3 w-3 text-primary" />}
+              <span className={currentView === opt.value ? '' : 'ml-5'}>{opt.label}</span>
+            </button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 /* ── Step 1 Config (Left) ── */
-function Step1Config({ productImages, productUploadRef, onUpload, onRemove, imageViews }: {
+function Step1Config({ productImages, productUploadRef, onUpload, onRemove, imageViews, onSetView }: {
   productImages: string[];
   productUploadRef: React.RefObject<HTMLInputElement>;
   onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemove: (index: number) => void;
   imageViews: Record<string, string>;
+  onSetView: (url: string, view: string) => void;
 }) {
   const TOTAL_SLOTS = 7;
   const slots = Array.from({ length: TOTAL_SLOTS }, (_, i) => productImages[i] ?? null);
-
-  const VIEW_LABEL_SHORT: Record<string, string> = {
-    'front': 'Front', 'back': 'Back', 'left-side': 'Left', 'right-side': 'Right',
-    'detail-closeup': 'Detail', 'top': 'Top', 'bottom': 'Bottom',
-    '3/4-front': '¾ F', '3/4-back': '¾ B', 'flat-lay': 'Flat',
-  };
 
   return (
     <div className="space-y-4">
@@ -1761,9 +1832,7 @@ function Step1Config({ productImages, productUploadRef, onUpload, onRemove, imag
               <X className="h-3 w-3" />
             </button>
             <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-background/70 to-transparent px-2 py-1.5 flex items-center justify-between">
-              <p className="text-[10px] font-medium text-foreground">
-                {imageViews[slots[0]!] ? VIEW_LABEL_SHORT[imageViews[slots[0]!]] || imageViews[slots[0]!] : 'Main Shot'}
-              </p>
+              <ViewTagPopover url={slots[0]!} currentView={imageViews[slots[0]!] || null} onSetView={onSetView} size="sm" />
             </div>
           </>
         ) : (
@@ -1795,11 +1864,9 @@ function Step1Config({ productImages, productUploadRef, onUpload, onRemove, imag
                   >
                     <X className="h-2.5 w-2.5" />
                   </button>
-                  {imageViews[url] && (
-                    <span className="absolute bottom-0 inset-x-0 bg-background/70 backdrop-blur-sm text-[8px] font-semibold text-center py-0.5 text-foreground">
-                      {VIEW_LABEL_SHORT[imageViews[url]] || imageViews[url]}
-                    </span>
-                  )}
+                  <div className="absolute bottom-0 inset-x-0 flex justify-center py-0.5">
+                    <ViewTagPopover url={url} currentView={imageViews[url] || null} onSetView={onSetView} size="xs" />
+                  </div>
                 </>
               ) : (
                 <div className="flex items-center justify-center h-full">
