@@ -76,13 +76,10 @@ const Dashboard = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const oneYearAgo = new Date();
-      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-
       const [
         { data: recentProjects },
         { data: recentTx },
-        { data: yearTx },
+        { data: allTx },
         { count: projectCount },
         { count: imageCount },
         { count: videoCount },
@@ -102,8 +99,7 @@ const Dashboard = () => {
         supabase
           .from('credit_transactions')
           .select('created_at, amount')
-          .eq('user_id', user.id)
-          .gte('created_at', oneYearAgo.toISOString()),
+          .eq('user_id', user.id),
         supabase
           .from('projects')
           .select('*', { count: 'exact', head: true })
