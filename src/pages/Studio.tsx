@@ -2641,6 +2641,7 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
             })}
           </div>
         </ScrollArea>
+        )}
       </div>
     );
   }
