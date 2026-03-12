@@ -1360,6 +1360,7 @@ const Studio = () => {
                     shootType={shootType}
                     selectedTemplate={selectedTemplate}
                     activeTemplates={dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES}
+                    projectCategory={project?.category || ''}
                   />
                 )}
                 {activeStep === 4 && (
