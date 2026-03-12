@@ -2658,37 +2658,93 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
   }
 
   // Phase 2: Done — left-aligned image, selectable thumbnails, uniform badges
+  const currentDisplayIndex = selectedThumbIndex ?? 0;
+  const currentViewLabel = imageViews[productImages[currentDisplayIndex]] || null;
+
+  const VIEW_LABEL_DISPLAY: Record<string, string> = {
+    'front': 'Front', 'back': 'Back', 'left-side': 'Left', 'right-side': 'Right',
+    'detail-closeup': 'Detail', 'top': 'Top', 'bottom': 'Bottom',
+    '3/4-front': '¾ Front', '3/4-back': '¾ Back', 'flat-lay': 'Flat Lay',
+  };
+
   return (
     <div className="h-full w-full overflow-hidden p-6 flex flex-col">
       {/* Top row: main image on left + thumbnails on right */}
       <div className="flex gap-4 flex-1 min-h-0">
-        <div className="flex-1 min-w-0 flex items-start animate-in slide-in-from-bottom-4 duration-500">
-          <img
-            src={displayImage}
-            alt="Product main"
-            className="max-h-[50vh] max-w-full rounded-2xl shadow-lg object-contain"
-          />
+        <div className="flex-1 min-w-0 flex flex-col items-start gap-2 animate-in slide-in-from-bottom-4 duration-500">
+          <div className="relative">
+            <img
+              src={displayImage}
+              alt="Product main"
+              className="max-h-[45vh] max-w-full rounded-2xl shadow-lg object-contain"
+            />
+            {currentViewLabel && (
+              <Badge variant="secondary" className="absolute top-2 left-2 text-[10px] gap-1 bg-background/80 backdrop-blur-sm">
+                <Eye className="h-2.5 w-2.5" />
+                {VIEW_LABEL_DISPLAY[currentViewLabel] || currentViewLabel}
+              </Badge>
+            )}
+            {removingBgIndex === currentDisplayIndex && (
+              <div className="absolute inset-0 rounded-2xl bg-foreground/30 backdrop-blur-[2px] flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary-foreground" />
+              </div>
+            )}
+          </div>
+          {/* Remove BG button for current image */}
+          {analysisPhase === 'done' && !productInfo?.hasModel && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              disabled={removingBackground}
+              onClick={() => onRemoveBackground(currentDisplayIndex)}
+            >
+              {removingBgIndex === currentDisplayIndex ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <ImageIcon className="h-3.5 w-3.5" />
+              )}
+              Remove BG
+            </Button>
+          )}
         </div>
 
         {productImages.length > 1 && (
           <div className="shrink-0 flex flex-col gap-2 animate-stagger-in" style={{ animationDelay: '0.3s' }}>
-            {productImages.slice(1).map((url, i) => {
-              const thumbIdx = i + 1;
-              const isSelected = selectedThumbIndex === thumbIdx;
+            {productImages.map((url, i) => {
+              const isSelected = currentDisplayIndex === i;
+              const viewLabel = imageViews[url];
               return (
-                <img
-                  key={i}
-                  src={url}
-                  alt={`Angle ${i + 2}`}
-                  onClick={() => setSelectedThumbIndex(isSelected ? null : thumbIdx)}
-                  className={`h-20 w-20 rounded-lg object-cover border shadow-sm transition-all cursor-pointer ${
-                    isSelected
-                      ? 'ring-2 ring-primary border-primary'
-                      : 'border-border hover:ring-2 hover:ring-primary/30'
-                  }`}
-                />
+                <div key={i} className="relative">
+                  <img
+                    src={url}
+                    alt={`Angle ${i + 1}`}
+                    onClick={() => setSelectedThumbIndex(i === 0 ? null : i)}
+                    className={`h-20 w-20 rounded-lg object-cover border shadow-sm transition-all cursor-pointer ${
+                      isSelected
+                        ? 'ring-2 ring-primary border-primary'
+                        : 'border-border hover:ring-2 hover:ring-primary/30'
+                    }`}
+                  />
+                  {viewLabel && (
+                    <span className="absolute bottom-0.5 left-0.5 right-0.5 bg-background/80 backdrop-blur-sm rounded-b-md text-[8px] font-semibold text-center py-0.5 text-foreground">
+                      {VIEW_LABEL_DISPLAY[viewLabel] || viewLabel}
+                    </span>
+                  )}
+                  {removingBgIndex === i && (
+                    <div className="absolute inset-0 rounded-lg bg-foreground/30 flex items-center justify-center">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary-foreground" />
+                    </div>
+                  )}
+                </div>
               );
             })}
+            {detectingViews && (
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span className="text-[9px]">Detecting views…</span>
+              </div>
+            )}
           </div>
         )}
       </div>
