@@ -143,3 +143,12 @@
   animation: stagger-in 0.5s ease-out forwards;
   opacity: 0;
 }
+
+@keyframes dash-flow {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -16; }
+}
+
+.animate-dash-flow {
+  animation: dash-flow 0.8s linear infinite;
+}

@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import JSZip from 'jszip';
+import heic2any from 'heic2any';
 import apparelClassic from '@/assets/presets/Classic.png';
 import apparelMinimal from '@/assets/presets/Minimal.png';
 import apparelLuxury from '@/assets/presets/Luxury.png';
@@ -755,6 +756,21 @@ const Studio = () => {
     }
   }, []);
 
+  /* ── HEIC/HEIF conversion helper ── */
+  const convertHeicIfNeeded = async (file: File): Promise<{ blob: Blob; ext: string; contentType: string }> => {
+    const name = file.name.toLowerCase();
+    const isHeic = file.type === 'image/heic' || file.type === 'image/heif' || name.endsWith('.heic') || name.endsWith('.heif');
+    if (!isHeic) return { blob: file, ext: name.split('.').pop() || 'jpg', contentType: file.type };
+    try {
+      const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
+      const resultBlob = Array.isArray(converted) ? converted[0] : converted;
+      return { blob: resultBlob, ext: 'jpg', contentType: 'image/jpeg' };
+    } catch (err) {
+      console.warn('HEIC conversion failed, uploading original:', err);
+      return { blob: file, ext: name.split('.').pop() || 'jpg', contentType: file.type };
+    }
+  };
+
   /* ── Step 1 handlers ── */
   const handleProductImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -762,11 +778,11 @@ const Studio = () => {
 
     const uploadedUrls: string[] = [];
     for (const file of Array.from(files)) {
-      const ext = file.name.split('.').pop() || 'jpg';
+      const { blob, ext, contentType } = await convertHeicIfNeeded(file);
       const filePath = `${id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error: uploadErr } = await supabase.storage
         .from('originals')
-        .upload(filePath, file, { contentType: file.type, upsert: false });
+        .upload(filePath, blob, { contentType, upsert: false });
       if (uploadErr) {
         console.error('Upload error:', uploadErr);
         toast({ title: 'Upload failed', description: uploadErr.message, variant: 'destructive' });
@@ -3287,6 +3303,28 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
   );
 }
 
+/* ── Animated Connector ── */
+function AnimatedConnector() {
+  return (
+    <div className="flex justify-center py-1">
+      <svg width="2" height="36" viewBox="0 0 2 36" className="overflow-visible">
+        <line
+          x1="1" y1="0" x2="1" y2="36"
+          stroke="hsl(var(--primary) / 0.4)"
+          strokeWidth="2"
+          strokeDasharray="4 4"
+          className="animate-dash-flow"
+        />
+        {/* Arrow tip */}
+        <polygon
+          points="-3,32 1,36 5,32"
+          fill="hsl(var(--primary) / 0.4)"
+        />
+      </svg>
+    </div>
+  );
+}
+
 /* ── Step 3 Viewport ── */
 function Step3Viewport({ selectedPreset, selectedPresetData, referenceImage, productImages, shootType, modelConfig, selectedModelData, modelImages, selectedTemplate, activeTemplates }: {
   selectedPreset: string | null;
@@ -3301,81 +3339,93 @@ function Step3Viewport({ selectedPreset, selectedPresetData, referenceImage, pro
   activeTemplates: ProductTemplate[];
 }) {
   const tpl = selectedTemplate ? activeTemplates.find(t => t.id === selectedTemplate) : null;
+  const presetImg = selectedPresetData ? APPAREL_PRESET_IMAGES[selectedPresetData.id] : null;
+
+  const hasShootInfo = !!shootType;
+  const hasModelOrTemplate = (shootType === 'model' && (selectedModelData || modelConfig.uploadedModelUrl)) || (shootType === 'product' && tpl);
+  const hasPreset = !!selectedPresetData;
 
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-6 animate-in fade-in duration-300 p-8">
-      {/* Product Images */}
-      {productImages.length > 0 && (
-        <div className="w-full max-w-md">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Your Product</p>
-          <div className="flex gap-3 items-start">
-            <div className="w-32 h-32 rounded-xl overflow-hidden border border-border shadow-sm shrink-0">
-              <img src={productImages[0]} alt="Product" className="w-full h-full object-cover" />
-            </div>
-            {productImages.length > 1 && (
-              <div className="flex flex-wrap gap-2">
-                {productImages.slice(1).map((img, i) => (
-                  <div key={i} className="w-16 h-16 rounded-lg overflow-hidden border border-border">
-                    <img src={img} alt={`Product ${i + 2}`} className="w-full h-full object-cover" />
-                  </div>
-                ))}
+    <div className="flex flex-col items-center justify-center h-full animate-in fade-in duration-300 p-8">
+      <div className="w-full max-w-lg space-y-0">
+
+        {/* Product Images */}
+        {productImages.length > 0 && (
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Your Product</p>
+            <div className="flex gap-4 items-start">
+              <div className="w-44 h-44 rounded-xl overflow-hidden border border-border shadow-sm shrink-0">
+                <img src={productImages[0]} alt="Product" className="w-full h-full object-cover" />
               </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Shoot Type Card */}
-      {shootType && (
-        <div className="w-full max-w-md">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Shoot Type</p>
-          <div className="rounded-xl border border-border bg-card p-4 flex items-center gap-4">
-            <div className={`h-12 w-12 rounded-lg flex items-center justify-center shrink-0 ${shootType === 'model' ? 'bg-primary/10' : 'bg-accent'}`}>
-              {shootType === 'model' ? <Camera className="h-5 w-5 text-primary" /> : <Package className="h-5 w-5 text-muted-foreground" />}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold">{shootType === 'model' ? 'Model Shoot' : 'Product Shoot'}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {shootType === 'model' ? 'AI model wearing/holding your product' : 'Product-focused scene composition'}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Model Card (if model shoot) */}
-      {shootType === 'model' && (selectedModelData || modelConfig.uploadedModelUrl) && (
-        <div className="w-full max-w-md">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Selected Model</p>
-          <div className="rounded-xl border border-border bg-card p-4 flex items-center gap-4">
-            <div className="w-14 h-[72px] rounded-lg overflow-hidden shrink-0 border border-border">
-              {selectedModelData && modelImages[selectedModelData.id] ? (
-                <img src={modelImages[selectedModelData.id]} alt={selectedModelData.name} className="w-full h-full object-cover" />
-              ) : modelConfig.uploadedModelUrl ? (
-                <img src={modelConfig.uploadedModelUrl} alt="Custom model" className="w-full h-full object-cover" />
-              ) : selectedModelData ? (
-                <div className="w-full h-full flex items-center justify-center" style={{ background: selectedModelData.color }}>
-                  <span className="text-lg font-bold text-foreground/40">{selectedModelData.name[0]}</span>
+              {productImages.length > 1 && (
+                <div className="flex flex-wrap gap-2 content-start">
+                  {productImages.slice(1).map((img, i) => (
+                    <div key={i} className="w-16 h-16 rounded-lg overflow-hidden border border-border">
+                      <img src={img} alt={`Product ${i + 2}`} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
                 </div>
-              ) : null}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold">{selectedModelData ? selectedModelData.name : 'Custom Model'}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{selectedModelData ? selectedModelData.attrs : 'Uploaded image'}</p>
-              {selectedModelData && <p className="text-xs text-muted-foreground mt-0.5">Age: {selectedModelData.ageRange}</p>}
+              )}
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Template Card (if product shoot with template) */}
-      {shootType === 'product' && tpl && (
-        <div className="w-full max-w-md">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Scene Template</p>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: tpl.color }}>
-                <LayoutGrid className="h-4 w-4 text-foreground/60" />
+        {/* Connector */}
+        {productImages.length > 0 && hasShootInfo && <AnimatedConnector />}
+
+        {/* Shoot Type Card */}
+        {shootType && (
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Shoot Type</p>
+            <div className="flex items-center gap-4">
+              <div className={`h-14 w-14 rounded-lg flex items-center justify-center shrink-0 ${shootType === 'model' ? 'bg-primary/10' : 'bg-accent'}`}>
+                {shootType === 'model' ? <Camera className="h-6 w-6 text-primary" /> : <Package className="h-6 w-6 text-muted-foreground" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold">{shootType === 'model' ? 'Model Shoot' : 'Product Shoot'}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {shootType === 'model' ? 'AI model wearing/holding your product' : 'Product-focused scene composition'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Connector */}
+        {hasShootInfo && hasModelOrTemplate && <AnimatedConnector />}
+
+        {/* Model Card (if model shoot) */}
+        {shootType === 'model' && (selectedModelData || modelConfig.uploadedModelUrl) && (
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Selected Model</p>
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-20 rounded-lg overflow-hidden shrink-0 border border-border">
+                {selectedModelData && modelImages[selectedModelData.id] ? (
+                  <img src={modelImages[selectedModelData.id]} alt={selectedModelData.name} className="w-full h-full object-cover" />
+                ) : modelConfig.uploadedModelUrl ? (
+                  <img src={modelConfig.uploadedModelUrl} alt="Custom model" className="w-full h-full object-cover" />
+                ) : selectedModelData ? (
+                  <div className="w-full h-full flex items-center justify-center" style={{ background: selectedModelData.color }}>
+                    <span className="text-lg font-bold text-foreground/40">{selectedModelData.name[0]}</span>
+                  </div>
+                ) : null}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold">{selectedModelData ? selectedModelData.name : 'Custom Model'}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{selectedModelData ? selectedModelData.attrs : 'Uploaded image'}</p>
+                {selectedModelData && <p className="text-xs text-muted-foreground mt-0.5">Age: {selectedModelData.ageRange}</p>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Template Card (if product shoot with template) */}
+        {shootType === 'product' && tpl && (
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Scene Template</p>
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-lg flex items-center justify-center shrink-0" style={{ background: tpl.color }}>
+                <LayoutGrid className="h-5 w-5 text-foreground/60" />
               </div>
               <div>
                 <p className="text-sm font-semibold">{tpl.name}</p>
@@ -3383,8 +3433,29 @@ function Step3Viewport({ selectedPreset, selectedPresetData, referenceImage, pro
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Connector */}
+        {hasModelOrTemplate && hasPreset && <AnimatedConnector />}
+
+        {/* Style Preset Card */}
+        {selectedPresetData && (
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Style Preset</p>
+            <div className="flex items-center gap-4">
+              {presetImg && (
+                <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-border">
+                  <img src={presetImg} alt={selectedPresetData.name} className="w-full h-full object-cover" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold">{selectedPresetData.name}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{selectedPresetData.desc}</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Empty state */}
       {productImages.length === 0 && !shootType && (
