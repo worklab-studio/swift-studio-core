@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
+import JSZip from 'jszip';
 import apparelClassic from '@/assets/presets/Classic.png';
 import apparelMinimal from '@/assets/presets/Minimal.png';
 import apparelLuxury from '@/assets/presets/Luxury.png';
@@ -418,6 +419,7 @@ const Studio = () => {
   const [showExportPanel, setShowExportPanel] = useState(false);
   const [exportFormat, setExportFormat] = useState<string>('png');
   const [selectedExportShots, setSelectedExportShots] = useState<Set<string>>(new Set());
+  const [isAddingMore, setIsAddingMore] = useState(false);
   const generationAbortRef = useRef(false);
 
   // Video state
@@ -982,7 +984,12 @@ const Studio = () => {
     const stepLabel = isProductWithTemplate
       ? tpl?.name || 'Product Shoot'
       : STYLE_PRESETS.find(p => p.id === selectedPreset)?.name || selectedPreset || '';
-    completeStep(3, stepLabel, 4);
+    if (mode === 'campaign_add') {
+      // Stay on step 5, show loading skeletons inline
+      setIsAddingMore(true);
+    } else {
+      completeStep(3, stepLabel, 4);
+    }
     generationAbortRef.current = false;
     setGenerationProgress(0);
     setGenerationStage(GENERATION_STAGES[0].label);
@@ -1044,8 +1051,11 @@ const Studio = () => {
       if (generationAbortRef.current) return;
       if (error || !data?.assets) {
         toast({ title: 'Generation failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
-        setActiveStep(3);
-        setCompletedSteps(prev => { const n = new Set(prev); n.delete(3); return n; });
+        setIsAddingMore(false);
+        if (mode !== 'campaign_add') {
+          setActiveStep(3);
+          setCompletedSteps(prev => { const n = new Set(prev); n.delete(3); return n; });
+        }
         return;
       }
       setGenerationProgress(100);
@@ -1060,7 +1070,8 @@ const Studio = () => {
         const allShots = [...generatedShots, ...newShots];
         setGeneratedShots(allShots);
         setSelectedExportShots(new Set(allShots.map(s => s.id)));
-        completeStep(4, `${allShots.length} shot${allShots.length > 1 ? 's' : ''}`, 5);
+        setIsAddingMore(false);
+        // Stay on step 5, just update the shots
       } else {
         setGeneratedShots(newShots);
         setSelectedExportShots(new Set(newShots.map(s => s.id)));
@@ -1072,8 +1083,9 @@ const Studio = () => {
       setProjectProducts(prev => prev.includes(pLabel) ? prev : [...prev, pLabel]);
     } catch {
       clearInterval(progressInterval);
+      setIsAddingMore(false);
       toast({ title: 'Generation failed', description: 'Network error', variant: 'destructive' });
-      setActiveStep(3);
+      if (mode !== 'campaign_add') setActiveStep(3);
     }
   };
 
@@ -1126,16 +1138,75 @@ const Studio = () => {
     });
   };
 
-  const handleDownload = () => {
-    const selected = generatedShots.filter(s => selectedExportShots.has(s.id));
-    selected.forEach(shot => {
-      const link = document.createElement('a');
-      link.href = shot.url;
-      link.download = `${project?.name || 'shot'}-${shot.shotLabel}.${exportFormat}`;
-      link.target = '_blank';
-      link.click();
+  const convertImageToFormat = async (imageUrl: string, format: string): Promise<Blob> => {
+    const response = await fetch(imageUrl);
+    const blob = await response.blob();
+    if (format === 'png' && blob.type === 'image/png') return blob;
+    if (format === 'jpg' && (blob.type === 'image/jpeg')) return blob;
+    // Convert via canvas
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d')!;
+        if (format === 'jpg') {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob(
+          (b) => b ? resolve(b) : reject(new Error('Canvas conversion failed')),
+          format === 'jpg' ? 'image/jpeg' : 'image/png',
+          0.95
+        );
+      };
+      img.onerror = () => reject(new Error('Image load failed'));
+      img.src = imageUrl;
     });
-    toast({ title: `Downloading ${selected.length} shot${selected.length > 1 ? 's' : ''}` });
+  };
+
+  const handleDownload = async () => {
+    const selected = generatedShots.filter(s => selectedExportShots.has(s.id));
+    if (selected.length === 0) return;
+    const ext = exportFormat === 'jpg' ? 'jpg' : 'png';
+    const projectName = project?.name || 'shot';
+
+    try {
+      if (selected.length === 1) {
+        toast({ title: 'Preparing download...' });
+        const blob = await convertImageToFormat(selected[0].url, exportFormat);
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${projectName}-${selected[0].shotLabel}.${ext}`;
+        link.click();
+        URL.revokeObjectURL(url);
+        toast({ title: 'Download started' });
+      } else {
+        toast({ title: `Preparing ${selected.length} images...` });
+        const zip = new JSZip();
+        await Promise.all(
+          selected.map(async (shot, i) => {
+            const blob = await convertImageToFormat(shot.url, exportFormat);
+            zip.file(`${projectName}-${shot.shotLabel}-${i + 1}.${ext}`, blob);
+          })
+        );
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(zipBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${projectName}-shots.zip`;
+        link.click();
+        URL.revokeObjectURL(url);
+        toast({ title: `Downloaded ${selected.length} shots as ZIP` });
+      }
+    } catch (err) {
+      console.error('Download error:', err);
+      toast({ title: 'Download failed', description: 'Could not download images', variant: 'destructive' });
+    }
   };
 
   const handleCopyLink = (url: string) => {
@@ -1575,6 +1646,7 @@ const Studio = () => {
                     videoPromptStep={videoPromptStep}
                     setVideoPromptStep={setVideoPromptStep}
                     onGenerateVideoPrompts={handleGenerateVideoPrompts}
+                    isAddingMore={isAddingMore}
                   />
                 )}
               </div>
@@ -3245,7 +3317,7 @@ function Step4Viewport({ progress, stage, shotCount, aspectRatio }: {
 }
 
 /* ── Step 5 Viewport (Results) ── */
-function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, onCopyLink, updateShot, videoExpanded, setVideoExpanded, videoConfig, setVideoConfig, videoGenerating, videoStage, generatedVideo, onGenerateVideo, onCancelVideo, setGeneratedVideo, creditsRemaining, onGenerate, onGenerateCampaignAdd, videoPrompts, videoPromptsLoading, videoPromptStep, setVideoPromptStep, onGenerateVideoPrompts }: {
+function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, onCopyLink, updateShot, videoExpanded, setVideoExpanded, videoConfig, setVideoConfig, videoGenerating, videoStage, generatedVideo, onGenerateVideo, onCancelVideo, setGeneratedVideo, creditsRemaining, onGenerate, onGenerateCampaignAdd, videoPrompts, videoPromptsLoading, videoPromptStep, setVideoPromptStep, onGenerateVideoPrompts, isAddingMore = false }: {
   shots: GeneratedShot[];
   shotCount: string;
   aspectRatio: string;
@@ -3271,14 +3343,17 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
   videoPromptStep: 'config' | 'prompts' | 'generating' | 'done';
   setVideoPromptStep: (step: 'config' | 'prompts' | 'generating' | 'done') => void;
   onGenerateVideoPrompts: () => void;
+  isAddingMore?: boolean;
 }) {
-  const isCampaign = shots.length > 1;
+  const isCampaign = shots.length > 1 || isAddingMore;
   const videoCreditCost = calculateVideoCreditCost(videoConfig.duration, videoConfig.resolution);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div>
-        <h2 className="text-xl font-medium" style={{ fontFamily: "'Instrument Serif', serif" }}>Your shots are ready</h2>
+        <h2 className="text-xl font-medium" style={{ fontFamily: "'Instrument Serif', serif" }}>
+          {isAddingMore ? 'Generating more shots...' : 'Your shots are ready'}
+        </h2>
         <p className="text-sm text-muted-foreground mt-1">Click any shot to edit with a prompt. Use the export panel on the left to download.</p>
       </div>
 
@@ -3288,6 +3363,15 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
           {shots.map((shot, i) => (
             <ShotCard key={shot.id} shot={shot} index={i} aspectRatio={aspectRatio} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />
           ))}
+          {isAddingMore && Array.from({ length: 5 }).map((_, i) => (
+            <div key={`skeleton-${i}`} className="rounded-xl overflow-hidden border bg-card animate-in fade-in duration-300" style={{ animationDelay: `${i * 80}ms` }}>
+              <Skeleton className="w-full" style={{ aspectRatio: ratioToCss(aspectRatio) }} />
+              <div className="p-4 space-y-2">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-3 w-32" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="max-w-lg">
@@ -3296,7 +3380,7 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
       )}
 
       {/* Single shot actions */}
-      {!isCampaign && (
+      {!isCampaign && !isAddingMore && (
         <div className="max-w-lg space-y-3">
           <Button variant="outline" className="w-full" onClick={onGenerate}>
             Generate another variation — 1 credit
