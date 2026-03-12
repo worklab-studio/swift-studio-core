@@ -88,13 +88,15 @@ function buildBeautyShowcasePrompt(
     applicationProps = "Subtle dew drops on the product surface for freshness, a hint of the product's key ingredient nearby.";
   }
 
-  // Size-aware scale
-  const material = (productInfo?.material || "").toLowerCase();
-  let sizeDesc = "Standard-sized product.";
-  if (/mini|travel|sample|deluxe sample/.test(material)) {
-    sizeDesc = "This is a MINI/TRAVEL size product — fits in a palm, render at exact small real-world scale. Do NOT enlarge.";
-  } else if (/large|family|jumbo|pump/.test(material)) {
-    sizeDesc = "This is a LARGE format product — pump bottle or family-size container. Render at generous real-world scale.";
+  // Size-aware scale (use structured field first, fall back to material detection)
+  const scaleRule = getScaleRule(productInfo);
+  let sizeDesc = scaleRule || "Standard-sized product.";
+  if (!scaleRule) {
+    if (/mini|travel|sample|deluxe sample/.test(material)) {
+      sizeDesc = "This is a MINI/TRAVEL size product — fits in a palm, render at exact small real-world scale. Do NOT enlarge.";
+    } else if (/large|family|jumbo|pump/.test(material)) {
+      sizeDesc = "This is a LARGE format product — pump bottle or family-size container. Render at generous real-world scale.";
+    }
   }
 
   const settingFallback = isMystic
