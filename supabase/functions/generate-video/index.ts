@@ -344,19 +344,29 @@ async function uploadVideoToStorage(
 ): Promise<string> {
   console.log(`[Storage] Downloading video from: ${videoUrl}`);
 
-  // Handle GCS URIs by converting to public URL (for Veo)
-  let fetchUrl = videoUrl;
-  if (videoUrl.startsWith("gs://")) {
-    // GCS URI → needs to be downloaded via GCS JSON API
-    const bucket = videoUrl.replace("gs://", "").split("/")[0];
-    const path = videoUrl.replace(`gs://${bucket}/`, "");
-    fetchUrl = `https://storage.googleapis.com/${bucket}/${path}`;
+  let videoBytes: Uint8Array;
+
+  if (videoUrl.startsWith("data:video/")) {
+    const [, base64Data] = videoUrl.split(",", 2);
+    if (!base64Data) throw new Error("Invalid inline video payload from Veo");
+
+    const binary = atob(base64Data);
+    videoBytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) videoBytes[i] = binary.charCodeAt(i);
+  } else {
+    // Handle GCS URIs by converting to public URL (for Veo)
+    let fetchUrl = videoUrl;
+    if (videoUrl.startsWith("gs://")) {
+      const bucket = videoUrl.replace("gs://", "").split("/")[0];
+      const path = videoUrl.replace(`gs://${bucket}/`, "");
+      fetchUrl = `https://storage.googleapis.com/${bucket}/${path}`;
+    }
+
+    const videoRes = await fetch(fetchUrl);
+    if (!videoRes.ok) throw new Error(`Failed to download video: ${videoRes.status}`);
+
+    videoBytes = new Uint8Array(await videoRes.arrayBuffer());
   }
-
-  const videoRes = await fetch(fetchUrl);
-  if (!videoRes.ok) throw new Error(`Failed to download video: ${videoRes.status}`);
-
-  const videoBytes = new Uint8Array(await videoRes.arrayBuffer());
   const filePath = `${projectId}/video-${Date.now()}.mp4`;
 
   const { error: uploadErr } = await supabase.storage
