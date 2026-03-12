@@ -186,33 +186,45 @@ interface ProductTemplate {
 }
 
 const PRODUCT_SHOOT_TEMPLATES: ProductTemplate[] = [
-  // Studio (5)
-  { id: 'pt1', name: 'Mannequin Front', description: 'Product displayed on mannequin, front-facing', category: 'Studio', color: 'hsl(220 15% 70% / 0.25)' },
-  { id: 'pt2', name: 'Mannequin 3/4 Angle', description: 'Three-quarter view on mannequin with depth', category: 'Studio', color: 'hsl(220 15% 65% / 0.25)' },
-  { id: 'pt3', name: 'Ghost Mannequin', description: 'Invisible mannequin effect, clean silhouette', category: 'Studio', color: 'hsl(220 15% 60% / 0.25)' },
-  { id: 'pt4', name: 'Hanging on Rail', description: 'Product hanging on a professional clothing rail', category: 'Studio', color: 'hsl(220 15% 55% / 0.25)' },
-  { id: 'pt5', name: 'Folded Stack', description: 'Neatly folded product in a stacked arrangement', category: 'Studio', color: 'hsl(220 15% 50% / 0.25)' },
-  // E-commerce (5)
-  { id: 'pt6', name: 'White Flat Lay', description: 'Flat lay on pure white background', category: 'E-commerce', color: 'hsl(0 0% 92% / 0.4)' },
-  { id: 'pt7', name: 'Hanger with Shadow', description: 'Hanging product with dramatic drop shadow', category: 'E-commerce', color: 'hsl(0 0% 85% / 0.35)' },
-  { id: 'pt8', name: 'Pack Shot Grid', description: 'Multiple angles in a grid layout', category: 'E-commerce', color: 'hsl(0 0% 88% / 0.35)' },
-  { id: 'pt9', name: 'Size Comparison', description: 'Product shown with scale reference objects', category: 'E-commerce', color: 'hsl(0 0% 82% / 0.35)' },
-  { id: 'pt10', name: 'Tag Close-up', description: 'Detail shot highlighting labels and tags', category: 'E-commerce', color: 'hsl(0 0% 78% / 0.35)' },
-  // Mystic (5)
-  { id: 'pt11', name: 'Floating in Mist', description: 'Product suspended in ethereal fog', category: 'Mystic', color: 'hsl(270 40% 60% / 0.2)' },
-  { id: 'pt12', name: 'Fabric Explosion', description: 'Dynamic burst of fabric in mid-air', category: 'Mystic', color: 'hsl(340 50% 55% / 0.2)' },
+  // Studio — universal
+  { id: 'pt1', name: 'Pedestal Display', description: 'Product on a sleek modern pedestal or platform, clean studio lighting, elegant elevation', category: 'Studio', color: 'hsl(220 15% 70% / 0.25)' },
+  { id: 'pt2', name: 'Reflective Surface', description: 'Product on glossy reflective black or white surface, mirror-like reflection below, dramatic studio lighting', category: 'Studio', color: 'hsl(220 15% 65% / 0.25)' },
+  { id: 'pt3', name: 'Ghost Mannequin', description: 'Invisible mannequin effect, clean silhouette (apparel only)', category: 'Studio', color: 'hsl(220 15% 60% / 0.25)' },
+  { id: 'pt4', name: 'Hanging on Rail', description: 'Product hanging on a professional clothing rail (apparel only)', category: 'Studio', color: 'hsl(220 15% 55% / 0.25)' },
+  { id: 'pt5', name: 'Folded Stack', description: 'Neatly folded product in a stacked arrangement (apparel only)', category: 'Studio', color: 'hsl(220 15% 50% / 0.25)' },
+  { id: 'pt-turntable', name: 'Turntable View', description: 'Product centered on turntable-style setup, 360-degree hero angle, neutral seamless background', category: 'Studio', color: 'hsl(220 15% 68% / 0.25)' },
+  // E-commerce — universal
+  { id: 'pt6', name: 'White Flat Lay', description: 'Flat lay on pure white background, top-down bird\'s eye view', category: 'E-commerce', color: 'hsl(0 0% 92% / 0.4)' },
+  { id: 'pt7', name: 'Shadow Drop', description: 'Product on white/light background with natural drop shadow for depth', category: 'E-commerce', color: 'hsl(0 0% 85% / 0.35)' },
+  { id: 'pt8', name: 'Pack Shot Grid', description: 'Multiple angles in a grid layout, comprehensive product views', category: 'E-commerce', color: 'hsl(0 0% 88% / 0.35)' },
+  { id: 'pt9', name: 'Size Comparison', description: 'Product shown with scale reference objects for size context', category: 'E-commerce', color: 'hsl(0 0% 82% / 0.35)' },
+  { id: 'pt-plain-bg', name: 'Plain Background', description: 'Product on pure solid color background, clean isolation, no props, marketplace-ready e-commerce shot', category: 'E-commerce', color: 'hsl(0 0% 95% / 0.4)' },
+  // Mystic
+  { id: 'pt11', name: 'Floating in Mist', description: 'Product suspended in ethereal fog, mysterious atmosphere', category: 'Mystic', color: 'hsl(270 40% 60% / 0.2)' },
+  { id: 'pt12', name: 'Fabric Explosion', description: 'Dynamic burst of fabric in mid-air, motion energy', category: 'Mystic', color: 'hsl(340 50% 55% / 0.2)' },
   { id: 'pt13', name: 'Ethereal Glow', description: 'Soft halo lighting with dreamy atmosphere', category: 'Mystic', color: 'hsl(200 50% 65% / 0.2)' },
   { id: 'pt14', name: 'Dark Moody Drape', description: 'Rich shadows with dramatic fabric draping', category: 'Mystic', color: 'hsl(250 30% 30% / 0.3)' },
   { id: 'pt15', name: 'Surreal Levitation', description: 'Product defying gravity in an abstract scene', category: 'Mystic', color: 'hsl(180 40% 50% / 0.2)' },
-  // Showcase (5)
-  { id: 'pt16', name: 'Editorial Spread', description: 'Magazine-style editorial composition', category: 'Showcase', color: 'hsl(30 50% 60% / 0.2)' },
-  { id: 'pt17', name: 'Window Light Drape', description: 'Natural window light with soft fabric fall', category: 'Showcase', color: 'hsl(45 60% 70% / 0.2)' },
-  { id: 'pt18', name: 'Styled Flat Lay', description: 'Curated accessories and props around product', category: 'Showcase', color: 'hsl(15 45% 55% / 0.2)' },
+  // Showcase — universal
+  { id: 'pt16', name: 'Editorial Spread', description: 'Magazine-style editorial composition with props', category: 'Showcase', color: 'hsl(30 50% 60% / 0.2)' },
+  { id: 'pt17', name: 'Contextual Use', description: 'Product shown in its natural use environment and context', category: 'Showcase', color: 'hsl(45 60% 70% / 0.2)' },
+  { id: 'pt18', name: 'Styled Flat Lay', description: 'Curated accessories and props around product, top-down', category: 'Showcase', color: 'hsl(15 45% 55% / 0.2)' },
   { id: 'pt19', name: 'Textured Surface', description: 'Product on marble, wood, or fabric surface', category: 'Showcase', color: 'hsl(25 30% 50% / 0.2)' },
   { id: 'pt20', name: 'Color Story', description: 'Monochromatic arrangement highlighting tones', category: 'Showcase', color: 'hsl(350 40% 55% / 0.2)' },
 ];
 
 const TEMPLATE_CATEGORIES = ['All', 'Studio', 'E-commerce', 'Mystic', 'Showcase'] as const;
+
+const PLAIN_BG_COLORS = [
+  { name: 'White', color: '#FFFFFF', border: true },
+  { name: 'Light Gray', color: '#F0F0F0', border: false },
+  { name: 'Beige', color: '#F5F0E8', border: false },
+  { name: 'Cream', color: '#FFFDD0', border: false },
+  { name: 'Soft Pink', color: '#FDE8E8', border: false },
+  { name: 'Light Blue', color: '#E0EEFF', border: false },
+  { name: 'Sage Green', color: '#E0EBE0', border: false },
+  { name: 'Black', color: '#1A1A1A', border: false },
+];
 
 /* ── Style presets with product/model-specific settings ── */
 interface StyleSettings {
