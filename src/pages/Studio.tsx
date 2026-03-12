@@ -420,6 +420,11 @@ const Studio = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [templateCategory, setTemplateCategory] = useState<string>('All');
 
+  // Dynamic AI-generated templates
+  const [dynamicTemplates, setDynamicTemplates] = useState<ProductTemplate[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [templatesCached, setTemplatesCached] = useState(false);
+
   // Portrait generation (lifted from Step2Viewport)
   const [modelImages, setModelImages] = useState<Record<string, string>>({});
   const [generatingPortraits, setGeneratingPortraits] = useState(false);
