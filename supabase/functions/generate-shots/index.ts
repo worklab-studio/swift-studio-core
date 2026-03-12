@@ -650,8 +650,11 @@ serve(async (req) => {
         const outfitDirective = productInfo?.selectedOutfit ? ` OUTFIT: The model is wearing: ${productInfo.selectedOutfit}.` : "";
         const garmentInfo = productInfo?.garmentType ? ` The garment is a ${productInfo.garmentType}.` : "";
 
+        // Inject view directive for angle-aware reference
+        const apparelViewDirective = getViewDirective(label, selectReferenceImage(label));
+
         return `APPAREL MODEL SHOOT — ${label.toUpperCase()} SHOT.
-POSE: ${poseDirective}
+${apparelViewDirective ? `${apparelViewDirective}\n` : ""}POSE: ${poseDirective}
 ${backgroundDirective}
 ${modelDesc}${garmentInfo}${outfitDirective}
 Style: ${baseStyle}. Category: ${category}.
