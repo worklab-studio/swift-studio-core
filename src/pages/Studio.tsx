@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
+import JSZip from 'jszip';
 import apparelClassic from '@/assets/presets/Classic.png';
 import apparelMinimal from '@/assets/presets/Minimal.png';
 import apparelLuxury from '@/assets/presets/Luxury.png';
