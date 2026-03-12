@@ -1955,7 +1955,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
 }
 
 /* ── Step 3 Config (Left) ── */
-function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, aspectRatio, setAspectRatio, additionalContext, setAdditionalContext, styleSettings, analyzingStyle, plainBgColor, setPlainBgColor, shootType, selectedTemplate }: {
+function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, aspectRatio, setAspectRatio, additionalContext, setAdditionalContext, styleSettings, analyzingStyle, plainBgColor, setPlainBgColor, shootType, selectedTemplate, activeTemplates }: {
   selectedPreset: string | null;
   setSelectedPreset: (v: string | null) => void;
   referenceImage: string | null;
@@ -1974,10 +1974,11 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
   setPlainBgColor: (v: string) => void;
   shootType: 'product' | 'model' | null;
   selectedTemplate: string | null;
+  activeTemplates: ProductTemplate[];
 }) {
   const isProductWithTemplate = shootType === 'product' && !!selectedTemplate;
   const isPlainBgTemplate = selectedTemplate === 'pt-plain-bg';
-  const templateData = isProductWithTemplate ? PRODUCT_SHOOT_TEMPLATES.find(t => t.id === selectedTemplate) : null;
+  const templateData = isProductWithTemplate ? activeTemplates.find(t => t.id === selectedTemplate) : null;
   // Show shots/ratio/direction when either a preset is selected OR product+template
   const showGenerationConfig = !!selectedPreset || isProductWithTemplate;
 
