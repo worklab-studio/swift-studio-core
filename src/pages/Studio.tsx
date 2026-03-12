@@ -793,7 +793,8 @@ const Studio = () => {
 
   const handleCompleteStep2 = () => {
     if (shootType === 'product') {
-      const tpl = PRODUCT_SHOOT_TEMPLATES.find(t => t.id === selectedTemplate);
+      const activeTemplates = dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES;
+      const tpl = activeTemplates.find(t => t.id === selectedTemplate);
       completeStep(2, tpl ? `Product · ${tpl.name}` : 'Product Shoot', 3);
     } else {
       const parts = [modelConfig.aiEngine === 'gemini' ? 'Gemini' : 'Runway'];
