@@ -794,12 +794,13 @@ const Studio = () => {
     completeStep(1, `${productImages.length} image${productImages.length > 1 ? 's' : ''}${modelChoice === 'keep' ? ' · Keep Model' : ''}`, 2);
   };
 
-  /* ── Remove background handler ── */
-  const handleRemoveBackground = async () => {
-    if (!productImages[0] || !id) return;
+  /* ── Remove background handler (per-image) ── */
+  const handleRemoveBackground = async (index: number = 0) => {
+    if (!productImages[index] || !id) return;
     setRemovingBackground(true);
+    setRemovingBgIndex(index);
     try {
-      const response = await fetch(productImages[0]);
+      const response = await fetch(productImages[index]);
       const blob = await response.blob();
       const reader = new FileReader();
       const base64 = await new Promise<string>((resolve) => {
@@ -814,24 +815,28 @@ const Studio = () => {
       if (error || !data?.url) {
         toast({ title: 'Background removal failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
         setRemovingBackground(false);
+        setRemovingBgIndex(null);
         return;
       }
 
-      // Replace primary image with cleaned version
+      // Replace the specific image with cleaned version
       setProductImages(prev => {
         const updated = [...prev];
-        updated[0] = data.url;
+        updated[index] = data.url;
         return updated;
       });
-      setModelChoice('remove');
-      // Re-analyze the cleaned image
-      analyzeProduct(data.url);
-      toast({ title: 'Background removed', description: 'Product image cleaned successfully.' });
+      if (index === 0) {
+        setModelChoice('remove');
+        // Re-analyze the cleaned image
+        analyzeProduct(data.url);
+      }
+      toast({ title: 'Background removed', description: `Image ${index + 1} cleaned successfully.` });
     } catch (e) {
       console.error('Remove background error:', e);
       toast({ title: 'Background removal failed', description: 'Network error', variant: 'destructive' });
     }
     setRemovingBackground(false);
+    setRemovingBgIndex(null);
   };
 
   const handleKeepModel = () => {
