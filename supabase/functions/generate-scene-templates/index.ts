@@ -33,7 +33,7 @@ serve(async (req) => {
       ? `Product: "${productInfo.productName || "Unknown"}". Category: ${category || productInfo.category || "General"}. Colors: ${(productInfo.colors || []).join(", ")}. Material: ${productInfo.material || "unknown"}. Description: ${productInfo.description || "N/A"}.`
       : `Category: ${category || "General"}.`;
 
-    const systemPrompt = `You are a world-class creative director for product photography. Given a product image and its details, generate 12 unique, tailored scene templates for photographing THIS SPECIFIC product.
+    const systemPrompt = `You are a world-class creative director for product photography. Given a product image and its details, generate 20 unique, tailored scene templates for photographing THIS SPECIFIC product.
 
 CRITICAL RULES:
 - Every template MUST be specifically designed for this product type. A lipstick should never get "Ghost Mannequin" or "Hanging on Rail". A ring should never get "Folded Stack".
@@ -42,10 +42,10 @@ CRITICAL RULES:
 - Descriptions should be detailed enough for an AI image generator to produce the scene.
 
 Generate exactly:
-- 3 "Studio" templates: Clean, professional studio settings (marble surfaces, pedestals, reflective surfaces, dramatic lighting setups)
-- 3 "E-commerce" templates: Marketplace-ready, clean backgrounds, flat lays, pack shots optimized for online stores
-- 3 "Mystic" templates: Surreal, fantastical, dramatic settings (floating in mist, ethereal glow, floral explosions, dark moody environments)
-- 3 "Showcase" templates: Editorial, lifestyle, contextual settings (magazine spreads, textured surfaces, color stories, contextual use)
+- 5 "Studio" templates: Clean, professional studio settings (marble surfaces, pedestals, reflective surfaces, dramatic lighting setups)
+- 5 "E-commerce" templates: Marketplace-ready, clean backgrounds, flat lays, pack shots optimized for online stores
+- 5 "Mystic" templates: Surreal, fantastical, dramatic settings (floating in mist, ethereal glow, floral explosions, dark moody environments)
+- 5 "Showcase" templates: Editorial, lifestyle, contextual settings (magazine spreads, textured surfaces, color stories, contextual use)
 
 Each template name should be unique, evocative, and 2-3 words max.
 Each description should paint a vivid picture specific to THIS product — mentioning its colors, material, shape where relevant.
@@ -66,7 +66,7 @@ Product details: ${productContext}`;
             role: "user",
             content: [
               { type: "image_url", image_url: { url: imageUrl } },
-              { type: "text", text: "Analyze this product and generate 12 tailored scene templates for it. Make every template specifically relevant to this exact product." },
+              { type: "text", text: "Analyze this product and generate 20 tailored scene templates for it. Make every template specifically relevant to this exact product." },
             ],
           },
         ],
@@ -75,7 +75,7 @@ Product details: ${productContext}`;
             type: "function",
             function: {
               name: "return_scene_templates",
-              description: "Return 12 tailored scene templates for product photography",
+              description: "Return 20 tailored scene templates for product photography",
               parameters: {
                 type: "object",
                 properties: {
