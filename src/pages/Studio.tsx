@@ -2832,7 +2832,7 @@ function Step5Config({ shots, exportFormat, setExportFormat, selectedShots, setS
    ════════════════════════════════════════════════════════════════ */
 
 /* ── Step 1 Viewport ── */
-function Step1Viewport({ productImages, productInfo, setProductInfo, analyzingProduct, analysisPhase, productName, setProductName, modelChoice, removingBackground, removingBgIndex, onRemoveBackground, onKeepModel, imageViews, detectingViews }: { 
+function Step1Viewport({ productImages, productInfo, setProductInfo, analyzingProduct, analysisPhase, productName, setProductName, modelChoice, removingBackground, removingBgIndex, onRemoveBackground, onKeepModel, imageViews, detectingViews, onSetView }: { 
   productImages: string[]; 
   productInfo: ProductInfo | null;
   setProductInfo: React.Dispatch<React.SetStateAction<ProductInfo | null>>;
@@ -2847,6 +2847,7 @@ function Step1Viewport({ productImages, productInfo, setProductInfo, analyzingPr
   onKeepModel: () => void;
   imageViews: Record<string, string>;
   detectingViews: boolean;
+  onSetView: (url: string, view: string) => void;
 }) {
   const ANALYSIS_TEXTS = [
     'Analyzing image...',
