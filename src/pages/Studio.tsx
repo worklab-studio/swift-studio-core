@@ -1759,7 +1759,7 @@ const SKINCARE_OUTFIT_OPTIONS: Record<string, Record<string, string[]>> = {
 };
 
 
-function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload, selectedTemplate, setSelectedTemplate, templateCategory, setTemplateCategory, selectedModelData, modelImages, productInfo, activeTemplates, loadingTemplates }: {
+function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload, selectedTemplate, setSelectedTemplate, templateCategory, setTemplateCategory, selectedModelData, modelImages, productInfo, activeTemplates, loadingTemplates, beautyApplication, setBeautyApplication, productSize, setProductSize, selectedOutfit, setSelectedOutfit }: {
   shootType: 'product' | 'model' | null;
   setShootType: React.Dispatch<React.SetStateAction<'product' | 'model' | null>>;
   modelConfig: ModelConfig;
@@ -1775,6 +1775,12 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
   productInfo: ProductInfo | null;
   activeTemplates: ProductTemplate[];
   loadingTemplates: boolean;
+  beautyApplication: string;
+  setBeautyApplication: (v: string) => void;
+  productSize: string;
+  setProductSize: (v: string) => void;
+  selectedOutfit: string;
+  setSelectedOutfit: (v: string) => void;
 }) {
   const filteredTemplates = templateCategory === 'All'
     ? activeTemplates
