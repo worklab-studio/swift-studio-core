@@ -756,6 +756,21 @@ const Studio = () => {
     }
   }, []);
 
+  /* ── HEIC/HEIF conversion helper ── */
+  const convertHeicIfNeeded = async (file: File): Promise<{ blob: Blob; ext: string; contentType: string }> => {
+    const name = file.name.toLowerCase();
+    const isHeic = file.type === 'image/heic' || file.type === 'image/heif' || name.endsWith('.heic') || name.endsWith('.heif');
+    if (!isHeic) return { blob: file, ext: name.split('.').pop() || 'jpg', contentType: file.type };
+    try {
+      const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
+      const resultBlob = Array.isArray(converted) ? converted[0] : converted;
+      return { blob: resultBlob, ext: 'jpg', contentType: 'image/jpeg' };
+    } catch (err) {
+      console.warn('HEIC conversion failed, uploading original:', err);
+      return { blob: file, ext: name.split('.').pop() || 'jpg', contentType: file.type };
+    }
+  };
+
   /* ── Step 1 handlers ── */
   const handleProductImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -763,11 +778,11 @@ const Studio = () => {
 
     const uploadedUrls: string[] = [];
     for (const file of Array.from(files)) {
-      const ext = file.name.split('.').pop() || 'jpg';
+      const { blob, ext, contentType } = await convertHeicIfNeeded(file);
       const filePath = `${id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error: uploadErr } = await supabase.storage
         .from('originals')
-        .upload(filePath, file, { contentType: file.type, upsert: false });
+        .upload(filePath, blob, { contentType, upsert: false });
       if (uploadErr) {
         console.error('Upload error:', uploadErr);
         toast({ title: 'Upload failed', description: uploadErr.message, variant: 'destructive' });
