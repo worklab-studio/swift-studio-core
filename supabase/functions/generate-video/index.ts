@@ -525,13 +525,19 @@ Deno.serve(async (req) => {
       }
     } catch (genError) {
       console.error(`[${engine}] Generation failed:`, genError);
+      const message = genError instanceof Error ? genError.message : "Video generation failed";
+      const isContentFiltered = message.startsWith("VEO_CONTENT_FILTERED:");
+
       // Do NOT deduct credits on failure
       return new Response(
         JSON.stringify({
-          error: genError instanceof Error ? genError.message : "Video generation failed",
+          error: isContentFiltered
+            ? message.replace("VEO_CONTENT_FILTERED:", "").trim()
+            : message,
+          code: isContentFiltered ? "CONTENT_FILTERED" : "GENERATION_FAILED",
         }),
         {
-          status: 500,
+          status: isContentFiltered ? 400 : 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
