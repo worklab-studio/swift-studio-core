@@ -228,10 +228,133 @@ function buildSafePrompt(productDescription: string, background: string): string
 }
 
 /* ── Showcase category detection ── */
-function isShowcaseCategory(category: string): "beauty" | "jewellery" | null {
+function isShowcaseCategory(category: string): "beauty" | "jewellery" | "fmcg" | null {
   if (["Skincare", "Beauty"].includes(category)) return "beauty";
   if (["Jewelry", "Jewellery", "Watch"].includes(category)) return "jewellery";
+  if (category === "FMCG") return "fmcg";
   return null;
+}
+
+/* ── Size-aware scale rules ── */
+function getScaleRule(productInfo: any): string {
+  const beautySize = productInfo?.beautySize;
+  const fmcgSize = productInfo?.fmcgSize;
+
+  if (beautySize) {
+    const rules: Record<string, string> = {
+      mini: "CRITICAL SCALE RULE: This is a MINI/TRAVEL size product — fits in a palm, like a lip balm or sample vial. Render at exact small real-world scale. Do NOT enlarge.",
+      standard: "CRITICAL SCALE RULE: This is a STANDARD size product — serum bottle, lipstick tube, cream jar. Render at normal hand-held scale.",
+      large: "CRITICAL SCALE RULE: This is a LARGE format product — pump bottle or family-size lotion. Render at generous real-world scale.",
+      "extra-large": "CRITICAL SCALE RULE: This is an EXTRA-LARGE salon-size product — noticeably bigger than a model's hand. Render at bulk real-world scale.",
+    };
+    return rules[beautySize] || "";
+  }
+
+  if (fmcgSize) {
+    const rules: Record<string, string> = {
+      small: "CRITICAL SCALE RULE: This is a SMALL product — sachet, single-serve packet, candy bar. Fits in one hand.",
+      medium: "CRITICAL SCALE RULE: This is a MEDIUM product — standard bottle, cereal box, held comfortably in one hand.",
+      large: "CRITICAL SCALE RULE: This is a LARGE product — family-size bottle, 2L+ container. Requires two hands to hold.",
+      "extra-large": "CRITICAL SCALE RULE: This is a BULK item — 5kg+ pack, noticeably bigger than a model's torso.",
+    };
+    return rules[fmcgSize] || "";
+  }
+
+  return "";
+}
+
+/* ── Application-area-aware posing for beauty model shoots ── */
+function getBeautyPosingDirective(application: string | undefined): string {
+  if (!application) return "";
+  const directives: Record<string, string> = {
+    hair: "POSING: Shoulders-up framing showing full hair. Model running fingers through hair or tossing hair naturally. Focus on hair texture and movement.",
+    face: "POSING: Close-up beauty shot from chest up. Model gently touching face or applying product to cheek/forehead. Dewy, luminous skin focus.",
+    lips: "POSING: Tight crop from nose to chin. Model applying product to lips or lips slightly parted showing color. Extreme detail on lip texture.",
+    eyes: "POSING: Close-up framing around eye area. Model gently dabbing around eye area or looking upward. Focus on eye definition and skin around eyes.",
+    body: "POSING: Waist-up or full body shot. Model applying product to arm, shoulder, or décolletage area. Smooth, glowing skin emphasis.",
+    fragrance: "POSING: Elegant pose spraying at wrist or neck area. Mist visible in dramatic backlight. Sophisticated, sensual mood.",
+    nails: "POSING: Hands prominently featured — one hand resting elegantly while the other applies product. Macro-close focus on nail detail and manicure.",
+  };
+  return directives[application] || "";
+}
+
+/* ── FMCG Showcase Prompt Builder ── */
+function buildFmcgShowcasePrompt(
+  label: string,
+  productDescription: string,
+  background: string,
+  productInfo: any,
+  shotDesc: string,
+): string {
+  const packaging = productInfo?.fmcgPackaging || "package";
+  const subType = productInfo?.fmcgSubType || "product";
+  const scaleRule = getScaleRule(productInfo);
+
+  // Packaging-aware display instructions
+  const packagingDisplay: Record<string, string> = {
+    bottle: "The bottle should be standing upright, label facing camera, cap/closure visible and pristine.",
+    can: "The can should be upright, label facing camera, subtle condensation droplets on the surface for freshness.",
+    pouch: "The pouch should be propped up naturally, front label fully visible, slight volume suggesting contents inside.",
+    sachet: "The sachet should be laid flat at a slight angle, front design fully visible, with a gentle natural curve.",
+    box: "The box should be standing upright at a slight 3/4 angle showing front and side panels.",
+    jar: "The jar should be upright with lid slightly ajar or beside it, revealing the product inside.",
+    tube: "The tube should be standing on its cap or laying at an elegant angle, label facing camera.",
+    carton: "The carton should be standing upright, front panel fully visible, at a slight angle for depth.",
+    bag: "The bag should be propped up naturally with the front label prominently displayed.",
+  };
+  const displayInstruction = packagingDisplay[packaging] || "Display the product at its most flattering angle with the label clearly visible.";
+
+  // Sub-type contextual props
+  const subTypeProps: Record<string, string> = {
+    food: "Scatter a few raw key ingredients nearby — fresh herbs, grains, spices — suggesting quality and freshness.",
+    beverage: "Add condensation droplets, a few ice cubes nearby, and a subtle splash or pour effect for refreshment appeal.",
+    spice: "Scatter a pinch of the spice powder nearby, perhaps with whole spices and a rustic wooden spoon.",
+    sauce: "A small drizzle or splash of the sauce nearby, with fresh ingredients that suggest the flavor profile.",
+    snack: "A few pieces of the snack artfully scattered nearby, showing texture and color.",
+    cleaning: "Sparkling clean surfaces surrounding the product, subtle bubbles or foam accent.",
+    "personal care": "Fresh botanical elements — flowers, leaves — suggesting clean ingredients and freshness.",
+    "health supplement": "Clean, clinical precision with subtle green botanical accents suggesting natural ingredients.",
+  };
+  const contextualProps = subTypeProps[subType] || "Subtle lifestyle props that reinforce the brand story.";
+
+  // Detect if editorial/premium style
+  const isEditorial = /editorial|dramatic|spotlight|moody|premium|dark|slate|copper/i.test(background);
+
+  const setting = background || (isEditorial ? "dark slate surface with dramatic side lighting" : "clean white surface with soft natural lighting");
+
+  if (isEditorial) {
+    return `EDIT this product image: Place this EXACT product into a PREMIUM EDITORIAL setting.
+PRODUCT-ONLY — NO human model, NO hands, NO skin, NO face, NO body parts. Any human element is a CRITICAL FAILURE.
+DO NOT redraw or regenerate the product. ${productDescription ? `\nPRODUCT DETAILS: ${productDescription}` : ""}
+${scaleRule}
+${displayInstruction}
+${contextualProps}
+${shotDesc}
+Setting: ${setting}
+Composition: Dramatic depth of field, bold editorial framing, the product as a premium hero.
+Lighting: Dramatic side lighting with deep shadows and brilliant highlights. Moody, cinematic.
+Feel: High-end food/beverage campaign — the product looks like a premium luxury item.
+FINAL REMINDER: ABSOLUTELY ZERO humans, hands, fingers, skin, or body parts anywhere in the image.
+${FIDELITY_BLOCK}
+${EDITING_INSTRUCTION}
+Image aspect ratio MUST be 4:5 portrait.`;
+  }
+
+  return `EDIT this product image: Place this EXACT product into a STYLED LIFESTYLE setting.
+PRODUCT-ONLY — NO human model, NO hands, NO skin, NO face, NO body parts. Any human element is a CRITICAL FAILURE.
+DO NOT redraw or regenerate the product. ${productDescription ? `\nPRODUCT DETAILS: ${productDescription}` : ""}
+${scaleRule}
+${displayInstruction}
+${contextualProps}
+${shotDesc}
+Setting: ${setting}
+Composition: Clean, inviting, with contextual props that tell the product's story.
+Lighting: Bright, warm, appetizing lighting — soft key light from the side with gentle fill.
+Feel: Premium FMCG brand campaign — clean, appetizing, trustworthy.
+FINAL REMINDER: ABSOLUTELY ZERO humans, hands, fingers, skin, or body parts anywhere in the image.
+${FIDELITY_BLOCK}
+${EDITING_INSTRUCTION}
+Image aspect ratio MUST be 4:5 portrait.`;
 }
 
 serve(async (req) => {
