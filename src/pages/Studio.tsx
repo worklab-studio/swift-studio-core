@@ -1292,6 +1292,7 @@ const Studio = () => {
                     productUploadRef={productUploadRef}
                     onUpload={handleProductImageUpload}
                     onRemove={handleRemoveProductImage}
+                    imageViews={imageViews}
                   />
                 )}
                 {activeStep === 2 && (
