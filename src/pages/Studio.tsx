@@ -3548,7 +3548,7 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
                       key={shot.id}
                       onClick={() => setVideoConfig(prev => ({ ...prev, baseImageId: shot.id }))}
                       className={`shrink-0 w-20 h-[100px] rounded-lg overflow-hidden border transition-all ${
-                        videoConfig.baseImageId === shot.id ? 'ring-2 ring-accent ring-offset-2' : 'hover:border-accent/50'
+                        videoConfig.baseImageId === shot.id ? 'ring-2 ring-primary ring-offset-2' : 'hover:border-primary/30'
                       }`}
                     >
                       <img src={shot.url} alt={shot.shotLabel} className="w-full h-full object-cover" />
