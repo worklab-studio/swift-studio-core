@@ -192,23 +192,42 @@ async function generateWithVeo(
         throw new Error(`Veo failed: ${JSON.stringify(pollData.error)}`);
       }
 
-      const videos =
-        pollData.response?.videos ||
-        pollData.response?.generateVideoResponse?.generatedSamples ||
-        pollData.response?.predictions;
+      const videoCandidates = [
+        pollData.response?.videos,
+        pollData.response?.generatedSamples,
+        pollData.response?.generateVideoResponse?.generatedSamples,
+        pollData.response?.generateVideoResponse?.samples,
+        pollData.response?.predictions,
+        pollData.response?.output?.videos,
+        pollData.response?.outputs?.videos,
+        pollData.videos,
+      ].flatMap((entry) => (Array.isArray(entry) ? entry : entry ? [entry] : []));
 
-      if (!videos || videos.length === 0) {
-        throw new Error("Veo returned no videos");
-      }
-
-      const videoUri =
-        videos[0]?.gcsUri ||
-        videos[0]?.uri ||
-        videos[0]?.video?.gcsUri ||
-        videos[0]?.video?.uri;
+      const videoUri = videoCandidates
+        .map((item) =>
+          item?.gcsUri ||
+          item?.uri ||
+          item?.video?.gcsUri ||
+          item?.video?.uri ||
+          item?.output?.gcsUri ||
+          item?.output?.uri ||
+          (item?.bytesBase64Encoded ? `data:video/mp4;base64,${item.bytesBase64Encoded}` : null)
+        )
+        .find((value): value is string => Boolean(value));
 
       if (!videoUri) {
-        throw new Error("Veo returned no video URI");
+        const finishReason =
+          pollData.response?.finishReason ||
+          pollData.response?.generateVideoResponse?.finishReason ||
+          pollData.response?.safetyAttributes?.blockedReason ||
+          pollData.response?.raiReason;
+
+        console.error("[Veo] Completed without video payload:", JSON.stringify(pollData).slice(0, 2000));
+        throw new Error(
+          finishReason
+            ? `Veo finished without a video output (${finishReason}). Try a safer or simpler prompt.`
+            : "Veo finished without a video output. Try a different prompt."
+        );
       }
 
       console.log(`[Veo] Video ready: ${videoUri}`);
@@ -325,19 +344,29 @@ async function uploadVideoToStorage(
 ): Promise<string> {
   console.log(`[Storage] Downloading video from: ${videoUrl}`);
 
-  // Handle GCS URIs by converting to public URL (for Veo)
-  let fetchUrl = videoUrl;
-  if (videoUrl.startsWith("gs://")) {
-    // GCS URI → needs to be downloaded via GCS JSON API
-    const bucket = videoUrl.replace("gs://", "").split("/")[0];
-    const path = videoUrl.replace(`gs://${bucket}/`, "");
-    fetchUrl = `https://storage.googleapis.com/${bucket}/${path}`;
+  let videoBytes: Uint8Array;
+
+  if (videoUrl.startsWith("data:video/")) {
+    const [, base64Data] = videoUrl.split(",", 2);
+    if (!base64Data) throw new Error("Invalid inline video payload from Veo");
+
+    const binary = atob(base64Data);
+    videoBytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) videoBytes[i] = binary.charCodeAt(i);
+  } else {
+    // Handle GCS URIs by converting to public URL (for Veo)
+    let fetchUrl = videoUrl;
+    if (videoUrl.startsWith("gs://")) {
+      const bucket = videoUrl.replace("gs://", "").split("/")[0];
+      const path = videoUrl.replace(`gs://${bucket}/`, "");
+      fetchUrl = `https://storage.googleapis.com/${bucket}/${path}`;
+    }
+
+    const videoRes = await fetch(fetchUrl);
+    if (!videoRes.ok) throw new Error(`Failed to download video: ${videoRes.status}`);
+
+    videoBytes = new Uint8Array(await videoRes.arrayBuffer());
   }
-
-  const videoRes = await fetch(fetchUrl);
-  if (!videoRes.ok) throw new Error(`Failed to download video: ${videoRes.status}`);
-
-  const videoBytes = new Uint8Array(await videoRes.arrayBuffer());
   const filePath = `${projectId}/video-${Date.now()}.mp4`;
 
   const { error: uploadErr } = await supabase.storage
