@@ -420,6 +420,11 @@ const Studio = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [templateCategory, setTemplateCategory] = useState<string>('All');
 
+  // Dynamic AI-generated templates
+  const [dynamicTemplates, setDynamicTemplates] = useState<ProductTemplate[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [templatesCached, setTemplatesCached] = useState(false);
+
   // Portrait generation (lifted from Step2Viewport)
   const [modelImages, setModelImages] = useState<Record<string, string>>({});
   const [generatingPortraits, setGeneratingPortraits] = useState(false);
@@ -447,6 +452,48 @@ const Studio = () => {
     };
     loadPortraits();
   }, []);
+
+  /* ── Fetch dynamic scene templates from AI ── */
+  const fetchDynamicTemplates = useCallback(async () => {
+    if (!productImages.length || !productInfo) return;
+    setLoadingTemplates(true);
+    setSelectedTemplate(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-scene-templates', {
+        body: {
+          imageUrl: productImages[0],
+          category: productInfo.category,
+          productInfo: {
+            productName: productInfo.productName,
+            colors: productInfo.colors,
+            material: productInfo.material,
+            description: productInfo.description,
+          },
+        },
+      });
+      if (error) throw error;
+      if (data?.templates?.length) {
+        setDynamicTemplates(data.templates);
+        setTemplatesCached(true);
+      } else {
+        // Fallback to static
+        setDynamicTemplates([]);
+      }
+    } catch (e) {
+      console.error('Failed to generate dynamic templates:', e);
+      toast({ title: 'Template generation failed', description: 'Using default templates instead.', variant: 'destructive' });
+      setDynamicTemplates([]);
+    } finally {
+      setLoadingTemplates(false);
+    }
+  }, [productImages, productInfo]);
+
+  // Auto-fetch templates when product shoot is selected and productInfo is available
+  useEffect(() => {
+    if (shootType === 'product' && productInfo && !templatesCached) {
+      fetchDynamicTemplates();
+    }
+  }, [shootType, productInfo, templatesCached]);
 
   /* ── Generate all model portraits (skip existing) ── */
   const handleGeneratePortraits = useCallback(async () => {
@@ -572,6 +619,8 @@ const Studio = () => {
     setShootType(null);
     setSelectedTemplate(null);
     setTemplateCategory('All');
+    setDynamicTemplates([]);
+    setTemplatesCached(false);
     setModelConfig({ selectedModel: null, uploadedModelUrl: null, gender: '', ethnicity: '', bodyType: '', background: '', backgroundPrompt: '', aiEngine: 'gemini' });
     setStyleSettings(null);
     setStylePrompt('');
@@ -746,7 +795,8 @@ const Studio = () => {
 
   const handleCompleteStep2 = () => {
     if (shootType === 'product') {
-      const tpl = PRODUCT_SHOOT_TEMPLATES.find(t => t.id === selectedTemplate);
+      const activeTemplates = dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES;
+      const tpl = activeTemplates.find(t => t.id === selectedTemplate);
       completeStep(2, tpl ? `Product · ${tpl.name}` : 'Product Shoot', 3);
     } else {
       const parts = [modelConfig.aiEngine === 'gemini' ? 'Gemini' : 'Runway'];
@@ -838,7 +888,8 @@ const Studio = () => {
     const isProductWithTemplate = shootType === 'product' && selectedTemplate;
     if (!isProductWithTemplate && !selectedPreset) return;
 
-    const tpl = isProductWithTemplate ? PRODUCT_SHOOT_TEMPLATES.find(t => t.id === selectedTemplate) : null;
+    const activeTemplates = dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES;
+    const tpl = isProductWithTemplate ? activeTemplates.find(t => t.id === selectedTemplate) : null;
     const stepLabel = isProductWithTemplate
       ? tpl?.name || 'Product Shoot'
       : STYLE_PRESETS.find(p => p.id === selectedPreset)?.name || selectedPreset || '';
@@ -1179,6 +1230,8 @@ const Studio = () => {
                     selectedModelData={selectedModelData}
                     modelImages={modelImages}
                     productInfo={productInfo}
+                    activeTemplates={dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES}
+                    loadingTemplates={loadingTemplates}
                   />
                 )}
                 {activeStep === 3 && (
@@ -1201,6 +1254,7 @@ const Studio = () => {
                     setPlainBgColor={setPlainBgColor}
                     shootType={shootType}
                     selectedTemplate={selectedTemplate}
+                    activeTemplates={dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES}
                   />
                 )}
                 {activeStep === 4 && (
@@ -1368,6 +1422,9 @@ const Studio = () => {
                     portraitProgress={portraitProgress}
                     portraitTotal={portraitTotal}
                     onGeneratePortraits={handleGeneratePortraits}
+                    activeTemplates={dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES}
+                    loadingTemplates={loadingTemplates}
+                    onRegenerateTemplates={fetchDynamicTemplates}
                   />
                 )}
                 {activeStep === 3 && (
@@ -1601,7 +1658,7 @@ const BACKGROUND_SUGGESTIONS: Record<string, string> = {
 };
 
 /* ── Step 2 Config (Left) ── */
-function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload, selectedTemplate, setSelectedTemplate, templateCategory, setTemplateCategory, selectedModelData, modelImages, productInfo }: {
+function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload, selectedTemplate, setSelectedTemplate, templateCategory, setTemplateCategory, selectedModelData, modelImages, productInfo, activeTemplates, loadingTemplates }: {
   shootType: 'product' | 'model' | null;
   setShootType: React.Dispatch<React.SetStateAction<'product' | 'model' | null>>;
   modelConfig: ModelConfig;
@@ -1615,10 +1672,12 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
   selectedModelData: typeof PLACEHOLDER_MODELS[0] | undefined;
   modelImages: Record<string, string>;
   productInfo: ProductInfo | null;
+  activeTemplates: ProductTemplate[];
+  loadingTemplates: boolean;
 }) {
   const filteredTemplates = templateCategory === 'All'
-    ? PRODUCT_SHOOT_TEMPLATES
-    : PRODUCT_SHOOT_TEMPLATES.filter(t => t.category === templateCategory);
+    ? activeTemplates
+    : activeTemplates.filter(t => t.category === templateCategory);
 
   // Auto-fill gender/ethnicity/bodyType when a model is selected
   useEffect(() => {
@@ -1715,11 +1774,18 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
               </button>
             ))}
           </div>
-          <p className="text-[10px] text-muted-foreground">
-            {selectedTemplate
-              ? `Selected: ${PRODUCT_SHOOT_TEMPLATES.find(t => t.id === selectedTemplate)?.name}`
-              : 'Select a template from the grid on the right →'}
-          </p>
+          {loadingTemplates ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+              <p className="text-[10px] text-muted-foreground">Generating tailored templates…</p>
+            </div>
+          ) : (
+            <p className="text-[10px] text-muted-foreground">
+              {selectedTemplate
+                ? `Selected: ${activeTemplates.find(t => t.id === selectedTemplate)?.name}`
+                : 'Select a template from the grid on the right →'}
+            </p>
+          )}
         </div>
       )}
 
@@ -1889,7 +1955,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
 }
 
 /* ── Step 3 Config (Left) ── */
-function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, aspectRatio, setAspectRatio, additionalContext, setAdditionalContext, styleSettings, analyzingStyle, plainBgColor, setPlainBgColor, shootType, selectedTemplate }: {
+function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, aspectRatio, setAspectRatio, additionalContext, setAdditionalContext, styleSettings, analyzingStyle, plainBgColor, setPlainBgColor, shootType, selectedTemplate, activeTemplates }: {
   selectedPreset: string | null;
   setSelectedPreset: (v: string | null) => void;
   referenceImage: string | null;
@@ -1908,10 +1974,11 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
   setPlainBgColor: (v: string) => void;
   shootType: 'product' | 'model' | null;
   selectedTemplate: string | null;
+  activeTemplates: ProductTemplate[];
 }) {
   const isProductWithTemplate = shootType === 'product' && !!selectedTemplate;
   const isPlainBgTemplate = selectedTemplate === 'pt-plain-bg';
-  const templateData = isProductWithTemplate ? PRODUCT_SHOOT_TEMPLATES.find(t => t.id === selectedTemplate) : null;
+  const templateData = isProductWithTemplate ? activeTemplates.find(t => t.id === selectedTemplate) : null;
   // Show shots/ratio/direction when either a preset is selected OR product+template
   const showGenerationConfig = !!selectedPreset || isProductWithTemplate;
 
@@ -2474,7 +2541,7 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
 }
 
 /* ── Step 2 Viewport ── */
-function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelData, selectedTemplate, setSelectedTemplate, templateCategory, modelImages, generatingPortraits, portraitProgress, portraitTotal, onGeneratePortraits }: {
+function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelData, selectedTemplate, setSelectedTemplate, templateCategory, modelImages, generatingPortraits, portraitProgress, portraitTotal, onGeneratePortraits, activeTemplates, loadingTemplates, onRegenerateTemplates }: {
   shootType: 'product' | 'model' | null;
   modelConfig: ModelConfig;
   setModelConfig: React.Dispatch<React.SetStateAction<ModelConfig>>;
@@ -2487,10 +2554,13 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
   portraitProgress: number;
   portraitTotal: number;
   onGeneratePortraits: () => void;
+  activeTemplates: ProductTemplate[];
+  loadingTemplates: boolean;
+  onRegenerateTemplates: () => void;
 }) {
   const filteredTemplates = templateCategory === 'All'
-    ? PRODUCT_SHOOT_TEMPLATES
-    : PRODUCT_SHOOT_TEMPLATES.filter(t => t.category === templateCategory);
+    ? activeTemplates
+    : activeTemplates.filter(t => t.category === templateCategory);
 
   if (!shootType) {
     return (
@@ -2509,14 +2579,43 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
   if (shootType === 'product') {
     return (
       <div className="h-full flex flex-col animate-in fade-in duration-300">
-        <div className="shrink-0 mb-4">
-          <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Scene Templates</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {selectedTemplate
-              ? `Selected: ${PRODUCT_SHOOT_TEMPLATES.find(t => t.id === selectedTemplate)?.name}`
-              : 'Choose a scene template for your product shoot.'}
-          </p>
+        <div className="shrink-0 mb-4 flex items-start justify-between">
+          <div>
+            <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Scene Templates</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {loadingTemplates
+                ? 'Generating templates tailored to your product…'
+                : selectedTemplate
+                  ? `Selected: ${activeTemplates.find(t => t.id === selectedTemplate)?.name}`
+                  : 'Choose a scene template for your product shoot.'}
+            </p>
+          </div>
+          {!loadingTemplates && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 shrink-0"
+              onClick={onRegenerateTemplates}
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Regenerate
+            </Button>
+          )}
         </div>
+        {loadingTemplates ? (
+          <div className="grid grid-cols-4 gap-3 pb-4">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="rounded-xl overflow-hidden border">
+                <Skeleton className="aspect-square w-full" />
+                <div className="p-2 space-y-1.5">
+                  <Skeleton className="h-3 w-3/4" />
+                  <Skeleton className="h-2 w-full" />
+                  <Skeleton className="h-2 w-2/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
         <ScrollArea className="flex-1 bg-background relative z-10">
           <div className="grid grid-cols-4 gap-3 pb-4">
             {filteredTemplates.map((t) => {
@@ -2546,6 +2645,7 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
             })}
           </div>
         </ScrollArea>
+        )}
       </div>
     );
   }
