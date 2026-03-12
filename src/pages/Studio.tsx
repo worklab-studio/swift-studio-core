@@ -2354,7 +2354,7 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
                 } ${p.id === 'plain-bg' ? 'col-span-2' : ''}`}
               >
                 <div className="aspect-[4/3] overflow-hidden bg-muted">
-                  <img src={['Apparel', 'Fashion'].includes(project?.category || '') ? (APPAREL_PRESET_IMAGES[p.id] || p.img) : p.img} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
+                  <img src={['Apparel', 'Fashion'].includes(projectCategory) ? (APPAREL_PRESET_IMAGES[p.id] || p.img) : p.img} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
                 </div>
                 <div className="p-1.5">
                   <p className="text-[11px] font-semibold">{p.name}</p>
