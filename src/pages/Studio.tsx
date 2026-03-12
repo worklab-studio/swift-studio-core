@@ -1051,8 +1051,11 @@ const Studio = () => {
       if (generationAbortRef.current) return;
       if (error || !data?.assets) {
         toast({ title: 'Generation failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
-        setActiveStep(3);
-        setCompletedSteps(prev => { const n = new Set(prev); n.delete(3); return n; });
+        setIsAddingMore(false);
+        if (mode !== 'campaign_add') {
+          setActiveStep(3);
+          setCompletedSteps(prev => { const n = new Set(prev); n.delete(3); return n; });
+        }
         return;
       }
       setGenerationProgress(100);
