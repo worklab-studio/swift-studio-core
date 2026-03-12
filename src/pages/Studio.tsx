@@ -1419,6 +1419,9 @@ const Studio = () => {
                     portraitProgress={portraitProgress}
                     portraitTotal={portraitTotal}
                     onGeneratePortraits={handleGeneratePortraits}
+                    activeTemplates={dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES}
+                    loadingTemplates={loadingTemplates}
+                    onRegenerateTemplates={fetchDynamicTemplates}
                   />
                 )}
                 {activeStep === 3 && (
