@@ -761,6 +761,10 @@ const Studio = () => {
         if (prev.length === 0 && updated.length > 0) {
           analyzeProduct(updated[0]);
         }
+        // Detect views when 2+ images
+        if (updated.length >= 2) {
+          detectViews(updated);
+        }
         return updated;
       });
     }
