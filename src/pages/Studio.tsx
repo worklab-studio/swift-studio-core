@@ -962,6 +962,7 @@ const Studio = () => {
           keepOriginalModel: modelChoice === 'keep',
           productLabel: productInfo?.productName || productName || 'Untitled',
           sceneTemplate: isProductWithTemplate ? { id: tpl!.id, description: tpl!.description, name: tpl!.name } : undefined,
+          presetId: selectedPreset || undefined,
           productInfo: productInfo ? {
             colors: productInfo.colors,
             material: productInfo.material,
