@@ -816,8 +816,8 @@ const Studio = () => {
     const isModel = shootType === 'model';
     const settings = isModel ? preset.model : preset.product;
     setStyleSettings(settings);
-    setStylePrompt(buildStylePrompt(preset, isModel, productInfo));
-  }, [selectedPreset, shootType, productInfo, buildStylePrompt]);
+    setStylePrompt(buildStylePrompt(preset, isModel, productInfo, plainBgColor));
+  }, [selectedPreset, shootType, productInfo, buildStylePrompt, plainBgColor]);
 
   /* ── Generation ── */
   const handleGenerate = async (mode?: 'single' | 'campaign_add') => {
