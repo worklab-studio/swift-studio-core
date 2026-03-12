@@ -886,7 +886,8 @@ const Studio = () => {
     const isProductWithTemplate = shootType === 'product' && selectedTemplate;
     if (!isProductWithTemplate && !selectedPreset) return;
 
-    const tpl = isProductWithTemplate ? PRODUCT_SHOOT_TEMPLATES.find(t => t.id === selectedTemplate) : null;
+    const activeTemplates = dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES;
+    const tpl = isProductWithTemplate ? activeTemplates.find(t => t.id === selectedTemplate) : null;
     const stepLabel = isProductWithTemplate
       ? tpl?.name || 'Product Shoot'
       : STYLE_PRESETS.find(p => p.id === selectedPreset)?.name || selectedPreset || '';
