@@ -116,6 +116,35 @@ serve(async (req) => {
     // Product shoot masterpiece quality booster
     const MASTERPIECE_BOOSTER = "MASTERPIECE PRODUCT PHOTOGRAPHY DIRECTIVE: Create an ultra-high-end advertising campaign image. The product must be the absolute hero and centerpiece, perfectly preserved in its EXACT original form — same color, shape, texture, every detail intact and unaltered. The scene around it should be surreal, fantastical, and jaw-dropping — the kind of visual that stops viewers mid-scroll. Think award-winning commercial photography meets digital art. Cinematic lighting with extraordinary attention to detail. The product should look like a precious artifact on display. 8K hyper-detailed, photorealistic rendering.";
 
+    // Category-aware style modifiers
+    const CATEGORY_MODIFIERS: Record<string, string> = {
+      "Apparel": "The garment should appear alive and dynamic — fabric billowing, sleeves flowing, material catching wind as if frozen mid-movement, natural drape and folds showing the garment's silhouette and construction. The clothing should float, twist, or cascade dramatically as if worn by an invisible figure in motion. Show the fabric's weight, texture, and movement quality.",
+      "Fashion": "The garment should appear alive and dynamic — fabric billowing, sleeves flowing, material catching wind as if frozen mid-movement, natural drape and folds showing the garment's silhouette and construction. The clothing should float, twist, or cascade dramatically as if worn by an invisible figure in motion. Show the fabric's weight, texture, and movement quality.",
+      "Footwear": "The shoe should be the sculptural hero — show sole architecture, material texture, lace detail. Angle to reveal both profile and 3/4 view. Treat it like a piece of industrial design art.",
+      "Skincare": "Show the product with its texture — cream swirls, liquid droplets, ingredient splashes (botanicals, honey, citrus). The packaging should gleam with dewy freshness.",
+      "Beauty": "Show the product with its texture — cream swirls, liquid droplets, ingredient splashes (botanicals, honey, citrus). The packaging should gleam with dewy freshness and luminosity.",
+      "Jewelry": "Capture light refractions, gemstone fire, metal luster. Dramatic macro-close energy even in wide shots. Every facet should sparkle with brilliance.",
+      "Watch": "Capture light refractions, metal luster, dial details, crystal clarity. Dramatic macro-close energy even in wide shots. Precision engineering visible.",
+      "Electronics": "Sleek tech product launch feel — screen glow, interface reflections, precision engineering visible. Futuristic and minimal aesthetic.",
+      "Food": "Appetite appeal — condensation, steam, fresh ingredients, pour shots, splashes frozen in time. Sensory and visceral.",
+      "Beverage": "Appetite appeal — condensation droplets, liquid splashes frozen in time, ice crystals, effervescence. Sensory and refreshing.",
+      "FMCG": "Show the product packaging with tactile appeal — texture of materials, label details, complementary lifestyle elements that reinforce the brand story.",
+    };
+
+    const categoryModifier = CATEGORY_MODIFIERS[category] || "Showcase the product's most distinctive material qualities, textures, and design details.";
+
+    const isApparel = ["Apparel", "Fashion"].includes(category);
+
+    // Apparel-specific shot shape directives
+    const apparelShotShapes: Record<string, string> = {
+      hero: "The garment floats upright as if worn by an invisible figure — fabric gently billowing, sleeves naturally spread, collar structured, showing the full silhouette with life and volume. NOT flat or static.",
+      detail: "Extreme close-up of the fabric — show the weave, stitching, texture with natural draping folds. The material should look tactile and luxurious, caught mid-drape.",
+      lifestyle: "The garment caught mid-swirl or flowing in wind — dynamic frozen movement, fabric trailing and twisting elegantly. As if someone just spun and the clothing is still dancing.",
+      alternate: "The garment from behind or side, floating with natural body shape implied. Back panel details visible, fabric flowing outward as if caught in a gentle breeze.",
+      editorial: "Dramatic fabric explosion — the garment unfurling, cascading, or twisting in a bold artistic shape. Haute couture energy, the clothing as abstract sculpture.",
+      flat_lay: "Artfully arranged from above with natural flowing shape — NOT pressed flat. Gentle folds, natural curves, as if the garment just landed softly on the surface.",
+    };
+
     const productShotTypeDesc: Record<string, string> = {
       hero: "Hero product shot — the product is the undeniable star, perfectly centered and fully visible at its most flattering angle, dramatic lighting sculpting every surface and edge, the scene built entirely to frame and elevate the product as a masterpiece.",
       detail: "Intimate detail shot — extreme close-up revealing the product's finest craftsmanship details (texture, stitching, material quality, surface finish, hardware), shallow depth of field with creamy bokeh, the scene elements still visible but softly blurred in the background, macro lens quality.",
@@ -129,9 +158,9 @@ serve(async (req) => {
       const isProductShoot = sceneTemplate?.description && shotType !== "model_shot";
 
       if (isProductShoot) {
-        // Use rich masterpiece prompting for product shoots with scene templates
         const shotDesc = productShotTypeDesc[label] || label;
-        return `${MASTERPIECE_BOOSTER} ${shotDesc} SCENE DIRECTION: ${sceneTemplate.description}. Product category: ${category}. Product-only shot, absolutely no human model in the image. ${consistencyInstruction}${additionalContext ? ` Additional creative direction: ${additionalContext}` : ""}. ${ratioInstruction} No text, no watermarks, no logos.`;
+        const apparelDirective = isApparel ? ` GARMENT SHAPE: ${apparelShotShapes[label] || apparelShotShapes.hero}` : "";
+        return `${MASTERPIECE_BOOSTER} PRODUCT STYLE: ${categoryModifier}${apparelDirective} ${shotDesc} SCENE DIRECTION: ${sceneTemplate.description}. Product category: ${category}. Product-only shot, absolutely no human model in the image. ${consistencyInstruction}${additionalContext ? ` Additional creative direction: ${additionalContext}` : ""}. ${ratioInstruction} No text, no watermarks, no logos.`;
       }
 
       // Original flow for model shots and non-template shoots
