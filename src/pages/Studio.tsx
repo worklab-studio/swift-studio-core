@@ -3626,6 +3626,32 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
                     <p className="text-xs text-muted-foreground mt-2 italic">{prompt.reason}</p>
                   </button>
                 ))}
+                {/* Custom prompt option */}
+                <button
+                  onClick={() => setVideoConfig(prev => ({ ...prev, selectedPrompt: { style: 'Custom', text: prev.selectedPrompt?.style === 'Custom' ? prev.selectedPrompt.text : '', reason: 'User-defined prompt' } }))}
+                  className={`w-full text-left p-4 rounded-xl border transition-all ${
+                    videoConfig.selectedPrompt?.style === 'Custom'
+                      ? 'ring-2 ring-primary border-primary bg-primary/5'
+                      : 'hover:border-primary/30 bg-card'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="outline" className="text-[10px] px-2 py-0">Custom</Badge>
+                    {videoConfig.selectedPrompt?.style === 'Custom' && (
+                      <Check className="h-3.5 w-3.5 text-primary" />
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">Write your own animation prompt</p>
+                </button>
+                {videoConfig.selectedPrompt?.style === 'Custom' && (
+                  <Textarea
+                    rows={3}
+                    placeholder="Describe the video motion you want... e.g. 'Slow cinematic zoom into the product with soft lighting'"
+                    value={videoConfig.selectedPrompt?.text || ''}
+                    onChange={e => setVideoConfig(prev => ({ ...prev, selectedPrompt: { style: 'Custom', text: e.target.value, reason: 'User-defined prompt' } }))}
+                    className="mt-1"
+                  />
+                )}
               </div>
               <Button className="w-full" onClick={onGenerateVideo} disabled={!videoConfig.selectedPrompt}>
                 Generate video — {videoCreditCost} credits
