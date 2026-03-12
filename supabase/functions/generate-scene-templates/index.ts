@@ -42,10 +42,10 @@ CRITICAL RULES:
 - Descriptions should be detailed enough for an AI image generator to produce the scene.
 
 Generate exactly:
-- 3 "Studio" templates: Clean, professional studio settings (marble surfaces, pedestals, reflective surfaces, dramatic lighting setups)
-- 3 "E-commerce" templates: Marketplace-ready, clean backgrounds, flat lays, pack shots optimized for online stores
-- 3 "Mystic" templates: Surreal, fantastical, dramatic settings (floating in mist, ethereal glow, floral explosions, dark moody environments)
-- 3 "Showcase" templates: Editorial, lifestyle, contextual settings (magazine spreads, textured surfaces, color stories, contextual use)
+- 5 "Studio" templates: Clean, professional studio settings (marble surfaces, pedestals, reflective surfaces, dramatic lighting setups)
+- 5 "E-commerce" templates: Marketplace-ready, clean backgrounds, flat lays, pack shots optimized for online stores
+- 5 "Mystic" templates: Surreal, fantastical, dramatic settings (floating in mist, ethereal glow, floral explosions, dark moody environments)
+- 5 "Showcase" templates: Editorial, lifestyle, contextual settings (magazine spreads, textured surfaces, color stories, contextual use)
 
 Each template name should be unique, evocative, and 2-3 words max.
 Each description should paint a vivid picture specific to THIS product — mentioning its colors, material, shape where relevant.
