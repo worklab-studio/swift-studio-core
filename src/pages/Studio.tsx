@@ -87,6 +87,13 @@ interface ProductInfo {
   hasModel: boolean;
   hasWhiteBackground: boolean;
   modelNote: string | null;
+  beautyApplication: string | null;
+  beautySize: string | null;
+  fmcgSize: string | null;
+  fmcgPackaging: string | null;
+  fmcgSubType: string | null;
+  suggestedModelShootBackgrounds: string[];
+  suggestedShowcaseBackgrounds: string[];
 }
 
 interface GeneratedVideo {
