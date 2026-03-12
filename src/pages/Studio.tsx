@@ -434,11 +434,6 @@ const Studio = () => {
   // AI Product Recognition
   const [productInfo, setProductInfo] = useState<ProductInfo | null>(null);
   const [analyzingProduct, setAnalyzingProduct] = useState(false);
-  const [editingCategory, setEditingCategory] = useState(false);
-  const [editCategoryVal, setEditCategoryVal] = useState('');
-  const [editGarmentVal, setEditGarmentVal] = useState('');
-  const [editingOutfit, setEditingOutfit] = useState(false);
-  const [editOutfitVal, setEditOutfitVal] = useState('');
   const [analysisPhase, setAnalysisPhase] = useState<'idle' | 'analyzing' | 'done'>('idle');
   const [productName, setProductName] = useState('');
 
