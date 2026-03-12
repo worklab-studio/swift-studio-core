@@ -1,4 +1,23 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
+import apparelClassic from '@/assets/presets/Classic.png';
+import apparelMinimal from '@/assets/presets/Minimal.png';
+import apparelLuxury from '@/assets/presets/Luxury.png';
+import apparelLoudLuxury from '@/assets/presets/Loud_luxury.png';
+import apparelMagazine from '@/assets/presets/Magazine.png';
+import apparelAvantGarde from '@/assets/presets/Avant_Grande.png';
+import apparelInfluencer from '@/assets/presets/Influencer.png';
+import apparelLifestyle from '@/assets/presets/Lifestyle.png';
+
+const APPAREL_PRESET_IMAGES: Record<string, string> = {
+  classic: apparelClassic,
+  minimalist: apparelMinimal,
+  luxury: apparelLuxury,
+  'loud-luxury': apparelLoudLuxury,
+  magazine: apparelMagazine,
+  'avant-garde': apparelAvantGarde,
+  influencer: apparelInfluencer,
+  lifestyle: apparelLifestyle,
+};
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
