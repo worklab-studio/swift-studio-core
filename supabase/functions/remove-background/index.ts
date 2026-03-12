@@ -29,34 +29,48 @@ serve(async (req) => {
       });
     }
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3.1-flash-image-preview",
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: category?.toLowerCase() === "apparel"
-                  ? "Extract only the clothing/garment from the human model in this image. Remove the person entirely — show the garment as if laid flat or on an invisible mannequin, on a pure white background. Preserve all fabric details, textures, colors, patterns, and proportions exactly. No text, no watermarks."
-                  : "Remove the background and any human model from this product photo. Return ONLY the product isolated on a pure clean white background. Keep the product exactly as it appears — same colors, details, proportions. No text, no watermarks.",
-              },
-              {
-                type: "image_url",
-                image_url: { url: image },
-              },
-            ],
-          },
-        ],
-        modalities: ["image", "text"],
-      }),
-    });
+    const aiPayload = {
+      model: "google/gemini-3.1-flash-image-preview",
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: category?.toLowerCase() === "apparel"
+                ? "Extract only the clothing/garment from the human model in this image. Remove the person entirely — show the garment as if laid flat or on an invisible mannequin, on a pure white background. Preserve all fabric details, textures, colors, patterns, and proportions exactly. No text, no watermarks."
+                : "Remove the background and any human model from this product photo. Return ONLY the product isolated on a pure clean white background. Keep the product exactly as it appears — same colors, details, proportions. No text, no watermarks.",
+            },
+            {
+              type: "image_url",
+              image_url: { url: image },
+            },
+          ],
+        },
+      ],
+      modalities: ["image", "text"],
+    };
+
+    let aiResponse: Response | null = null;
+    const maxRetries = 3;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(aiPayload),
+      });
+
+      if (aiResponse.status !== 429) break;
+
+      if (attempt < maxRetries - 1) {
+        const wait = (attempt + 1) * 3000; // 3s, 6s
+        console.log(`Rate limited, retrying in ${wait}ms (attempt ${attempt + 1}/${maxRetries})`);
+        await new Promise((r) => setTimeout(r, wait));
+      }
+    }
 
     if (!aiResponse.ok) {
       const errText = await aiResponse.text();
