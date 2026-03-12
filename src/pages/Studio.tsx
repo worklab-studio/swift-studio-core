@@ -1999,11 +1999,107 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                 </SelectContent>
               </Select>
             </div>
+
+            {/* ── Beauty: Application Area ── */}
+            {productInfo && ['Skincare', 'Beauty'].includes(productInfo.category) && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Application Area</label>
+                <Select value={beautyApplication} onValueChange={setBeautyApplication}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Auto-detected" /></SelectTrigger>
+                  <SelectContent>
+                    {['face', 'hair', 'lips', 'eyes', 'body', 'nails', 'fragrance'].map(a => (
+                      <SelectItem key={a} value={a}>{a.charAt(0).toUpperCase() + a.slice(1)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {productInfo.beautyApplication && (
+                  <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                    <Sparkles className="h-2.5 w-2.5" /> AI detected: {productInfo.beautyApplication}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* ── Product Size (Beauty or FMCG) ── */}
+            {productInfo && ['Skincare', 'Beauty'].includes(productInfo.category) && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Product Size</label>
+                <Select value={productSize} onValueChange={setProductSize}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Auto-detected" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mini">Mini — lip balm, sample vial</SelectItem>
+                    <SelectItem value="standard">Standard — serum bottle, lipstick</SelectItem>
+                    <SelectItem value="large">Large — pump bottle, family-size</SelectItem>
+                    <SelectItem value="extra-large">Extra Large — salon-size</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {productInfo?.category === 'FMCG' && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Product Size</label>
+                <Select value={productSize} onValueChange={setProductSize}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Auto-detected" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="small">Small — sachet, candy bar</SelectItem>
+                    <SelectItem value="medium">Medium — standard bottle, cereal box</SelectItem>
+                    <SelectItem value="large">Large — family-size bottle, 2L+</SelectItem>
+                    <SelectItem value="extra-large">Extra Large — bulk pack, 5kg+</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* ── Outfit (Beauty/Skincare model shoot) ── */}
+            {productInfo && ['Skincare', 'Beauty'].includes(productInfo.category) && modelConfig.gender && beautyApplication && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Outfit</label>
+                <Select value={selectedOutfit} onValueChange={setSelectedOutfit}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select outfit" /></SelectTrigger>
+                  <SelectContent>
+                    {(SKINCARE_OUTFIT_OPTIONS[modelConfig.gender]?.[beautyApplication] || []).map((outfit, i) => (
+                      <SelectItem key={i} value={outfit}>{outfit}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* ── Background ── */}
             <div className="space-y-1">
               <label className="text-xs font-medium">Background</label>
               <Select value={modelConfig.background} onValueChange={v => setModelConfig(prev => ({ ...prev, background: v }))}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
+                  {/* AI-Suggested backgrounds (Layer 1) */}
+                  {productInfo?.suggestedModelShootBackgrounds && productInfo.suggestedModelShootBackgrounds.length > 0 && (
+                    <SelectGroup>
+                      <SelectLabel className="flex items-center gap-1"><Sparkles className="h-3 w-3" /> AI Suggested</SelectLabel>
+                      {productInfo.suggestedModelShootBackgrounds.map((bg, i) => (
+                        <SelectItem key={`ai-bg-${i}`} value={`ai-model-bg-${i}`}>{bg.length > 50 ? bg.substring(0, 50) + '…' : bg}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
+
+                  {/* Category-specific backgrounds (Layer 2) */}
+                  {productInfo && ['Skincare', 'Beauty'].includes(productInfo.category) && beautyApplication && MODEL_SHOOT_BEAUTY_BACKGROUNDS[beautyApplication] && (
+                    <SelectGroup>
+                      <SelectLabel>{beautyApplication.charAt(0).toUpperCase() + beautyApplication.slice(1)} Settings</SelectLabel>
+                      {MODEL_SHOOT_BEAUTY_BACKGROUNDS[beautyApplication].map((bg, i) => (
+                        <SelectItem key={`beauty-bg-${i}`} value={`beauty-bg-${beautyApplication}-${i}`}>{bg.length > 50 ? bg.substring(0, 50) + '…' : bg}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
+                  {productInfo?.category === 'FMCG' && Object.entries(FMCG_MODEL_SHOOT_BACKGROUNDS).map(([group, bgs]) => (
+                    <SelectGroup key={group}>
+                      <SelectLabel>{group}</SelectLabel>
+                      {bgs.map((bg, i) => (
+                        <SelectItem key={`fmcg-bg-${group}-${i}`} value={`fmcg-bg-${group}-${i}`}>{bg.length > 50 ? bg.substring(0, 50) + '…' : bg}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  ))}
+
+                  {/* Generic backgrounds (Layer 3) */}
                   <SelectGroup>
                     <SelectLabel>Studio</SelectLabel>
                     <SelectItem value="white-sweep">White sweep</SelectItem>
