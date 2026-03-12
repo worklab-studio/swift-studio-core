@@ -418,9 +418,14 @@ const Studio = () => {
   const [analysisPhase, setAnalysisPhase] = useState<'idle' | 'analyzing' | 'done'>('idle');
   const [productName, setProductName] = useState('');
 
+  // View detection
+  const [imageViews, setImageViews] = useState<Record<string, string>>({});
+  const [detectingViews, setDetectingViews] = useState(false);
+
   // Model detection choice
   const [modelChoice, setModelChoice] = useState<'remove' | 'keep' | null>(null);
   const [removingBackground, setRemovingBackground] = useState(false);
+  const [removingBgIndex, setRemovingBgIndex] = useState<number | null>(null);
 
   // Shoot type selection (Step 2)
   const [shootType, setShootType] = useState<'product' | 'model' | null>(null);
@@ -709,6 +714,26 @@ const Studio = () => {
     setAnalyzingProduct(false);
   }, []);
 
+  /* ── Detect views for multiple images ── */
+  const detectViews = useCallback(async (urls: string[]) => {
+    if (urls.length < 2) return;
+    setDetectingViews(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('detect-views', {
+        body: { images: urls },
+      });
+      if (error || !data?.views) {
+        console.error('View detection failed:', error);
+        return;
+      }
+      setImageViews(prev => ({ ...prev, ...data.views }));
+    } catch (e) {
+      console.error('View detection error:', e);
+    } finally {
+      setDetectingViews(false);
+    }
+  }, []);
+
   /* ── Step 1 handlers ── */
   const handleProductImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -735,6 +760,10 @@ const Studio = () => {
         const updated = [...prev, ...uploadedUrls];
         if (prev.length === 0 && updated.length > 0) {
           analyzeProduct(updated[0]);
+        }
+        // Detect views when 2+ images
+        if (updated.length >= 2) {
+          detectViews(updated);
         }
         return updated;
       });
@@ -765,12 +794,13 @@ const Studio = () => {
     completeStep(1, `${productImages.length} image${productImages.length > 1 ? 's' : ''}${modelChoice === 'keep' ? ' · Keep Model' : ''}`, 2);
   };
 
-  /* ── Remove background handler ── */
-  const handleRemoveBackground = async () => {
-    if (!productImages[0] || !id) return;
+  /* ── Remove background handler (per-image) ── */
+  const handleRemoveBackground = async (index: number = 0) => {
+    if (!productImages[index] || !id) return;
     setRemovingBackground(true);
+    setRemovingBgIndex(index);
     try {
-      const response = await fetch(productImages[0]);
+      const response = await fetch(productImages[index]);
       const blob = await response.blob();
       const reader = new FileReader();
       const base64 = await new Promise<string>((resolve) => {
@@ -785,24 +815,28 @@ const Studio = () => {
       if (error || !data?.url) {
         toast({ title: 'Background removal failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
         setRemovingBackground(false);
+        setRemovingBgIndex(null);
         return;
       }
 
-      // Replace primary image with cleaned version
+      // Replace the specific image with cleaned version
       setProductImages(prev => {
         const updated = [...prev];
-        updated[0] = data.url;
+        updated[index] = data.url;
         return updated;
       });
-      setModelChoice('remove');
-      // Re-analyze the cleaned image
-      analyzeProduct(data.url);
-      toast({ title: 'Background removed', description: 'Product image cleaned successfully.' });
+      if (index === 0) {
+        setModelChoice('remove');
+        // Re-analyze the cleaned image
+        analyzeProduct(data.url);
+      }
+      toast({ title: 'Background removed', description: `Image ${index + 1} cleaned successfully.` });
     } catch (e) {
       console.error('Remove background error:', e);
       toast({ title: 'Background removal failed', description: 'Network error', variant: 'destructive' });
     }
     setRemovingBackground(false);
+    setRemovingBgIndex(null);
   };
 
   const handleKeepModel = () => {
@@ -965,6 +999,8 @@ const Studio = () => {
           modelConfig: shootType === 'model' ? modelConfig : null,
           stylePrompt: effectiveStylePrompt,
           productImageUrl,
+          productImages: productImages.length > 1 ? productImages : undefined,
+          imageViews: Object.keys(imageViews).length > 0 ? imageViews : undefined,
           aspectRatio,
           keepOriginalModel: modelChoice === 'keep',
           productLabel: productInfo?.productName || productName || 'Untitled',
@@ -1256,6 +1292,7 @@ const Studio = () => {
                     productUploadRef={productUploadRef}
                     onUpload={handleProductImageUpload}
                     onRemove={handleRemoveProductImage}
+                    imageViews={imageViews}
                   />
                 )}
                 {activeStep === 2 && (
@@ -1453,7 +1490,7 @@ const Studio = () => {
         {toolbarView === 'studio' && (
           <>
             {activeStep === 1 && (
-              <Step1Viewport productImages={productImages} productInfo={productInfo} analyzingProduct={analyzingProduct} analysisPhase={analysisPhase} productName={productName} setProductName={setProductName} modelChoice={modelChoice} removingBackground={removingBackground} onRemoveBackground={handleRemoveBackground} onKeepModel={handleKeepModel} />
+              <Step1Viewport productImages={productImages} productInfo={productInfo} analyzingProduct={analyzingProduct} analysisPhase={analysisPhase} productName={productName} setProductName={setProductName} modelChoice={modelChoice} removingBackground={removingBackground} removingBgIndex={removingBgIndex} onRemoveBackground={handleRemoveBackground} onKeepModel={handleKeepModel} imageViews={imageViews} detectingViews={detectingViews} />
             )}
             {activeStep !== 1 && (
               <div className="p-8 min-h-full overflow-y-auto h-full">
@@ -1553,14 +1590,21 @@ const Studio = () => {
    ════════════════════════════════════════════════════════════════ */
 
 /* ── Step 1 Config (Left) ── */
-function Step1Config({ productImages, productUploadRef, onUpload, onRemove }: {
+function Step1Config({ productImages, productUploadRef, onUpload, onRemove, imageViews }: {
   productImages: string[];
   productUploadRef: React.RefObject<HTMLInputElement>;
   onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemove: (index: number) => void;
+  imageViews: Record<string, string>;
 }) {
   const TOTAL_SLOTS = 7;
   const slots = Array.from({ length: TOTAL_SLOTS }, (_, i) => productImages[i] ?? null);
+
+  const VIEW_LABEL_SHORT: Record<string, string> = {
+    'front': 'Front', 'back': 'Back', 'left-side': 'Left', 'right-side': 'Right',
+    'detail-closeup': 'Detail', 'top': 'Top', 'bottom': 'Bottom',
+    '3/4-front': '¾ F', '3/4-back': '¾ B', 'flat-lay': 'Flat',
+  };
 
   return (
     <div className="space-y-4">
@@ -1600,8 +1644,10 @@ function Step1Config({ productImages, productUploadRef, onUpload, onRemove }: {
             >
               <X className="h-3 w-3" />
             </button>
-            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-background/70 to-transparent px-2 py-1.5">
-              <p className="text-[10px] font-medium text-foreground">Main Shot</p>
+            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-background/70 to-transparent px-2 py-1.5 flex items-center justify-between">
+              <p className="text-[10px] font-medium text-foreground">
+                {imageViews[slots[0]!] ? VIEW_LABEL_SHORT[imageViews[slots[0]!]] || imageViews[slots[0]!] : 'Main Shot'}
+              </p>
             </div>
           </>
         ) : (
@@ -1633,6 +1679,11 @@ function Step1Config({ productImages, productUploadRef, onUpload, onRemove }: {
                   >
                     <X className="h-2.5 w-2.5" />
                   </button>
+                  {imageViews[url] && (
+                    <span className="absolute bottom-0 inset-x-0 bg-background/70 backdrop-blur-sm text-[8px] font-semibold text-center py-0.5 text-foreground">
+                      {VIEW_LABEL_SHORT[imageViews[url]] || imageViews[url]}
+                    </span>
+                  )}
                 </>
               ) : (
                 <div className="flex items-center justify-center h-full">
@@ -2532,7 +2583,7 @@ function Step5Config({ shots, exportFormat, setExportFormat, selectedShots, setS
    ════════════════════════════════════════════════════════════════ */
 
 /* ── Step 1 Viewport ── */
-function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisPhase, productName, setProductName, modelChoice, removingBackground, onRemoveBackground, onKeepModel }: { 
+function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisPhase, productName, setProductName, modelChoice, removingBackground, removingBgIndex, onRemoveBackground, onKeepModel, imageViews, detectingViews }: { 
   productImages: string[]; 
   productInfo: ProductInfo | null;
   analyzingProduct: boolean;
@@ -2541,8 +2592,11 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
   setProductName: (name: string) => void;
   modelChoice: 'remove' | 'keep' | null;
   removingBackground: boolean;
-  onRemoveBackground: () => void;
+  removingBgIndex: number | null;
+  onRemoveBackground: (index?: number) => void;
   onKeepModel: () => void;
+  imageViews: Record<string, string>;
+  detectingViews: boolean;
 }) {
   const ANALYSIS_TEXTS = [
     'Analyzing image...',
@@ -2619,37 +2673,93 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
   }
 
   // Phase 2: Done — left-aligned image, selectable thumbnails, uniform badges
+  const currentDisplayIndex = selectedThumbIndex ?? 0;
+  const currentViewLabel = imageViews[productImages[currentDisplayIndex]] || null;
+
+  const VIEW_LABEL_DISPLAY: Record<string, string> = {
+    'front': 'Front', 'back': 'Back', 'left-side': 'Left', 'right-side': 'Right',
+    'detail-closeup': 'Detail', 'top': 'Top', 'bottom': 'Bottom',
+    '3/4-front': '¾ Front', '3/4-back': '¾ Back', 'flat-lay': 'Flat Lay',
+  };
+
   return (
     <div className="h-full w-full overflow-hidden p-6 flex flex-col">
       {/* Top row: main image on left + thumbnails on right */}
       <div className="flex gap-4 flex-1 min-h-0">
-        <div className="flex-1 min-w-0 flex items-start animate-in slide-in-from-bottom-4 duration-500">
-          <img
-            src={displayImage}
-            alt="Product main"
-            className="max-h-[50vh] max-w-full rounded-2xl shadow-lg object-contain"
-          />
+        <div className="flex-1 min-w-0 flex flex-col items-start gap-2 animate-in slide-in-from-bottom-4 duration-500">
+          <div className="relative">
+            <img
+              src={displayImage}
+              alt="Product main"
+              className="max-h-[45vh] max-w-full rounded-2xl shadow-lg object-contain"
+            />
+            {currentViewLabel && (
+              <Badge variant="secondary" className="absolute top-2 left-2 text-[10px] gap-1 bg-background/80 backdrop-blur-sm">
+                <Eye className="h-2.5 w-2.5" />
+                {VIEW_LABEL_DISPLAY[currentViewLabel] || currentViewLabel}
+              </Badge>
+            )}
+            {removingBgIndex === currentDisplayIndex && (
+              <div className="absolute inset-0 rounded-2xl bg-foreground/30 backdrop-blur-[2px] flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary-foreground" />
+              </div>
+            )}
+          </div>
+          {/* Remove BG button for current image */}
+          {analysisPhase === 'done' && !productInfo?.hasModel && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              disabled={removingBackground}
+              onClick={() => onRemoveBackground(currentDisplayIndex)}
+            >
+              {removingBgIndex === currentDisplayIndex ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <ImageIcon className="h-3.5 w-3.5" />
+              )}
+              Remove BG
+            </Button>
+          )}
         </div>
 
         {productImages.length > 1 && (
           <div className="shrink-0 flex flex-col gap-2 animate-stagger-in" style={{ animationDelay: '0.3s' }}>
-            {productImages.slice(1).map((url, i) => {
-              const thumbIdx = i + 1;
-              const isSelected = selectedThumbIndex === thumbIdx;
+            {productImages.map((url, i) => {
+              const isSelected = currentDisplayIndex === i;
+              const viewLabel = imageViews[url];
               return (
-                <img
-                  key={i}
-                  src={url}
-                  alt={`Angle ${i + 2}`}
-                  onClick={() => setSelectedThumbIndex(isSelected ? null : thumbIdx)}
-                  className={`h-20 w-20 rounded-lg object-cover border shadow-sm transition-all cursor-pointer ${
-                    isSelected
-                      ? 'ring-2 ring-primary border-primary'
-                      : 'border-border hover:ring-2 hover:ring-primary/30'
-                  }`}
-                />
+                <div key={i} className="relative">
+                  <img
+                    src={url}
+                    alt={`Angle ${i + 1}`}
+                    onClick={() => setSelectedThumbIndex(i === 0 ? null : i)}
+                    className={`h-20 w-20 rounded-lg object-cover border shadow-sm transition-all cursor-pointer ${
+                      isSelected
+                        ? 'ring-2 ring-primary border-primary'
+                        : 'border-border hover:ring-2 hover:ring-primary/30'
+                    }`}
+                  />
+                  {viewLabel && (
+                    <span className="absolute bottom-0.5 left-0.5 right-0.5 bg-background/80 backdrop-blur-sm rounded-b-md text-[8px] font-semibold text-center py-0.5 text-foreground">
+                      {VIEW_LABEL_DISPLAY[viewLabel] || viewLabel}
+                    </span>
+                  )}
+                  {removingBgIndex === i && (
+                    <div className="absolute inset-0 rounded-lg bg-foreground/30 flex items-center justify-center">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary-foreground" />
+                    </div>
+                  )}
+                </div>
               );
             })}
+            {detectingViews && (
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span className="text-[9px]">Detecting views…</span>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -2720,7 +2830,7 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
                 <p className="text-[11px] font-semibold text-foreground">What would you like to do?</p>
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={onRemoveBackground}
+                    onClick={() => onRemoveBackground(0)}
                     disabled={removingBackground}
                     className="rounded-xl border border-border bg-card p-3 text-left transition-all hover:border-primary/50 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                   >
