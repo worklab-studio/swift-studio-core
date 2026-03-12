@@ -2271,7 +2271,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
 }
 
 /* ── Step 3 Config (Left) ── */
-function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, aspectRatio, setAspectRatio, additionalContext, setAdditionalContext, styleSettings, analyzingStyle, plainBgColor, setPlainBgColor, shootType, selectedTemplate, activeTemplates }: {
+function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, aspectRatio, setAspectRatio, additionalContext, setAdditionalContext, styleSettings, analyzingStyle, plainBgColor, setPlainBgColor, shootType, selectedTemplate, activeTemplates, projectCategory }: {
   selectedPreset: string | null;
   setSelectedPreset: (v: string | null) => void;
   referenceImage: string | null;
@@ -2291,6 +2291,7 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
   shootType: 'product' | 'model' | null;
   selectedTemplate: string | null;
   activeTemplates: ProductTemplate[];
+  projectCategory: string;
 }) {
   const isProductWithTemplate = shootType === 'product' && !!selectedTemplate;
   const isPlainBgTemplate = selectedTemplate === 'pt-plain-bg';
