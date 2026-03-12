@@ -2296,7 +2296,7 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
           {selectedPreset === 'plain-bg' && (
             <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
               <p className="text-xs font-medium">Background Color</p>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-8 gap-1.5">
                 {PLAIN_BG_COLORS.map(c => (
                   <button
                     key={c.name}
