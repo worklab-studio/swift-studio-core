@@ -265,6 +265,82 @@ function getScaleRule(productInfo: any): string {
   return "";
 }
 
+/* ── Apparel Pose Matrix: preset × shot label → unique pose ── */
+const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
+  classic: {
+    hero: "Standing front-facing, hands relaxed at sides, weight evenly distributed, confident direct gaze at camera. Full body visible, clean symmetrical posture.",
+    detail: "Close-up on collar/neckline area showing fabric texture and stitching detail. Model's chin slightly tilted up, only chest-to-chin visible.",
+    lifestyle: "Walking mid-stride, one foot forward, arms swinging naturally. Captured from 3/4 angle, slight motion blur in limbs, relaxed authentic expression.",
+    alternate: "Full back view, head turned slightly over left shoulder looking back at camera. Hands in pockets or relaxed at sides, showing garment's rear construction.",
+    editorial: "Leaning against a wall with arms crossed, weight on one hip, strong jawline visible. Low camera angle, confident body language.",
+    flat_lay: "Garment laid flat from directly above, neatly arranged with natural shape, paired with minimal accessories (watch, sunglasses, shoes nearby).",
+  },
+  minimalist: {
+    hero: "Still centered pose, arms down at sides, serene neutral expression, body perfectly straight. Ultra-clean framing with maximum negative space.",
+    detail: "Macro close-up of sleeve cuff or hem detail, showing fabric weave and finish. Tight crop, shallow depth of field.",
+    lifestyle: "Turning slowly, captured mid-rotation at 3/4 angle. Subtle movement, fabric gently shifting, calm composed expression looking slightly off-camera.",
+    alternate: "Clean side profile, arms relaxed, perfect posture. Silhouette-like framing showing garment's drape and line from the side.",
+    editorial: "Geometric angular pose — one arm bent at 90°, body creating clean lines. Architectural stance, minimal expression, art-gallery stillness.",
+    flat_lay: "Garment arranged in a precise minimal grid layout from above, folded cleanly with one accessory, lots of white space.",
+  },
+  luxury: {
+    hero: "One hand in pocket, slight lean, chin elevated with confident expression. Weight shifted to back foot, elegant casual stance. Shot from slightly below.",
+    detail: "Close-up on button/hardware detail, showing jewelry-like craftsmanship of closures, zippers, or embellishments. Macro precision.",
+    lifestyle: "Descending a staircase, one hand on railing, garment flowing with movement. Captured mid-step from below, regal and composed.",
+    alternate: "3/4 back view, fabric trailing slightly, head turned in profile. One hand adjusting collar or cuff. Showing garment's back drape.",
+    editorial: "Chin up power pose, direct intense gaze, body angled dramatically. Strong directional light creating deep chiaroscuro. Magazine cover energy.",
+    flat_lay: "Garment draped on dark velvet surface from above, with luxury accessories (leather goods, silk scarf, fine watch) artfully placed.",
+  },
+  'loud-luxury': {
+    hero: "Wide power stance, both hands visible, commanding presence. Chest forward, shoulders back, opulent and bold. Low camera angle emphasizing stature.",
+    detail: "Tight crop on brand logo, monogram detail, or signature hardware. Reflective surfaces catching dramatic light.",
+    lifestyle: "Stepping out of a luxury setting, mid-motion with purpose. Arms swinging, garment moving, captured in dynamic frozen frame.",
+    alternate: "Over-the-shoulder view with dramatic head turn, fabric draping over shoulder. Theatrical body positioning showing garment's structure.",
+    editorial: "Arms spread wide or hands on hips, wide stance, bold maximalist energy. Dutch angle camera, shadows and highlights exaggerated.",
+    flat_lay: "Garment displayed on marble surface from above with bold luxury props (gold accessories, crystals, ornate items), maximalist arrangement.",
+  },
+  magazine: {
+    hero: "Strong jawline forward, direct intense gaze, body at 3/4 angle. One shoulder slightly forward creating depth. Print-cover-ready composition.",
+    detail: "Extreme close-up of seam, stitch, or fabric texture. Shot like a fashion macro editorial — showing craftsmanship as art.",
+    lifestyle: "Wind in hair, garment caught mid-movement, striding with purpose. 3/4 angle, dynamic energy, editorial street-style feel.",
+    alternate: "Profile walk — captured from the side mid-step, looking straight ahead. Clean side view showing garment's full silhouette in motion.",
+    editorial: "Dutch angle with asymmetric lean, one arm extended, dramatic weight shift. Unconventional pose breaking symmetry intentionally.",
+    flat_lay: "Editorial scatter arrangement from above — garment with curated lifestyle props, magazine pages, flowers, artfully 'messy' but precise.",
+  },
+  'avant-garde': {
+    hero: "Sculptural body position — arms creating geometric shapes, body contorted artistically. Abstract fashion pose, defying conventional modeling.",
+    detail: "Extreme close-up of unexpected garment detail — inner lining, raw edge, deconstructed seam. Art-focused abstraction.",
+    lifestyle: "Frozen mid-leap or mid-spin, garment flying outward. Captured at peak movement, fabric as kinetic sculpture.",
+    alternate: "Upside-down or extreme overhead perspective, body creating abstract shapes. Garment seen from completely unexpected angle.",
+    editorial: "Body folded or twisted into angular geometric pose, limbs creating triangles and lines. Stark, bold, gallery-installation energy.",
+    flat_lay: "Garment arranged in abstract art composition from above — folded into sculptural shape, combined with unconventional objects.",
+  },
+  influencer: {
+    hero: "Casual hair toss, looking slightly off-camera with genuine smile. One hand adjusting garment naturally. Warm, approachable, aspirational.",
+    detail: "Close-up selfie-style crop of fabric detail or styling detail (how it's tucked, rolled, layered). Natural phone-camera feel.",
+    lifestyle: "Walking with coffee in hand, candid laughing moment. Full body in lifestyle environment, golden hour warmth, Instagram-ready.",
+    alternate: "Back to camera looking over shoulder with playful expression. Showing back of garment with casual body language.",
+    editorial: "Sitting casually — cross-legged on floor or perched on ledge. Relaxed but styled, natural hand placement, warm lighting.",
+    flat_lay: "OOTD-style flat lay from above — garment with shoes, bag, sunglasses, phone arranged as 'outfit of the day' grid.",
+  },
+  lifestyle: {
+    hero: "Natural standing pose in real-world setting, relaxed smile, arms at ease. Environmental portrait feel, approachable and relatable.",
+    detail: "Close-up of garment detail in context — sleeve while holding something, collar while looking to side. Natural and lived-in.",
+    lifestyle: "Sitting on a bench or leaning on counter, legs crossed casually. Natural body language, genuine expression, environmental storytelling.",
+    alternate: "Walking away from camera, 3/4 back view. Natural stride, garment moving with body, candid documentary feel.",
+    editorial: "Leaning in doorway or against railing, contemplative expression. Mixed natural light, environmental portrait with character.",
+    flat_lay: "Garment arranged naturally on bed or couch from above — 'just tossed' look with personal items (book, mug, plant).",
+  },
+  'plain-bg': {
+    hero: "Relaxed natural stance facing camera directly, hands at sides, confident but approachable expression. Full body visible, clean and centered.",
+    detail: "Close-up of fabric texture — weave, print detail, or material finish. Tight macro crop on the most interesting textile area.",
+    lifestyle: "Quarter turn with subtle weight shift to one hip, one hand touching garment naturally. Casual but intentional body language.",
+    alternate: "Full back view, head turned to look over shoulder. Arms relaxed or one hand adjusting collar. Complete rear silhouette visible.",
+    editorial: "Arms crossed confidently, weight on one leg, subtle lean. Direct gaze, strong but relaxed stance. Still on solid backdrop.",
+    flat_lay: "Garment laid flat on solid surface from above, neatly arranged showing full shape, minimal or no accessories.",
+  },
+};
+
 /* ── Application-area-aware posing for beauty model shoots ── */
 function getBeautyPosingDirective(application: string | undefined): string {
   if (!application) return "";
@@ -388,7 +464,7 @@ serve(async (req) => {
     }
     const userId = user.id;
 
-    const { projectId, preset, shotCount, additionalContext, category, shotType, modelConfig, stylePrompt, productImageUrl, aspectRatio, keepOriginalModel, productLabel, sceneTemplate, productInfo } = await req.json();
+    const { projectId, preset, shotCount, additionalContext, category, shotType, modelConfig, stylePrompt, productImageUrl, aspectRatio, keepOriginalModel, productLabel, sceneTemplate, productInfo, presetId } = await req.json();
 
     if (!projectId || !preset || !shotCount) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -548,6 +624,43 @@ serve(async (req) => {
         editorial: "Editorial shot — high-fashion dramatic pose with strong angles: a confident lean, crossed arms, or asymmetric weight shift. Shot from a low camera angle or slight Dutch tilt for drama. Strong directional lighting with deep shadows on one side. Asymmetric composition with intentional negative space. Magazine cover worthy, fashion-forward, artistic and bold. Completely different mood from the hero shot.",
         flat_lay: "Flat lay — top-down bird's eye view from directly above, product laid flat on a clean surface, styled arrangement with complementary props (accessories, fabrics, botanicals), organized grid or artful scatter composition. No model visible.",
       };
+
+      // ── Apparel model shoot: use pose matrix + background control ──
+      const isApparelModel = ["Apparel", "Fashion"].includes(category) && shotType === "model_shot";
+      const effectivePresetId = presetId || preset || "classic";
+
+      if (isApparelModel && modelConfig) {
+        const poseMatrix = APPAREL_POSE_MATRIX[effectivePresetId] || APPAREL_POSE_MATRIX["classic"];
+        const poseDirective = poseMatrix[label] || poseMatrix["hero"];
+
+        // Background control: plain-bg/ecommerce = solid color ONLY; others = Step 2 background only
+        const isPlainBg = effectivePresetId === "plain-bg";
+        let backgroundDirective: string;
+        if (isPlainBg) {
+          // Extract color from stylePrompt or modelConfig
+          const colorMatch = (stylePrompt || "").match(/solid\s+([\w\s]+?)\s+color/i);
+          const bgColor = colorMatch?.[1] || "white";
+          backgroundDirective = `BACKGROUND: Pure solid ${bgColor} background. No texture, no gradient, no environment, no props, no floor, no shadows on backdrop — completely clean flat ${bgColor} color filling the entire background.`;
+        } else {
+          const stepTwoBg = modelConfig.backgroundPrompt || modelConfig.background || "studio";
+          backgroundDirective = `BACKGROUND: ${stepTwoBg}. Show this environment from a different angle/perspective for each shot but do NOT change the setting itself.`;
+        }
+
+        const modelDesc = `The product is worn by a ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""} model with ${modelConfig.bodyType || "average"} build.`;
+        const outfitDirective = productInfo?.selectedOutfit ? ` OUTFIT: The model is wearing: ${productInfo.selectedOutfit}.` : "";
+        const garmentInfo = productInfo?.garmentType ? ` The garment is a ${productInfo.garmentType}.` : "";
+
+        return `APPAREL MODEL SHOOT — ${label.toUpperCase()} SHOT.
+POSE: ${poseDirective}
+${backgroundDirective}
+${modelDesc}${garmentInfo}${outfitDirective}
+Style: ${baseStyle}. Category: ${category}.
+${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}
+${ratioInstruction} Professional commercial ecommerce photography, high resolution, no text, no watermarks.
+IMPORTANT: Each of the 6 shots MUST have a distinctly different pose and body position. Never repeat the same pose across shots.`;
+      }
+
+      // ── Non-apparel model shots (beauty, etc.) ──
       const modelDesc = shotType === "model_shot" && modelConfig
         ? `The product is worn/held by a ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""} model with ${modelConfig.bodyType || "average"} build. Background: ${modelConfig.backgroundPrompt || modelConfig.background || "studio"}.`
         : "Product-only shot, no human model.";
