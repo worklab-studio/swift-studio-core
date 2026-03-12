@@ -1399,6 +1399,7 @@ const Studio = () => {
                     onUpload={handleProductImageUpload}
                     onRemove={handleRemoveProductImage}
                     imageViews={imageViews}
+                    onSetView={(url, view) => setImageViews(prev => ({ ...prev, [url]: view }))}
                   />
                 )}
                 {activeStep === 2 && (
