@@ -968,6 +968,12 @@ const Studio = () => {
             description: productInfo.description,
             productName: productInfo.productName,
             garmentType: productInfo.garmentType,
+            beautyApplication: beautyApplication || productInfo.beautyApplication || undefined,
+            beautySize: productSize || productInfo.beautySize || undefined,
+            fmcgSize: productSize || productInfo.fmcgSize || undefined,
+            fmcgPackaging: productInfo.fmcgPackaging || undefined,
+            fmcgSubType: productInfo.fmcgSubType || undefined,
+            selectedOutfit: selectedOutfit || undefined,
           } : undefined,
         },
       });
