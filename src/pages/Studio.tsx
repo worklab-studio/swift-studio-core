@@ -2279,7 +2279,7 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
                 onClick={() => { setSelectedPreset(p.id); setReferenceImage(null); }}
                 className={`rounded-lg overflow-hidden border text-left transition-all ${
                   selectedPreset === p.id ? 'ring-2 ring-primary ring-offset-1' : 'hover:border-primary/50'
-                }`}
+                } ${p.id === 'plain-bg' ? 'col-span-2' : ''}`}
               >
                 <div className="aspect-[4/3] overflow-hidden bg-muted">
                   <img src={p.img} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
