@@ -1609,6 +1609,13 @@ const Studio = () => {
                     selectedPreset={selectedPreset}
                     selectedPresetData={selectedPresetData}
                     referenceImage={referenceImage}
+                    productImages={productImages}
+                    shootType={shootType}
+                    modelConfig={modelConfig}
+                    selectedModelData={selectedModelData}
+                    modelImages={modelImages}
+                    selectedTemplate={selectedTemplate}
+                    activeTemplates={dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES}
                   />
                 )}
                 {activeStep === 4 && (
