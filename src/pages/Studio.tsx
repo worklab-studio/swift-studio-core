@@ -2949,12 +2949,14 @@ function Step1Viewport({ productImages, productInfo, setProductInfo, analyzingPr
               alt="Product main"
               className="max-h-[45vh] max-w-full rounded-2xl shadow-lg object-contain"
             />
-            {currentViewLabel && (
-              <Badge variant="secondary" className="absolute top-2 left-2 text-[10px] gap-1 bg-background/80 backdrop-blur-sm">
-                <Eye className="h-2.5 w-2.5" />
-                {VIEW_LABEL_DISPLAY[currentViewLabel] || currentViewLabel}
-              </Badge>
-            )}
+            <div className="absolute top-2 left-2">
+              <ViewTagPopover
+                url={productImages[currentDisplayIndex]}
+                currentView={currentViewLabel}
+                onSetView={onSetView}
+                size="sm"
+              />
+            </div>
             {removingBgIndex === currentDisplayIndex && (
               <div className="absolute inset-0 rounded-2xl bg-foreground/30 backdrop-blur-[2px] flex items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary-foreground" />
