@@ -1905,114 +1905,162 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
   const isProductWithTemplate = shootType === 'product' && !!selectedTemplate;
   const isPlainBgTemplate = selectedTemplate === 'pt-plain-bg';
   const templateData = isProductWithTemplate ? PRODUCT_SHOOT_TEMPLATES.find(t => t.id === selectedTemplate) : null;
+  // Show shots/ratio/direction when either a preset is selected OR product+template
+  const showGenerationConfig = !!selectedPreset || isProductWithTemplate;
+
   return (
     <div className="space-y-4">
-      <p className="text-sm font-semibold text-foreground">Style preset</p>
-      <div className="grid grid-cols-2 gap-2">
-        {STYLE_PRESETS.map(p => (
-          <button
-            key={p.id}
-            onClick={() => { setSelectedPreset(p.id); setReferenceImage(null); }}
-            className={`rounded-lg overflow-hidden border text-left transition-all ${
-              selectedPreset === p.id ? 'ring-2 ring-primary ring-offset-1' : 'hover:border-primary/50'
-            }`}
-          >
-            <div className="aspect-[4/3] overflow-hidden bg-muted">
-              <img src={p.img} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
-            </div>
-            <div className="p-1.5">
-              <p className="text-[11px] font-semibold">{p.name}</p>
-              <p className="text-[9px] text-muted-foreground leading-tight">{p.desc}</p>
-            </div>
-          </button>
-        ))}
-      </div>
+      {/* For product shoot with template: show template info, NO style presets */}
+      {isProductWithTemplate ? (
+        <>
+          <div>
+            <p className="text-sm font-semibold text-foreground">Scene Template</p>
+            <p className="text-xs text-muted-foreground mt-1">Configure your {templateData?.name} shot.</p>
+          </div>
+          <div className="rounded-lg border bg-muted/50 p-3">
+            <p className="text-xs font-semibold text-foreground">{templateData?.name}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{templateData?.description}</p>
+          </div>
 
-      {/* Plain Background color picker */}
-      {selectedPreset === 'plain-bg' && (
-        <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
-          <p className="text-xs font-medium">Background Color</p>
-          <div className="flex flex-wrap gap-2">
-            {PLAIN_BG_COLORS.map(c => (
+          {/* Plain Background color picker for pt-plain-bg template */}
+          {isPlainBgTemplate && (
+            <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+              <p className="text-xs font-medium">Background Color</p>
+              <div className="flex flex-wrap gap-2">
+                {PLAIN_BG_COLORS.map(c => (
+                  <button
+                    key={c.name}
+                    onClick={() => setPlainBgColor(c.name)}
+                    className={`flex flex-col items-center gap-1 group`}
+                    title={c.name}
+                  >
+                    <div
+                      className={`w-8 h-8 rounded-full transition-all ${
+                        plainBgColor === c.name ? 'ring-2 ring-primary ring-offset-2' : 'hover:ring-2 hover:ring-muted-foreground/30 hover:ring-offset-1'
+                      } ${c.border ? 'border border-border' : ''}`}
+                      style={{ backgroundColor: c.color }}
+                    />
+                    <span className={`text-[9px] ${plainBgColor === c.name ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                      {c.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          {/* Model shoot or no template: show style presets */}
+          <p className="text-sm font-semibold text-foreground">Style preset</p>
+          <div className="grid grid-cols-2 gap-2">
+            {STYLE_PRESETS.map(p => (
               <button
-                key={c.name}
-                onClick={() => setPlainBgColor(c.name)}
-                className={`flex flex-col items-center gap-1 group`}
-                title={c.name}
+                key={p.id}
+                onClick={() => { setSelectedPreset(p.id); setReferenceImage(null); }}
+                className={`rounded-lg overflow-hidden border text-left transition-all ${
+                  selectedPreset === p.id ? 'ring-2 ring-primary ring-offset-1' : 'hover:border-primary/50'
+                }`}
               >
-                <div
-                  className={`w-8 h-8 rounded-full transition-all ${
-                    plainBgColor === c.name ? 'ring-2 ring-primary ring-offset-2' : 'hover:ring-2 hover:ring-muted-foreground/30 hover:ring-offset-1'
-                  } ${c.border ? 'border border-border' : ''}`}
-                  style={{ backgroundColor: c.color }}
-                />
-                <span className={`text-[9px] ${plainBgColor === c.name ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                  {c.name}
-                </span>
+                <div className="aspect-[4/3] overflow-hidden bg-muted">
+                  <img src={p.img} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
+                </div>
+                <div className="p-1.5">
+                  <p className="text-[11px] font-semibold">{p.name}</p>
+                  <p className="text-[9px] text-muted-foreground leading-tight">{p.desc}</p>
+                </div>
               </button>
             ))}
           </div>
-        </div>
-      )}
 
-      {/* Reference upload */}
-      <input ref={referenceInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onReferenceUpload} />
-      {referenceImage ? (
-        <div className="relative rounded-lg overflow-hidden border">
-          <img src={referenceImage} alt="Reference" className="w-full aspect-[4/3] object-cover" />
-          <button
-            onClick={() => { setReferenceImage(null); if (selectedPreset === 'custom') setSelectedPreset(null); }}
-            className="absolute top-1 right-1 h-5 w-5 rounded-full bg-background/80 flex items-center justify-center"
-          >
-            <X className="h-3 w-3" />
-          </button>
-          <div className="p-1.5">
-            <p className="text-[11px] font-semibold">Custom Reference</p>
-            {analyzingStyle && (
-              <div className="flex items-center gap-1 mt-0.5">
-                <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                <p className="text-[10px] text-primary">Extracting style...</p>
+          {/* Plain Background color picker for plain-bg style preset */}
+          {selectedPreset === 'plain-bg' && (
+            <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+              <p className="text-xs font-medium">Background Color</p>
+              <div className="flex flex-wrap gap-2">
+                {PLAIN_BG_COLORS.map(c => (
+                  <button
+                    key={c.name}
+                    onClick={() => setPlainBgColor(c.name)}
+                    className={`flex flex-col items-center gap-1 group`}
+                    title={c.name}
+                  >
+                    <div
+                      className={`w-8 h-8 rounded-full transition-all ${
+                        plainBgColor === c.name ? 'ring-2 ring-primary ring-offset-2' : 'hover:ring-2 hover:ring-muted-foreground/30 hover:ring-offset-1'
+                      } ${c.border ? 'border border-border' : ''}`}
+                      style={{ backgroundColor: c.color }}
+                    />
+                    <span className={`text-[9px] ${plainBgColor === c.name ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                      {c.name}
+                    </span>
+                  </button>
+                ))}
               </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        <button
-          onClick={() => referenceInputRef.current?.click()}
-          className="w-full h-16 rounded-lg border-2 border-dashed border-border flex items-center justify-center gap-2 hover:border-primary/50 transition-colors"
-        >
-          <Upload className="h-4 w-4 text-muted-foreground" />
-          <p className="text-xs text-muted-foreground">Upload reference image</p>
-        </button>
-      )}
-
-      {/* Style settings badges */}
-      {styleSettings && (
-        <>
-          <Separator />
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-foreground flex items-center gap-1.5">
-              <Sparkles className="h-3 w-3 text-primary" />
-              Auto-detected settings
-            </p>
-            <div className="space-y-1.5">
-              {[
-                { label: 'Pose', value: styleSettings.pose, icon: '🎯' },
-                { label: 'Angle', value: styleSettings.angle, icon: '📐' },
-                { label: 'Lighting', value: styleSettings.lighting, icon: '💡' },
-                { label: 'Composition', value: styleSettings.composition, icon: '🖼' },
-              ].map(item => (
-                <div key={item.label} className="rounded-md border bg-muted/50 p-2">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{item.icon} {item.label}</p>
-                  <p className="text-[11px] text-foreground mt-0.5 leading-snug">{item.value}</p>
-                </div>
-              ))}
             </div>
-          </div>
+          )}
+
+          {/* Reference upload */}
+          <input ref={referenceInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onReferenceUpload} />
+          {referenceImage ? (
+            <div className="relative rounded-lg overflow-hidden border">
+              <img src={referenceImage} alt="Reference" className="w-full aspect-[4/3] object-cover" />
+              <button
+                onClick={() => { setReferenceImage(null); if (selectedPreset === 'custom') setSelectedPreset(null); }}
+                className="absolute top-1 right-1 h-5 w-5 rounded-full bg-background/80 flex items-center justify-center"
+              >
+                <X className="h-3 w-3" />
+              </button>
+              <div className="p-1.5">
+                <p className="text-[11px] font-semibold">Custom Reference</p>
+                {analyzingStyle && (
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                    <p className="text-[10px] text-primary">Extracting style...</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => referenceInputRef.current?.click()}
+              className="w-full h-16 rounded-lg border-2 border-dashed border-border flex items-center justify-center gap-2 hover:border-primary/50 transition-colors"
+            >
+              <Upload className="h-4 w-4 text-muted-foreground" />
+              <p className="text-xs text-muted-foreground">Upload reference image</p>
+            </button>
+          )}
+
+          {/* Style settings badges */}
+          {styleSettings && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                  <Sparkles className="h-3 w-3 text-primary" />
+                  Auto-detected settings
+                </p>
+                <div className="space-y-1.5">
+                  {[
+                    { label: 'Pose', value: styleSettings.pose, icon: '🎯' },
+                    { label: 'Angle', value: styleSettings.angle, icon: '📐' },
+                    { label: 'Lighting', value: styleSettings.lighting, icon: '💡' },
+                    { label: 'Composition', value: styleSettings.composition, icon: '🖼' },
+                  ].map(item => (
+                    <div key={item.label} className="rounded-md border bg-muted/50 p-2">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{item.icon} {item.label}</p>
+                      <p className="text-[11px] text-foreground mt-0.5 leading-snug">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </>
       )}
 
-      {selectedPreset && (
+      {/* Shots, ratio, direction — shown for both flows */}
+      {showGenerationConfig && (
         <>
           <Separator />
           {/* Shot count */}
@@ -2072,7 +2120,6 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
             />
             <p className="text-[10px] text-right text-muted-foreground">{additionalContext.length}/200</p>
           </div>
-
         </>
       )}
     </div>
