@@ -1655,7 +1655,7 @@ const BACKGROUND_SUGGESTIONS: Record<string, string> = {
 };
 
 /* ── Step 2 Config (Left) ── */
-function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload, selectedTemplate, setSelectedTemplate, templateCategory, setTemplateCategory, selectedModelData, modelImages, productInfo }: {
+function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload, selectedTemplate, setSelectedTemplate, templateCategory, setTemplateCategory, selectedModelData, modelImages, productInfo, activeTemplates, loadingTemplates }: {
   shootType: 'product' | 'model' | null;
   setShootType: React.Dispatch<React.SetStateAction<'product' | 'model' | null>>;
   modelConfig: ModelConfig;
@@ -1669,10 +1669,12 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
   selectedModelData: typeof PLACEHOLDER_MODELS[0] | undefined;
   modelImages: Record<string, string>;
   productInfo: ProductInfo | null;
+  activeTemplates: ProductTemplate[];
+  loadingTemplates: boolean;
 }) {
   const filteredTemplates = templateCategory === 'All'
-    ? PRODUCT_SHOOT_TEMPLATES
-    : PRODUCT_SHOOT_TEMPLATES.filter(t => t.category === templateCategory);
+    ? activeTemplates
+    : activeTemplates.filter(t => t.category === templateCategory);
 
   // Auto-fill gender/ethnicity/bodyType when a model is selected
   useEffect(() => {
