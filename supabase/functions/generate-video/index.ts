@@ -113,7 +113,7 @@ async function generateWithVeo(
 
   // Map aspect ratio from UI format (e.g. "9:16") to Veo format
   const veoAspectRatio = aspectRatio || "9:16";
-  const veoDuration = Math.min(duration, 8); // Veo max 8s
+  const veoDuration = 8; // Veo 3.1 only supports 8s for reference_to_video
   const veoResolution = resolution === "1080p" ? "1080p" : "720p";
   const modelId = "veo-3.1-generate-001";
 
