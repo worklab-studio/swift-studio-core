@@ -3035,13 +3035,11 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
         {loadingTemplates ? (
           <div className="grid grid-cols-4 gap-3 pb-4">
             {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="rounded-xl overflow-hidden border">
-                <Skeleton className="aspect-square w-full" />
-                <div className="p-2 space-y-1.5">
-                  <Skeleton className="h-3 w-3/4" />
-                  <Skeleton className="h-2 w-full" />
-                  <Skeleton className="h-2 w-2/3" />
-                </div>
+              <div key={i} className="rounded-xl border p-3 space-y-2">
+                <Skeleton className="h-3.5 w-3/4" />
+                <Skeleton className="h-2.5 w-full" />
+                <Skeleton className="h-2.5 w-2/3" />
+                <Skeleton className="h-4 w-16 mt-1 rounded-full" />
               </div>
             ))}
           </div>
