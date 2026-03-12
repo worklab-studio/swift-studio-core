@@ -619,6 +619,8 @@ const Studio = () => {
     setShootType(null);
     setSelectedTemplate(null);
     setTemplateCategory('All');
+    setDynamicTemplates([]);
+    setTemplatesCached(false);
     setModelConfig({ selectedModel: null, uploadedModelUrl: null, gender: '', ethnicity: '', bodyType: '', background: '', backgroundPrompt: '', aiEngine: 'gemini' });
     setStyleSettings(null);
     setStylePrompt('');
