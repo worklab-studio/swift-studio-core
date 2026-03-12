@@ -66,7 +66,7 @@ Product details: ${productContext}`;
             role: "user",
             content: [
               { type: "image_url", image_url: { url: imageUrl } },
-              { type: "text", text: "Analyze this product and generate 12 tailored scene templates for it. Make every template specifically relevant to this exact product." },
+              { type: "text", text: "Analyze this product and generate 20 tailored scene templates for it. Make every template specifically relevant to this exact product." },
             ],
           },
         ],
