@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import JSZip from 'jszip';
+import heic2any from 'heic2any';
 import apparelClassic from '@/assets/presets/Classic.png';
 import apparelMinimal from '@/assets/presets/Minimal.png';
 import apparelLuxury from '@/assets/presets/Luxury.png';
