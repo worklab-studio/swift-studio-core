@@ -528,6 +528,9 @@ serve(async (req) => {
           if (showcaseType === "jewellery") {
             return buildJewelleryShowcasePrompt(label, productDescription, sceneTemplate.description, productInfo, shotDesc);
           }
+          if (showcaseType === "fmcg") {
+            return buildFmcgShowcasePrompt(label, productDescription, sceneTemplate.description, productInfo, shotDesc);
+          }
         }
 
         // ── Default product shoot (non-showcase categories) ──
