@@ -1590,14 +1590,21 @@ const Studio = () => {
    ════════════════════════════════════════════════════════════════ */
 
 /* ── Step 1 Config (Left) ── */
-function Step1Config({ productImages, productUploadRef, onUpload, onRemove }: {
+function Step1Config({ productImages, productUploadRef, onUpload, onRemove, imageViews }: {
   productImages: string[];
   productUploadRef: React.RefObject<HTMLInputElement>;
   onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemove: (index: number) => void;
+  imageViews: Record<string, string>;
 }) {
   const TOTAL_SLOTS = 7;
   const slots = Array.from({ length: TOTAL_SLOTS }, (_, i) => productImages[i] ?? null);
+
+  const VIEW_LABEL_SHORT: Record<string, string> = {
+    'front': 'Front', 'back': 'Back', 'left-side': 'Left', 'right-side': 'Right',
+    'detail-closeup': 'Detail', 'top': 'Top', 'bottom': 'Bottom',
+    '3/4-front': '¾ F', '3/4-back': '¾ B', 'flat-lay': 'Flat',
+  };
 
   return (
     <div className="space-y-4">
