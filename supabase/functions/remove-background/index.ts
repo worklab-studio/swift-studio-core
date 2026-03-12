@@ -21,7 +21,7 @@ serve(async (req) => {
       });
     }
 
-    const { image, projectId } = await req.json();
+    const { image, projectId, category } = await req.json();
     if (!image) {
       return new Response(JSON.stringify({ error: "No image provided" }), {
         status: 400,
