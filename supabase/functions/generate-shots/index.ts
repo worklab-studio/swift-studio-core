@@ -611,7 +611,8 @@ serve(async (req) => {
 
         // ── Default product shoot (non-showcase categories) ──
         const apparelDirective = isApparel ? ` GARMENT SHAPE: ${apparelShotShapes[label] || apparelShotShapes.hero}` : "";
-        return `${MASTERPIECE_BOOSTER} PRODUCT STYLE: ${categoryModifier}${apparelDirective} ${shotDesc} SCENE DIRECTION: ${sceneTemplate.description}. Product category: ${category}. Product-only shot, absolutely no human model in the image. ${consistencyInstruction}${additionalContext ? ` Additional creative direction: ${additionalContext}` : ""}. ${ratioInstruction} No text, no watermarks, no logos.`;
+        const productViewDirective = isApparel ? ` ${getViewDirective(label, selectReferenceImage(label))}` : "";
+        return `${MASTERPIECE_BOOSTER} PRODUCT STYLE: ${categoryModifier}${apparelDirective}${productViewDirective} ${shotDesc} SCENE DIRECTION: ${sceneTemplate.description}. Product category: ${category}. Product-only shot, absolutely no human model in the image. ${consistencyInstruction}${additionalContext ? ` Additional creative direction: ${additionalContext}` : ""}. ${ratioInstruction} No text, no watermarks, no logos.`;
       }
 
       // Original flow for model shots and non-template shoots
@@ -650,8 +651,11 @@ serve(async (req) => {
         const outfitDirective = productInfo?.selectedOutfit ? ` OUTFIT: The model is wearing: ${productInfo.selectedOutfit}.` : "";
         const garmentInfo = productInfo?.garmentType ? ` The garment is a ${productInfo.garmentType}.` : "";
 
+        // Inject view directive for angle-aware reference
+        const apparelViewDirective = getViewDirective(label, selectReferenceImage(label));
+
         return `APPAREL MODEL SHOOT — ${label.toUpperCase()} SHOT.
-POSE: ${poseDirective}
+${apparelViewDirective ? `${apparelViewDirective}\n` : ""}POSE: ${poseDirective}
 ${backgroundDirective}
 ${modelDesc}${garmentInfo}${outfitDirective}
 Style: ${baseStyle}. Category: ${category}.
@@ -697,6 +701,50 @@ IMPORTANT: Each of the 6 shots MUST have a distinctly different pose and body po
       return productImageUrl; // fallback to primary
     }
 
+    // ── View directive helper for angle-aware prompts ──
+    function getViewDirective(label: string, ref: string | null): string {
+      if (!ref || !imageViews) return "";
+      const viewLabel = imageViews[ref];
+      if (!viewLabel) return "";
+
+      const viewDirectives: Record<string, Record<string, string>> = {
+        hero: {
+          front: "REFERENCE IMAGE ANGLE: The provided reference photo shows the FRONT of the garment. The model should face the camera wearing this exact garment, preserving all front-facing details, logos, prints, and construction.",
+          "3/4-front": "REFERENCE IMAGE ANGLE: The provided reference photo shows a 3/4-FRONT angle. Generate the shot preserving these exact details visible in the reference.",
+        },
+        alternate: {
+          back: "REFERENCE IMAGE ANGLE: The provided reference photo shows the BACK of the garment. Show the model from behind, preserving all back-panel details, stitching, labels, seams, and construction visible in this reference.",
+          "3/4-back": "REFERENCE IMAGE ANGLE: The provided reference photo shows a 3/4-BACK angle. Generate the back/side view preserving all details from this reference.",
+        },
+        detail: {
+          "detail-closeup": "REFERENCE IMAGE ANGLE: The provided reference shows a CLOSE-UP DETAIL. Preserve these exact texture, fabric weave, stitching, and construction details in the close-up shot.",
+          front: "REFERENCE IMAGE ANGLE: The provided reference shows the FRONT. Focus on fine details, texture, and craftsmanship visible from this angle.",
+        },
+        lifestyle: {
+          "3/4-front": "REFERENCE IMAGE ANGLE: The reference shows a 3/4-FRONT angle. Use this perspective to maintain garment accuracy in the lifestyle context.",
+          front: "REFERENCE IMAGE ANGLE: The reference shows the FRONT of the garment. Maintain all front-facing details in the lifestyle scene.",
+        },
+        editorial: {
+          "left-side": "REFERENCE IMAGE ANGLE: The reference shows the LEFT SIDE of the garment. Maintain side-profile details and construction in the editorial composition.",
+          "right-side": "REFERENCE IMAGE ANGLE: The reference shows the RIGHT SIDE. Maintain side-profile details and construction in the editorial composition.",
+          "3/4-front": "REFERENCE IMAGE ANGLE: The reference shows a 3/4-FRONT angle. Use this perspective for the editorial shot.",
+        },
+        flat_lay: {
+          "flat-lay": "REFERENCE IMAGE ANGLE: The reference is a FLAT-LAY. Maintain exact garment proportions, colors, and details in the top-down arrangement.",
+          top: "REFERENCE IMAGE ANGLE: The reference shows a TOP-DOWN view. Use this perspective for the flat lay.",
+          front: "REFERENCE IMAGE ANGLE: The reference shows the FRONT. Arrange the garment flat while preserving all front-facing details.",
+        },
+      };
+
+      const shotDirectives = viewDirectives[label];
+      if (shotDirectives && shotDirectives[viewLabel]) {
+        return shotDirectives[viewLabel];
+      }
+
+      // Generic fallback
+      return `REFERENCE IMAGE ANGLE: The provided reference photo shows the ${viewLabel.toUpperCase().replace("-", " ")} of the garment. Preserve all details visible from this angle.`;
+    }
+
     // Generate images in parallel batches
     const insertedAssets: any[] = [];
 
@@ -705,8 +753,8 @@ IMPORTANT: Each of the 6 shots MUST have a distinctly different pose and body po
       const primaryRef = selectReferenceImage(label);
       const messageContent: any[] = [{ type: "text", text: prompt }];
       
-      // Add view context to prompt if we have multi-image refs
-      if (allProductImages && imageViews && primaryRef && primaryRef !== productImageUrl) {
+      // Add view context to prompt if we have multi-image refs (always inject when views data exists)
+      if (allProductImages && imageViews && primaryRef) {
         const viewLabel = imageViews[primaryRef];
         if (viewLabel) {
           messageContent[0] = { type: "text", text: `${prompt}\n\nREFERENCE IMAGE VIEW: This reference shows the product from the ${viewLabel} angle. Maintain exact product details, colors, textures, and branding from this reference.` };
