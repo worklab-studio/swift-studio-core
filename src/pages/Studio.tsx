@@ -681,7 +681,7 @@ const Studio = () => {
       });
 
       const { data, error } = await supabase.functions.invoke('remove-background', {
-        body: { image: base64, projectId: id },
+        body: { image: base64, projectId: id, category: productInfo?.category },
       });
 
       if (error || !data?.url) {
