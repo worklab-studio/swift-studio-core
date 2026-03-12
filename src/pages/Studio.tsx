@@ -87,6 +87,13 @@ interface ProductInfo {
   hasModel: boolean;
   hasWhiteBackground: boolean;
   modelNote: string | null;
+  beautyApplication: string | null;
+  beautySize: string | null;
+  fmcgSize: string | null;
+  fmcgPackaging: string | null;
+  fmcgSubType: string | null;
+  suggestedModelShootBackgrounds: string[];
+  suggestedShowcaseBackgrounds: string[];
 }
 
 interface GeneratedVideo {
@@ -420,6 +427,11 @@ const Studio = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [templateCategory, setTemplateCategory] = useState<string>('All');
 
+  // Category-specific settings (Beauty & FMCG)
+  const [beautyApplication, setBeautyApplication] = useState<string>('');
+  const [productSize, setProductSize] = useState<string>('');
+  const [selectedOutfit, setSelectedOutfit] = useState<string>('');
+
   // Dynamic AI-generated templates
   const [dynamicTemplates, setDynamicTemplates] = useState<ProductTemplate[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
@@ -494,6 +506,20 @@ const Studio = () => {
       fetchDynamicTemplates();
     }
   }, [shootType, productInfo, templatesCached]);
+
+  // Auto-populate beauty/FMCG fields from productInfo
+  useEffect(() => {
+    if (!productInfo) return;
+    if (productInfo.beautyApplication && !beautyApplication) {
+      setBeautyApplication(productInfo.beautyApplication);
+    }
+    if (productInfo.beautySize && !productSize) {
+      setProductSize(productInfo.beautySize);
+    }
+    if (productInfo.fmcgSize && !productSize) {
+      setProductSize(productInfo.fmcgSize);
+    }
+  }, [productInfo]);
 
   /* ── Generate all model portraits (skip existing) ── */
   const handleGeneratePortraits = useCallback(async () => {
@@ -641,6 +667,9 @@ const Studio = () => {
     setVideoGenerating(false);
     setVideoStage('');
     setGeneratedVideo(null);
+    setBeautyApplication('');
+    setProductSize('');
+    setSelectedOutfit('');
     toast({ title: 'Workspace reset', description: 'Ready for a new product shoot.' });
   }, []);
 
@@ -939,6 +968,12 @@ const Studio = () => {
             description: productInfo.description,
             productName: productInfo.productName,
             garmentType: productInfo.garmentType,
+            beautyApplication: beautyApplication || productInfo.beautyApplication || undefined,
+            beautySize: productSize || productInfo.beautySize || undefined,
+            fmcgSize: productSize || productInfo.fmcgSize || undefined,
+            fmcgPackaging: productInfo.fmcgPackaging || undefined,
+            fmcgSubType: productInfo.fmcgSubType || undefined,
+            selectedOutfit: selectedOutfit || undefined,
           } : undefined,
         },
       });
@@ -1232,6 +1267,12 @@ const Studio = () => {
                     productInfo={productInfo}
                     activeTemplates={dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES}
                     loadingTemplates={loadingTemplates}
+                    beautyApplication={beautyApplication}
+                    setBeautyApplication={setBeautyApplication}
+                    productSize={productSize}
+                    setProductSize={setProductSize}
+                    selectedOutfit={selectedOutfit}
+                    setSelectedOutfit={setSelectedOutfit}
                   />
                 )}
                 {activeStep === 3 && (
@@ -1629,6 +1670,34 @@ const BACKGROUND_PROMPTS: Record<string, (info?: ProductInfo | null) => string> 
 function buildBackgroundPrompt(backgroundKey: string, productInfo?: ProductInfo | null): string {
   const builder = BACKGROUND_PROMPTS[backgroundKey];
   if (builder) return builder(productInfo);
+
+  // AI-suggested model shoot backgrounds
+  if (backgroundKey.startsWith('ai-model-bg-') && productInfo?.suggestedModelShootBackgrounds) {
+    const idx = parseInt(backgroundKey.replace('ai-model-bg-', ''), 10);
+    const bg = productInfo.suggestedModelShootBackgrounds[idx];
+    if (bg) return `${bg}, professional product photography${productInfo ? ` for ${productInfo.category}` : ''}`;
+  }
+
+  // Beauty application-specific backgrounds
+  if (backgroundKey.startsWith('beauty-bg-')) {
+    const parts = backgroundKey.replace('beauty-bg-', '').split('-');
+    const idx = parseInt(parts.pop() || '0', 10);
+    const area = parts.join('-');
+    const bgs = MODEL_SHOOT_BEAUTY_BACKGROUNDS[area];
+    if (bgs?.[idx]) return `${bgs[idx]}, professional beauty photography${productInfo ? ` for ${productInfo.category} ${area} product` : ''}`;
+  }
+
+  // FMCG backgrounds
+  if (backgroundKey.startsWith('fmcg-bg-')) {
+    const match = backgroundKey.match(/^fmcg-bg-(.+)-(\d+)$/);
+    if (match) {
+      const group = match[1];
+      const idx = parseInt(match[2], 10);
+      const bgs = FMCG_MODEL_SHOOT_BACKGROUNDS[group];
+      if (bgs?.[idx]) return `${bgs[idx]}, professional FMCG product photography`;
+    }
+  }
+
   // Fallback for unknown keys
   return `${backgroundKey.replace(/-/g, ' ')} background, professional product photography${productInfo ? ` for ${productInfo.category}` : ''}`;
 }
@@ -1657,8 +1726,74 @@ const BACKGROUND_SUGGESTIONS: Record<string, string> = {
   'Fitness': 'urban-rooftop',
 };
 
-/* ── Step 2 Config (Left) ── */
-function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload, selectedTemplate, setSelectedTemplate, templateCategory, setTemplateCategory, selectedModelData, modelImages, productInfo, activeTemplates, loadingTemplates }: {
+/* ── Beauty: Application-area-specific model shoot backgrounds ── */
+const MODEL_SHOOT_BEAUTY_BACKGROUNDS: Record<string, string[]> = {
+  hair: ['Bright modern bathroom with large mirror and soft daylight', 'Luxury hair salon with warm pendant lighting', 'Spa treatment room with bamboo accents and steam', 'Sun-drenched balcony with flowing white curtains', 'Minimalist white bathroom with monstera plant'],
+  face: ['Clean skincare clinic with soft diffused lighting', 'Bright bathroom vanity with ring light glow', 'Morning bedroom with golden window light on skin', 'Spa facial room with calming blue-green tones', 'Modern apartment with floor-to-ceiling windows'],
+  lips: ['Glamorous dressing room with Hollywood mirror lights', 'Candlelit evening lounge with deep velvet tones', 'Fashion backstage with dramatic directional lighting', 'Rooftop cocktail bar at golden hour', 'Minimalist studio with a single warm spotlight'],
+  eyes: ['Soft-focus morning bedroom with pastel curtains', 'Elegant vanity table with ornate mirror', 'Fashion editorial studio with cool-toned lighting', 'Airy greenhouse with dappled botanical light', 'Luxurious powder room with marble surfaces'],
+  body: ['Tropical spa with open-air bamboo pavilion', 'Scandinavian bathroom with freestanding tub and candles', 'Beach cabana with sheer white drapes and ocean breeze', 'Yoga studio with warm wood floors and soft backlighting', 'Resort poolside with turquoise water reflections'],
+  fragrance: ['Luxury bedroom with silk sheets and candlelight', 'Evening cocktail terrace with city skyline bokeh', 'Parisian balcony at dusk with wrought iron railings', 'Opulent dressing room with crystal decanters', 'Moonlit garden with jasmine and warm lantern glow'],
+  nails: ['Chic nail salon with pastel decor and soft lighting', 'Bright café table with floral arrangement', 'Fashion-forward studio with bold colored backdrop', 'Poolside lounge with tropical leaves', 'Elegant brunch setting with champagne and florals'],
+};
+
+/* ── Beauty: Showcase backgrounds ── */
+const SHOWCASE_MYSTIC_BACKGROUNDS = [
+  'Lush moss-covered rocks in enchanted forest with dew drops and golden dappled light',
+  'Crystal cave with amethyst formations reflecting prismatic light',
+  'Zen temple courtyard with still water reflection and cherry blossoms',
+  'Volcanic black sand with wisps of steam and warm amber backlighting',
+  'Ancient stone steps in misty bamboo grove with firefly-like particles',
+  'Aurora borealis sky reflected on a still alpine lake surface',
+  'Sacred garden with floating lotus flowers and ethereal morning mist',
+];
+
+const SHOWCASE_SIMPLE_BACKGROUNDS = [
+  'Polished wood slab with neutral linen backdrop',
+  'White marble surface with soft gradient background',
+  'Terrazzo pedestal with clean studio lighting',
+  'Frosted glass shelf with diffused backlight',
+  'Raw concrete surface with minimal styling and side light',
+];
+
+/* ── FMCG: Model shoot backgrounds ── */
+const FMCG_MODEL_SHOOT_BACKGROUNDS: Record<string, string[]> = {
+  'Kitchen / Home': ['Bright modern kitchen counter with morning sunlight streaming in', 'Cozy breakfast table with family-friendly warmth', 'Organized pantry shelf with warm ambient lighting', 'Farmhouse kitchen with rustic wood surfaces and herbs'],
+  'Outdoor / Lifestyle': ['Sunny picnic blanket in a lush green park', 'Beach cooler setup with ocean waves in background', 'Camping scene with fire pit and mountain backdrop', 'Farmer\'s market stall with fresh produce and bunting'],
+  'Studio / Commercial': ['Clean white studio with product-forward commercial lighting', 'Bright colored pop-art backdrop for bold packaging', 'Grocery aisle perspective with shallow depth of field', 'Modern minimalist counter with geometric props'],
+};
+
+/* ── FMCG: Showcase backgrounds ── */
+const FMCG_SHOWCASE_BACKGROUNDS: Record<string, string[]> = {
+  'Clean / Minimal': ['White marble surface with soft overhead lighting', 'Light wood tabletop with clean neutral backdrop', 'Frosted glass platform with even diffused light', 'Pure white seamless background with soft drop shadow'],
+  'Styled / Contextual': ['Rustic wooden table with scattered raw ingredients nearby', 'Breakfast spread scene with complementary food items', 'Kitchen marble counter with fresh herbs and cutting board', 'Picnic basket setting with natural outdoor light'],
+  'Premium / Editorial': ['Black slate with dramatic side lighting and condensation droplets', 'Dark wood surface with single spotlight from above', 'Brushed copper tray with moody chiaroscuro lighting', 'Textured concrete with bold color accent lighting'],
+};
+
+/* ── Skincare: Outfit options by gender + application area ── */
+const SKINCARE_OUTFIT_OPTIONS: Record<string, Record<string, string[]>> = {
+  Female: {
+    hair: ['White towel wrap with hair exposed flowing down', 'Silk bathrobe, hair down in natural waves', 'Off-shoulder cotton top showing neck and shoulders', 'Spa headband with strapless tube top'],
+    face: ['White spa robe, dewy clean skin', 'Simple cotton tank top, minimal makeup', 'Off-shoulder knit sweater, natural glow', 'Strapless towel wrap, fresh-faced'],
+    lips: ['Elegant evening gown, bold lip', 'Silk slip dress with delicate jewelry', 'Classic black turtleneck, statement lip color', 'Sheer blouse with subtle glam styling'],
+    eyes: ['Soft cashmere sweater, natural eye look', 'White button-down shirt, editorial styling', 'Cozy knit cardigan, morning skincare routine look', 'Minimalist silk top, clean beauty aesthetic'],
+    body: ['White fluffy bathrobe, spa setting', 'Linen wrap dress, beachy relaxed vibe', 'Athletic crop top and leggings, post-workout', 'Simple cotton sundress, natural lifestyle'],
+    fragrance: ['Elegant evening gown, sophisticated styling', 'Silk slip dress with lace details', 'Tailored blazer with nothing underneath, editorial', 'Sheer flowing maxi dress, ethereal mood'],
+    nails: ['Casual chic outfit with hands prominently visible', 'Elegant bracelet-stacked wrists, manicured hands', 'White cotton top, hands resting artfully', 'Minimalist outfit, focus on hand positioning'],
+  },
+  Male: {
+    hair: ['White crew-neck t-shirt, damp styled hair', 'Open terry cloth robe, grooming routine', 'Fitted henley shirt, natural hair texture', 'Athletic tank top, post-shower look'],
+    face: ['White crew-neck t-shirt, clean-shaven or groomed beard', 'Open collar linen shirt, natural skin', 'Classic navy polo, fresh-faced', 'Henley with rolled sleeves, morning routine'],
+    lips: ['Smart casual button-down shirt', 'Minimal black t-shirt, editorial mood', 'Crisp white shirt, groomed appearance', 'Casual sweater, natural look'],
+    eyes: ['Classic crewneck sweater, editorial', 'White t-shirt, focused eye area', 'Casual oxford shirt, clean look', 'Minimalist athletic top, fresh morning'],
+    body: ['Athletic shorts, shirtless, post-workout', 'Open bathrobe, spa aesthetic', 'Swim trunks, beach/pool context', 'Comfortable lounge pants, relaxed home setting'],
+    fragrance: ['Tailored dark suit, sophisticated', 'Open white linen shirt, Mediterranean vibe', 'Leather jacket, evening editorial', 'Classic tuxedo, black-tie elegance'],
+    nails: ['Smart casual with visible hands, groomed nails', 'Relaxed shirt with hands resting on surface', 'Business casual with attention to groomed hands', 'Casual outfit with natural hand positioning'],
+  },
+};
+
+
+function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload, selectedTemplate, setSelectedTemplate, templateCategory, setTemplateCategory, selectedModelData, modelImages, productInfo, activeTemplates, loadingTemplates, beautyApplication, setBeautyApplication, productSize, setProductSize, selectedOutfit, setSelectedOutfit }: {
   shootType: 'product' | 'model' | null;
   setShootType: React.Dispatch<React.SetStateAction<'product' | 'model' | null>>;
   modelConfig: ModelConfig;
@@ -1674,6 +1809,12 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
   productInfo: ProductInfo | null;
   activeTemplates: ProductTemplate[];
   loadingTemplates: boolean;
+  beautyApplication: string;
+  setBeautyApplication: (v: string) => void;
+  productSize: string;
+  setProductSize: (v: string) => void;
+  selectedOutfit: string;
+  setSelectedOutfit: (v: string) => void;
 }) {
   const filteredTemplates = templateCategory === 'All'
     ? activeTemplates
@@ -1886,11 +2027,107 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                 </SelectContent>
               </Select>
             </div>
+
+            {/* ── Beauty: Application Area ── */}
+            {productInfo && ['Skincare', 'Beauty'].includes(productInfo.category) && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Application Area</label>
+                <Select value={beautyApplication} onValueChange={setBeautyApplication}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Auto-detected" /></SelectTrigger>
+                  <SelectContent>
+                    {['face', 'hair', 'lips', 'eyes', 'body', 'nails', 'fragrance'].map(a => (
+                      <SelectItem key={a} value={a}>{a.charAt(0).toUpperCase() + a.slice(1)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {productInfo.beautyApplication && (
+                  <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                    <Sparkles className="h-2.5 w-2.5" /> AI detected: {productInfo.beautyApplication}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* ── Product Size (Beauty or FMCG) ── */}
+            {productInfo && ['Skincare', 'Beauty'].includes(productInfo.category) && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Product Size</label>
+                <Select value={productSize} onValueChange={setProductSize}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Auto-detected" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mini">Mini — lip balm, sample vial</SelectItem>
+                    <SelectItem value="standard">Standard — serum bottle, lipstick</SelectItem>
+                    <SelectItem value="large">Large — pump bottle, family-size</SelectItem>
+                    <SelectItem value="extra-large">Extra Large — salon-size</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {productInfo?.category === 'FMCG' && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Product Size</label>
+                <Select value={productSize} onValueChange={setProductSize}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Auto-detected" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="small">Small — sachet, candy bar</SelectItem>
+                    <SelectItem value="medium">Medium — standard bottle, cereal box</SelectItem>
+                    <SelectItem value="large">Large — family-size bottle, 2L+</SelectItem>
+                    <SelectItem value="extra-large">Extra Large — bulk pack, 5kg+</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* ── Outfit (Beauty/Skincare model shoot) ── */}
+            {productInfo && ['Skincare', 'Beauty'].includes(productInfo.category) && modelConfig.gender && beautyApplication && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Outfit</label>
+                <Select value={selectedOutfit} onValueChange={setSelectedOutfit}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select outfit" /></SelectTrigger>
+                  <SelectContent>
+                    {(SKINCARE_OUTFIT_OPTIONS[modelConfig.gender]?.[beautyApplication] || []).map((outfit, i) => (
+                      <SelectItem key={i} value={outfit}>{outfit}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* ── Background ── */}
             <div className="space-y-1">
               <label className="text-xs font-medium">Background</label>
               <Select value={modelConfig.background} onValueChange={v => setModelConfig(prev => ({ ...prev, background: v }))}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
+                  {/* AI-Suggested backgrounds (Layer 1) */}
+                  {productInfo?.suggestedModelShootBackgrounds && productInfo.suggestedModelShootBackgrounds.length > 0 && (
+                    <SelectGroup>
+                      <SelectLabel className="flex items-center gap-1"><Sparkles className="h-3 w-3" /> AI Suggested</SelectLabel>
+                      {productInfo.suggestedModelShootBackgrounds.map((bg, i) => (
+                        <SelectItem key={`ai-bg-${i}`} value={`ai-model-bg-${i}`}>{bg.length > 50 ? bg.substring(0, 50) + '…' : bg}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
+
+                  {/* Category-specific backgrounds (Layer 2) */}
+                  {productInfo && ['Skincare', 'Beauty'].includes(productInfo.category) && beautyApplication && MODEL_SHOOT_BEAUTY_BACKGROUNDS[beautyApplication] && (
+                    <SelectGroup>
+                      <SelectLabel>{beautyApplication.charAt(0).toUpperCase() + beautyApplication.slice(1)} Settings</SelectLabel>
+                      {MODEL_SHOOT_BEAUTY_BACKGROUNDS[beautyApplication].map((bg, i) => (
+                        <SelectItem key={`beauty-bg-${i}`} value={`beauty-bg-${beautyApplication}-${i}`}>{bg.length > 50 ? bg.substring(0, 50) + '…' : bg}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
+                  {productInfo?.category === 'FMCG' && Object.entries(FMCG_MODEL_SHOOT_BACKGROUNDS).map(([group, bgs]) => (
+                    <SelectGroup key={group}>
+                      <SelectLabel>{group}</SelectLabel>
+                      {bgs.map((bg, i) => (
+                        <SelectItem key={`fmcg-bg-${group}-${i}`} value={`fmcg-bg-${group}-${i}`}>{bg.length > 50 ? bg.substring(0, 50) + '…' : bg}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  ))}
+
+                  {/* Generic backgrounds (Layer 3) */}
                   <SelectGroup>
                     <SelectLabel>Studio</SelectLabel>
                     <SelectItem value="white-sweep">White sweep</SelectItem>
