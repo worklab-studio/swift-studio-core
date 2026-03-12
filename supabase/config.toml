@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.remove-background]
 verify_jwt = false
+
+[functions.detect-views]
+verify_jwt = false
