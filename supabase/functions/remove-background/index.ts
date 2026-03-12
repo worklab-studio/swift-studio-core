@@ -21,7 +21,7 @@ serve(async (req) => {
       });
     }
 
-    const { image, projectId } = await req.json();
+    const { image, projectId, category } = await req.json();
     if (!image) {
       return new Response(JSON.stringify({ error: "No image provided" }), {
         status: 400,
@@ -36,14 +36,16 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-pro-image-preview",
+        model: "google/gemini-3.1-flash-image-preview",
         messages: [
           {
             role: "user",
             content: [
               {
                 type: "text",
-                text: "Remove the background and any human model from this product photo. Return ONLY the product isolated on a pure clean white background. Keep the product exactly as it appears — same colors, details, proportions. No text, no watermarks.",
+                text: category?.toLowerCase() === "apparel"
+                  ? "Extract only the clothing/garment from the human model in this image. Remove the person entirely — show the garment as if laid flat or on an invisible mannequin, on a pure white background. Preserve all fabric details, textures, colors, patterns, and proportions exactly. No text, no watermarks."
+                  : "Remove the background and any human model from this product photo. Return ONLY the product isolated on a pure clean white background. Keep the product exactly as it appears — same colors, details, proportions. No text, no watermarks.",
               },
               {
                 type: "image_url",
