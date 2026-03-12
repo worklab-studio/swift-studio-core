@@ -552,7 +552,16 @@ serve(async (req) => {
         ? `The product is worn/held by a ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""} model with ${modelConfig.bodyType || "average"} build. Background: ${modelConfig.backgroundPrompt || modelConfig.background || "studio"}.`
         : "Product-only shot, no human model.";
 
-      return `${shotTypeDesc[label] || label}. ${baseStyle}. Category: ${category}. ${modelDesc} ${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}. ${ratioInstruction} Professional commercial photography, high resolution, no text, no watermarks.`;
+      // Beauty-specific posing and outfit for model shoots
+      const beautyPosing = shotType === "model_shot" && productInfo?.beautyApplication
+        ? ` ${getBeautyPosingDirective(productInfo.beautyApplication)}`
+        : "";
+      const outfitDirective = shotType === "model_shot" && productInfo?.selectedOutfit
+        ? ` OUTFIT: The model is wearing: ${productInfo.selectedOutfit}.`
+        : "";
+      const scaleDirective = shotType === "model_shot" ? ` ${getScaleRule(productInfo)}` : "";
+
+      return `${shotTypeDesc[label] || label}. ${baseStyle}. Category: ${category}. ${modelDesc}${beautyPosing}${outfitDirective}${scaleDirective} ${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}. ${ratioInstruction} Professional commercial photography, high resolution, no text, no watermarks.`;
     });
 
     // Generate images in parallel batches
