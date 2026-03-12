@@ -2604,9 +2604,10 @@ function Step5Config({ shots, exportFormat, setExportFormat, selectedShots, setS
    ════════════════════════════════════════════════════════════════ */
 
 /* ── Step 1 Viewport ── */
-function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisPhase, productName, setProductName, modelChoice, removingBackground, removingBgIndex, onRemoveBackground, onKeepModel, imageViews, detectingViews }: { 
+function Step1Viewport({ productImages, productInfo, setProductInfo, analyzingProduct, analysisPhase, productName, setProductName, modelChoice, removingBackground, removingBgIndex, onRemoveBackground, onKeepModel, imageViews, detectingViews }: { 
   productImages: string[]; 
   productInfo: ProductInfo | null;
+  setProductInfo: React.Dispatch<React.SetStateAction<ProductInfo | null>>;
   analyzingProduct: boolean;
   analysisPhase: 'idle' | 'analyzing' | 'done';
   productName: string;
@@ -2628,6 +2629,11 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
   ];
   const [cycleIndex, setCycleIndex] = useState(0);
   const [selectedThumbIndex, setSelectedThumbIndex] = useState<number | null>(null);
+  const [editingCategory, setEditingCategory] = useState(false);
+  const [editCategoryVal, setEditCategoryVal] = useState('');
+  const [editGarmentVal, setEditGarmentVal] = useState('');
+  const [editingOutfit, setEditingOutfit] = useState(false);
+  const [editOutfitVal, setEditOutfitVal] = useState('');
 
   useEffect(() => {
     if (analysisPhase !== 'analyzing') return;
