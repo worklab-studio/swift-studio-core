@@ -1938,7 +1938,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
 
   // Auto-compute detailed background prompt whenever background or productInfo changes
   useEffect(() => {
-    if (!modelConfig.background) return;
+    if (!modelConfig.background || modelConfig.background === 'custom') return;
     const prompt = buildBackgroundPrompt(modelConfig.background, productInfo);
     setModelConfig(prev => prev.backgroundPrompt === prompt ? prev : ({ ...prev, backgroundPrompt: prompt }));
   }, [modelConfig.background, productInfo]);
