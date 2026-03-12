@@ -753,8 +753,8 @@ IMPORTANT: Each of the 6 shots MUST have a distinctly different pose and body po
       const primaryRef = selectReferenceImage(label);
       const messageContent: any[] = [{ type: "text", text: prompt }];
       
-      // Add view context to prompt if we have multi-image refs
-      if (allProductImages && imageViews && primaryRef && primaryRef !== productImageUrl) {
+      // Add view context to prompt if we have multi-image refs (always inject when views data exists)
+      if (allProductImages && imageViews && primaryRef) {
         const viewLabel = imageViews[primaryRef];
         if (viewLabel) {
           messageContent[0] = { type: "text", text: `${prompt}\n\nREFERENCE IMAGE VIEW: This reference shows the product from the ${viewLabel} angle. Maintain exact product details, colors, textures, and branding from this reference.` };
