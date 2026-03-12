@@ -46,6 +46,19 @@ Special instructions for Apparel & Fashion products:
 - Suggest a complete complementary outfit pairing based on formality, color, and cultural context. For example, for a navy formal shirt suggest "charcoal slim-fit trousers, black leather belt, dark brown oxford shoes".
 - For non-apparel products, set garmentType and outfitSuggestion to null.
 
+Special instructions for Skincare / Beauty products:
+- Detect the application area: face, hair, lips, eyes, body, nails, or fragrance. Set beautyApplication accordingly. Null for non-beauty.
+- Detect product size: mini (lip balm, sample vial, travel size), standard (serum bottle, lipstick tube, cream jar), large (pump bottle, family-size lotion), extra-large (salon-size, bulk). Set beautySize accordingly. Null for non-beauty.
+
+Special instructions for FMCG products (packaged food, beverages, cleaning, personal care):
+- Detect size: small (sachet, single-serve packet, candy bar), medium (standard bottle, cereal box, pouch up to 1kg), large (family-size bottle, 2L+ container), extra-large (bulk pack, 5kg+). Set fmcgSize accordingly. Null for non-FMCG.
+- Detect packaging type: bottle, can, pouch, sachet, box, jar, tube, carton, bag. Set fmcgPackaging accordingly. Null for non-FMCG.
+- Detect sub-type: food, beverage, spice, sauce, snack, cleaning, personal care, health supplement. Set fmcgSubType accordingly. Null for non-FMCG.
+
+Background suggestions (for ALL products):
+- suggestedModelShootBackgrounds: Generate 5-7 specific lifestyle background descriptions where a person would naturally use/wear/hold this product. Tailor to the product's color, material, vibe and category. Each should be 1-2 sentences describing the setting vividly. Examples: "Sun-drenched Mediterranean terrace with whitewashed walls and terracotta pots", "Modern minimalist bathroom with soft morning light through frosted glass".
+- suggestedShowcaseBackgrounds: Generate 5-7 specific product-only showcase surface/setting descriptions for luxury product photography. Tailor to the product's aesthetic. Examples: "Polished black obsidian slab with scattered gold leaf flakes", "Lush moss-covered forest floor with dappled sunlight".
+
 Model & Background detection (for ALL products):
 - Detect whether a human model is visible in the image (wearing or holding the product).
 - If no model is detected, set modelNote to "No model detected, add in upcoming steps."
@@ -62,7 +75,7 @@ Model & Background detection (for ALL products):
               },
               {
                 type: "text",
-                text: "Analyze this product image. Identify the product category, colors, material, suggest a product name, write a brief description, detect garment type if apparel, suggest outfit pairing if apparel, detect if a human model is present, and check if the background is white/studio.",
+                text: "Analyze this product image comprehensively. Identify category, colors, material, suggest a product name, write a brief description, detect garment type if apparel, suggest outfit pairing if apparel, detect beauty application area and size if skincare/beauty, detect FMCG size/packaging/sub-type if FMCG, detect if a human model is present, check if background is white/studio, and generate tailored model shoot and showcase background suggestions.",
               },
             ],
           },
@@ -72,13 +85,13 @@ Model & Background detection (for ALL products):
             type: "function",
             function: {
               name: "return_product_info",
-              description: "Return structured product analysis with apparel-awareness, model detection, and background check",
+              description: "Return structured product analysis with category-specific detection, model detection, background check, and AI-suggested backgrounds",
               parameters: {
                 type: "object",
                 properties: {
                   category: {
                     type: "string",
-                    description: "Product category (e.g., Footwear, Handbag, Watch, Skincare, Jewelry, Apparel)",
+                    description: "Product category (e.g., Footwear, Handbag, Watch, Skincare, Beauty, Jewelry, Apparel, FMCG, Electronics)",
                   },
                   colors: {
                     type: "array",
@@ -87,7 +100,7 @@ Model & Background detection (for ALL products):
                   },
                   material: {
                     type: "string",
-                    description: "Primary material (e.g., Leather, Canvas, Metal, Plastic, Fabric, Cotton, Silk)",
+                    description: "Primary material (e.g., Leather, Canvas, Metal, Plastic, Fabric, Cotton, Silk, Glass)",
                   },
                   suggestedShots: {
                     type: "array",
@@ -100,19 +113,49 @@ Model & Background detection (for ALL products):
                   },
                   productName: {
                     type: "string",
-                    description: "Suggested product name (e.g., 'Classic Leather Tote', 'Slim-Fit Navy Formal Shirt')",
+                    description: "Suggested product name",
                   },
                   garmentType: {
                     type: ["string", "null"],
-                    description: "Specific garment type if apparel (e.g., 'slim-fit formal shirt', 'A-line midi dress', 'embroidered kurta'). Null for non-apparel.",
+                    description: "Specific garment type if apparel. Null for non-apparel.",
                   },
                   outfitSuggestion: {
                     type: ["string", "null"],
-                    description: "Complete complementary outfit pairing for apparel based on formality, color, cultural context. Null for non-apparel.",
+                    description: "Complete complementary outfit pairing for apparel. Null for non-apparel.",
+                  },
+                  beautyApplication: {
+                    type: ["string", "null"],
+                    description: "Application area for skincare/beauty: face, hair, lips, eyes, body, nails, or fragrance. Null for non-beauty.",
+                  },
+                  beautySize: {
+                    type: ["string", "null"],
+                    description: "Product size for beauty: mini, standard, large, extra-large. Null for non-beauty.",
+                  },
+                  fmcgSize: {
+                    type: ["string", "null"],
+                    description: "Product size for FMCG: small, medium, large, extra-large. Null for non-FMCG.",
+                  },
+                  fmcgPackaging: {
+                    type: ["string", "null"],
+                    description: "Packaging type for FMCG: bottle, can, pouch, sachet, box, jar, tube, carton, bag. Null for non-FMCG.",
+                  },
+                  fmcgSubType: {
+                    type: ["string", "null"],
+                    description: "Sub-type for FMCG: food, beverage, spice, sauce, snack, cleaning, personal care, health supplement. Null for non-FMCG.",
+                  },
+                  suggestedModelShootBackgrounds: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "5-7 lifestyle background descriptions tailored to this product for model shoots",
+                  },
+                  suggestedShowcaseBackgrounds: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "5-7 showcase/product-only background descriptions tailored to this product",
                   },
                   hasModel: {
                     type: "boolean",
-                    description: "Whether a human model is detected in the image (wearing or holding the product)",
+                    description: "Whether a human model is detected in the image",
                   },
                   hasWhiteBackground: {
                     type: "boolean",
@@ -123,7 +166,7 @@ Model & Background detection (for ALL products):
                     description: "Note about model detection status and available actions",
                   },
                 },
-                required: ["category", "colors", "material", "suggestedShots", "description", "productName", "garmentType", "outfitSuggestion", "hasModel", "hasWhiteBackground", "modelNote"],
+                required: ["category", "colors", "material", "suggestedShots", "description", "productName", "garmentType", "outfitSuggestion", "beautyApplication", "beautySize", "fmcgSize", "fmcgPackaging", "fmcgSubType", "suggestedModelShootBackgrounds", "suggestedShowcaseBackgrounds", "hasModel", "hasWhiteBackground", "modelNote"],
                 additionalProperties: false,
               },
             },
