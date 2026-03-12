@@ -3035,13 +3035,11 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
         {loadingTemplates ? (
           <div className="grid grid-cols-4 gap-3 pb-4">
             {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="rounded-xl overflow-hidden border">
-                <Skeleton className="aspect-square w-full" />
-                <div className="p-2 space-y-1.5">
-                  <Skeleton className="h-3 w-3/4" />
-                  <Skeleton className="h-2 w-full" />
-                  <Skeleton className="h-2 w-2/3" />
-                </div>
+              <div key={i} className="rounded-xl border p-3 space-y-2">
+                <Skeleton className="h-3.5 w-3/4" />
+                <Skeleton className="h-2.5 w-full" />
+                <Skeleton className="h-2.5 w-2/3" />
+                <Skeleton className="h-4 w-16 mt-1 rounded-full" />
               </div>
             ))}
           </div>
@@ -3054,22 +3052,19 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
                 <button
                   key={t.id}
                   onClick={() => setSelectedTemplate(prev => prev === t.id ? null : t.id)}
-                  className={`rounded-xl overflow-hidden border transition-all text-left ${
-                    isSelected ? 'ring-2 ring-primary ring-offset-2' : 'hover:border-primary/50 hover:shadow-md'
+                  className={`relative rounded-xl border p-3 transition-all text-left min-h-[100px] flex flex-col gap-1.5 ${
+                    isSelected ? 'ring-2 ring-primary ring-offset-2 border-primary' : 'hover:border-primary/50 hover:shadow-md'
                   }`}
+                  style={{ backgroundColor: isSelected ? `${t.color}18` : `${t.color}0a` }}
                 >
-                  <div className="aspect-square flex items-center justify-center" style={{ background: t.color }}>
-                    {isSelected && (
-                      <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-                        <Check className="h-4 w-4 text-primary-foreground" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-2">
-                    <p className="text-xs font-medium truncate">{t.name}</p>
-                    <p className="text-[10px] text-muted-foreground line-clamp-2 leading-tight">{t.description}</p>
-                    <Badge variant="outline" className="text-[8px] mt-1 px-1.5 py-0">{t.category}</Badge>
-                  </div>
+                  {isSelected && (
+                    <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-primary flex items-center justify-center">
+                      <Check className="h-3 w-3 text-primary-foreground" />
+                    </div>
+                  )}
+                  <p className="text-sm font-medium leading-tight pr-6">{t.name}</p>
+                  <p className="text-[11px] text-muted-foreground leading-snug line-clamp-3">{t.description}</p>
+                  <Badge variant="outline" className="text-[8px] mt-auto px-1.5 py-0 w-fit">{t.category}</Badge>
                 </button>
               );
             })}
