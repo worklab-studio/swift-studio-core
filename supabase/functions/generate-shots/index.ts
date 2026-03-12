@@ -40,7 +40,7 @@ serve(async (req) => {
     }
     const userId = user.id;
 
-    const { projectId, preset, shotCount, additionalContext, category, shotType, modelConfig, stylePrompt, productImageUrl, aspectRatio, keepOriginalModel, productLabel } = await req.json();
+    const { projectId, preset, shotCount, additionalContext, category, shotType, modelConfig, stylePrompt, productImageUrl, aspectRatio, keepOriginalModel, productLabel, sceneTemplate } = await req.json();
 
     if (!projectId || !preset || !shotCount) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -114,7 +114,10 @@ serve(async (req) => {
       : "IMPORTANT: Every image MUST show ONLY the product. Do NOT include any human model in the image.";
 
     const shotPrompts = labels.map((label) => {
-      const baseStyle = stylePrompt || `${preset} style photography`;
+      // Use scene template description as base style if provided, otherwise use stylePrompt or preset name
+      const baseStyle = sceneTemplate?.description
+        ? `Scene template: ${sceneTemplate.description}. ${stylePrompt || ''}`
+        : stylePrompt || `${preset} style photography`;
       const shotTypeDesc: Record<string, string> = {
         hero: "Hero shot — front-facing, full body or full product visible, hands relaxed at sides or product centered, straight-on camera at eye level, clean symmetrical framing, the definitive primary product image. The model/product should be still, poised, and directly engaging the camera.",
         detail: "Close-up detail shot — extreme macro-style focus on texture, stitching, material quality, fine craftsmanship details. Tight crop on a specific area (fabric weave, hardware, logo, seam). Shallow depth of field, f/2.8 macro lens feel.",

@@ -186,33 +186,45 @@ interface ProductTemplate {
 }
 
 const PRODUCT_SHOOT_TEMPLATES: ProductTemplate[] = [
-  // Studio (5)
-  { id: 'pt1', name: 'Mannequin Front', description: 'Product displayed on mannequin, front-facing', category: 'Studio', color: 'hsl(220 15% 70% / 0.25)' },
-  { id: 'pt2', name: 'Mannequin 3/4 Angle', description: 'Three-quarter view on mannequin with depth', category: 'Studio', color: 'hsl(220 15% 65% / 0.25)' },
-  { id: 'pt3', name: 'Ghost Mannequin', description: 'Invisible mannequin effect, clean silhouette', category: 'Studio', color: 'hsl(220 15% 60% / 0.25)' },
-  { id: 'pt4', name: 'Hanging on Rail', description: 'Product hanging on a professional clothing rail', category: 'Studio', color: 'hsl(220 15% 55% / 0.25)' },
-  { id: 'pt5', name: 'Folded Stack', description: 'Neatly folded product in a stacked arrangement', category: 'Studio', color: 'hsl(220 15% 50% / 0.25)' },
-  // E-commerce (5)
-  { id: 'pt6', name: 'White Flat Lay', description: 'Flat lay on pure white background', category: 'E-commerce', color: 'hsl(0 0% 92% / 0.4)' },
-  { id: 'pt7', name: 'Hanger with Shadow', description: 'Hanging product with dramatic drop shadow', category: 'E-commerce', color: 'hsl(0 0% 85% / 0.35)' },
-  { id: 'pt8', name: 'Pack Shot Grid', description: 'Multiple angles in a grid layout', category: 'E-commerce', color: 'hsl(0 0% 88% / 0.35)' },
-  { id: 'pt9', name: 'Size Comparison', description: 'Product shown with scale reference objects', category: 'E-commerce', color: 'hsl(0 0% 82% / 0.35)' },
-  { id: 'pt10', name: 'Tag Close-up', description: 'Detail shot highlighting labels and tags', category: 'E-commerce', color: 'hsl(0 0% 78% / 0.35)' },
-  // Mystic (5)
-  { id: 'pt11', name: 'Floating in Mist', description: 'Product suspended in ethereal fog', category: 'Mystic', color: 'hsl(270 40% 60% / 0.2)' },
-  { id: 'pt12', name: 'Fabric Explosion', description: 'Dynamic burst of fabric in mid-air', category: 'Mystic', color: 'hsl(340 50% 55% / 0.2)' },
+  // Studio — universal
+  { id: 'pt1', name: 'Pedestal Display', description: 'Product on a sleek modern pedestal or platform, clean studio lighting, elegant elevation', category: 'Studio', color: 'hsl(220 15% 70% / 0.25)' },
+  { id: 'pt2', name: 'Reflective Surface', description: 'Product on glossy reflective black or white surface, mirror-like reflection below, dramatic studio lighting', category: 'Studio', color: 'hsl(220 15% 65% / 0.25)' },
+  { id: 'pt3', name: 'Ghost Mannequin', description: 'Invisible mannequin effect, clean silhouette (apparel only)', category: 'Studio', color: 'hsl(220 15% 60% / 0.25)' },
+  { id: 'pt4', name: 'Hanging on Rail', description: 'Product hanging on a professional clothing rail (apparel only)', category: 'Studio', color: 'hsl(220 15% 55% / 0.25)' },
+  { id: 'pt5', name: 'Folded Stack', description: 'Neatly folded product in a stacked arrangement (apparel only)', category: 'Studio', color: 'hsl(220 15% 50% / 0.25)' },
+  { id: 'pt-turntable', name: 'Turntable View', description: 'Product centered on turntable-style setup, 360-degree hero angle, neutral seamless background', category: 'Studio', color: 'hsl(220 15% 68% / 0.25)' },
+  // E-commerce — universal
+  { id: 'pt6', name: 'White Flat Lay', description: 'Flat lay on pure white background, top-down bird\'s eye view', category: 'E-commerce', color: 'hsl(0 0% 92% / 0.4)' },
+  { id: 'pt7', name: 'Shadow Drop', description: 'Product on white/light background with natural drop shadow for depth', category: 'E-commerce', color: 'hsl(0 0% 85% / 0.35)' },
+  { id: 'pt8', name: 'Pack Shot Grid', description: 'Multiple angles in a grid layout, comprehensive product views', category: 'E-commerce', color: 'hsl(0 0% 88% / 0.35)' },
+  { id: 'pt9', name: 'Size Comparison', description: 'Product shown with scale reference objects for size context', category: 'E-commerce', color: 'hsl(0 0% 82% / 0.35)' },
+  { id: 'pt-plain-bg', name: 'Plain Background', description: 'Product on pure solid color background, clean isolation, no props, marketplace-ready e-commerce shot', category: 'E-commerce', color: 'hsl(0 0% 95% / 0.4)' },
+  // Mystic
+  { id: 'pt11', name: 'Floating in Mist', description: 'Product suspended in ethereal fog, mysterious atmosphere', category: 'Mystic', color: 'hsl(270 40% 60% / 0.2)' },
+  { id: 'pt12', name: 'Fabric Explosion', description: 'Dynamic burst of fabric in mid-air, motion energy', category: 'Mystic', color: 'hsl(340 50% 55% / 0.2)' },
   { id: 'pt13', name: 'Ethereal Glow', description: 'Soft halo lighting with dreamy atmosphere', category: 'Mystic', color: 'hsl(200 50% 65% / 0.2)' },
   { id: 'pt14', name: 'Dark Moody Drape', description: 'Rich shadows with dramatic fabric draping', category: 'Mystic', color: 'hsl(250 30% 30% / 0.3)' },
   { id: 'pt15', name: 'Surreal Levitation', description: 'Product defying gravity in an abstract scene', category: 'Mystic', color: 'hsl(180 40% 50% / 0.2)' },
-  // Showcase (5)
-  { id: 'pt16', name: 'Editorial Spread', description: 'Magazine-style editorial composition', category: 'Showcase', color: 'hsl(30 50% 60% / 0.2)' },
-  { id: 'pt17', name: 'Window Light Drape', description: 'Natural window light with soft fabric fall', category: 'Showcase', color: 'hsl(45 60% 70% / 0.2)' },
-  { id: 'pt18', name: 'Styled Flat Lay', description: 'Curated accessories and props around product', category: 'Showcase', color: 'hsl(15 45% 55% / 0.2)' },
+  // Showcase — universal
+  { id: 'pt16', name: 'Editorial Spread', description: 'Magazine-style editorial composition with props', category: 'Showcase', color: 'hsl(30 50% 60% / 0.2)' },
+  { id: 'pt17', name: 'Contextual Use', description: 'Product shown in its natural use environment and context', category: 'Showcase', color: 'hsl(45 60% 70% / 0.2)' },
+  { id: 'pt18', name: 'Styled Flat Lay', description: 'Curated accessories and props around product, top-down', category: 'Showcase', color: 'hsl(15 45% 55% / 0.2)' },
   { id: 'pt19', name: 'Textured Surface', description: 'Product on marble, wood, or fabric surface', category: 'Showcase', color: 'hsl(25 30% 50% / 0.2)' },
   { id: 'pt20', name: 'Color Story', description: 'Monochromatic arrangement highlighting tones', category: 'Showcase', color: 'hsl(350 40% 55% / 0.2)' },
 ];
 
 const TEMPLATE_CATEGORIES = ['All', 'Studio', 'E-commerce', 'Mystic', 'Showcase'] as const;
+
+const PLAIN_BG_COLORS = [
+  { name: 'White', color: '#FFFFFF', border: true },
+  { name: 'Light Gray', color: '#F0F0F0', border: false },
+  { name: 'Beige', color: '#F5F0E8', border: false },
+  { name: 'Cream', color: '#FFFDD0', border: false },
+  { name: 'Soft Pink', color: '#FDE8E8', border: false },
+  { name: 'Light Blue', color: '#E0EEFF', border: false },
+  { name: 'Sage Green', color: '#E0EBE0', border: false },
+  { name: 'Black', color: '#1A1A1A', border: false },
+];
 
 /* ── Style presets with product/model-specific settings ── */
 interface StyleSettings {
@@ -821,9 +833,16 @@ const Studio = () => {
 
   /* ── Generation ── */
   const handleGenerate = async (mode?: 'single' | 'campaign_add') => {
-    if (!project || !selectedPreset) return;
-    const presetName = STYLE_PRESETS.find(p => p.id === selectedPreset)?.name || selectedPreset;
-    completeStep(3, presetName, 4);
+    if (!project) return;
+    // For product shoot with template, we don't need selectedPreset
+    const isProductWithTemplate = shootType === 'product' && selectedTemplate;
+    if (!isProductWithTemplate && !selectedPreset) return;
+
+    const tpl = isProductWithTemplate ? PRODUCT_SHOOT_TEMPLATES.find(t => t.id === selectedTemplate) : null;
+    const stepLabel = isProductWithTemplate
+      ? tpl?.name || 'Product Shoot'
+      : STYLE_PRESETS.find(p => p.id === selectedPreset)?.name || selectedPreset || '';
+    completeStep(3, stepLabel, 4);
     generationAbortRef.current = false;
     setGenerationProgress(0);
     setGenerationStage(GENERATION_STAGES[0].label);
@@ -841,16 +860,28 @@ const Studio = () => {
     try {
       const productImageUrl = productImages[0] || assets[0]?.url || null;
       const effectiveShotCount = mode === 'campaign_add' ? 'campaign_add' : mode === 'single' ? 'single' : shotCount;
+
+      // Build stylePrompt for product shoot with template
+      let effectiveStylePrompt = stylePrompt || undefined;
+      if (isProductWithTemplate && tpl) {
+        let templatePrompt = tpl.description;
+        if (tpl.id === 'pt-plain-bg') {
+          templatePrompt += `. CRITICAL: The background MUST be a pure solid ${plainBgColor} color. No texture, no gradient, no patterns, no props — completely clean flat ${plainBgColor} backdrop.`;
+        }
+        effectiveStylePrompt = templatePrompt;
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-shots', {
           body: {
-          projectId: project.id, preset: selectedPreset, shotCount: effectiveShotCount, additionalContext,
+          projectId: project.id, preset: selectedPreset || 'template', shotCount: effectiveShotCount, additionalContext,
           category: project.category, shotType: shootType === 'model' ? 'model_shot' : 'product_showcase',
           modelConfig: shootType === 'model' ? modelConfig : null,
-          stylePrompt: stylePrompt || undefined,
+          stylePrompt: effectiveStylePrompt,
           productImageUrl,
           aspectRatio,
           keepOriginalModel: modelChoice === 'keep',
           productLabel: productInfo?.productName || productName || 'Untitled',
+          sceneTemplate: isProductWithTemplate ? { id: tpl!.id, description: tpl!.description, name: tpl!.name } : undefined,
         },
       });
       clearInterval(progressInterval);
@@ -1035,7 +1066,7 @@ const Studio = () => {
   };
 
   const credits = shotCount === 'campaign' ? 6 : 1;
-  const canGenerate = (selectedPreset || referenceImage) && shotCount;
+  const canGenerate = ((selectedPreset || referenceImage) && shotCount) || (shootType === 'product' && selectedTemplate && shotCount);
 
   if (loading) {
     return (
@@ -1161,6 +1192,8 @@ const Studio = () => {
                     analyzingStyle={analyzingStyle}
                     plainBgColor={plainBgColor}
                     setPlainBgColor={setPlainBgColor}
+                    shootType={shootType}
+                    selectedTemplate={selectedTemplate}
                   />
                 )}
                 {activeStep === 4 && (
@@ -1849,7 +1882,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
 }
 
 /* ── Step 3 Config (Left) ── */
-function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, aspectRatio, setAspectRatio, additionalContext, setAdditionalContext, styleSettings, analyzingStyle, plainBgColor, setPlainBgColor }: {
+function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, aspectRatio, setAspectRatio, additionalContext, setAdditionalContext, styleSettings, analyzingStyle, plainBgColor, setPlainBgColor, shootType, selectedTemplate }: {
   selectedPreset: string | null;
   setSelectedPreset: (v: string | null) => void;
   referenceImage: string | null;
@@ -1866,125 +1899,168 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
   analyzingStyle: boolean;
   plainBgColor: string;
   setPlainBgColor: (v: string) => void;
+  shootType: 'product' | 'model' | null;
+  selectedTemplate: string | null;
 }) {
-  const PLAIN_BG_COLORS = [
-    { name: 'White', color: '#FFFFFF', border: true },
-    { name: 'Light Gray', color: '#F0F0F0', border: false },
-    { name: 'Beige', color: '#F5F0E8', border: false },
-    { name: 'Cream', color: '#FFFDD0', border: false },
-    { name: 'Soft Pink', color: '#FDE8E8', border: false },
-    { name: 'Light Blue', color: '#E0EEFF', border: false },
-    { name: 'Sage Green', color: '#E0EBE0', border: false },
-    { name: 'Black', color: '#1A1A1A', border: false },
-  ];
+  const isProductWithTemplate = shootType === 'product' && !!selectedTemplate;
+  const isPlainBgTemplate = selectedTemplate === 'pt-plain-bg';
+  const templateData = isProductWithTemplate ? PRODUCT_SHOOT_TEMPLATES.find(t => t.id === selectedTemplate) : null;
+  // Show shots/ratio/direction when either a preset is selected OR product+template
+  const showGenerationConfig = !!selectedPreset || isProductWithTemplate;
+
   return (
     <div className="space-y-4">
-      <p className="text-sm font-semibold text-foreground">Style preset</p>
-      <div className="grid grid-cols-2 gap-2">
-        {STYLE_PRESETS.map(p => (
-          <button
-            key={p.id}
-            onClick={() => { setSelectedPreset(p.id); setReferenceImage(null); }}
-            className={`rounded-lg overflow-hidden border text-left transition-all ${
-              selectedPreset === p.id ? 'ring-2 ring-primary ring-offset-1' : 'hover:border-primary/50'
-            }`}
-          >
-            <div className="aspect-[4/3] overflow-hidden bg-muted">
-              <img src={p.img} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
-            </div>
-            <div className="p-1.5">
-              <p className="text-[11px] font-semibold">{p.name}</p>
-              <p className="text-[9px] text-muted-foreground leading-tight">{p.desc}</p>
-            </div>
-          </button>
-        ))}
-      </div>
+      {/* For product shoot with template: show template info, NO style presets */}
+      {isProductWithTemplate ? (
+        <>
+          <div>
+            <p className="text-sm font-semibold text-foreground">Scene Template</p>
+            <p className="text-xs text-muted-foreground mt-1">Configure your {templateData?.name} shot.</p>
+          </div>
+          <div className="rounded-lg border bg-muted/50 p-3">
+            <p className="text-xs font-semibold text-foreground">{templateData?.name}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{templateData?.description}</p>
+          </div>
 
-      {/* Plain Background color picker */}
-      {selectedPreset === 'plain-bg' && (
-        <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
-          <p className="text-xs font-medium">Background Color</p>
-          <div className="flex flex-wrap gap-2">
-            {PLAIN_BG_COLORS.map(c => (
+          {/* Plain Background color picker for pt-plain-bg template */}
+          {isPlainBgTemplate && (
+            <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+              <p className="text-xs font-medium">Background Color</p>
+              <div className="flex flex-wrap gap-2">
+                {PLAIN_BG_COLORS.map(c => (
+                  <button
+                    key={c.name}
+                    onClick={() => setPlainBgColor(c.name)}
+                    className={`flex flex-col items-center gap-1 group`}
+                    title={c.name}
+                  >
+                    <div
+                      className={`w-8 h-8 rounded-full transition-all ${
+                        plainBgColor === c.name ? 'ring-2 ring-primary ring-offset-2' : 'hover:ring-2 hover:ring-muted-foreground/30 hover:ring-offset-1'
+                      } ${c.border ? 'border border-border' : ''}`}
+                      style={{ backgroundColor: c.color }}
+                    />
+                    <span className={`text-[9px] ${plainBgColor === c.name ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                      {c.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          {/* Model shoot or no template: show style presets */}
+          <p className="text-sm font-semibold text-foreground">Style preset</p>
+          <div className="grid grid-cols-2 gap-2">
+            {STYLE_PRESETS.map(p => (
               <button
-                key={c.name}
-                onClick={() => setPlainBgColor(c.name)}
-                className={`flex flex-col items-center gap-1 group`}
-                title={c.name}
+                key={p.id}
+                onClick={() => { setSelectedPreset(p.id); setReferenceImage(null); }}
+                className={`rounded-lg overflow-hidden border text-left transition-all ${
+                  selectedPreset === p.id ? 'ring-2 ring-primary ring-offset-1' : 'hover:border-primary/50'
+                }`}
               >
-                <div
-                  className={`w-8 h-8 rounded-full transition-all ${
-                    plainBgColor === c.name ? 'ring-2 ring-primary ring-offset-2' : 'hover:ring-2 hover:ring-muted-foreground/30 hover:ring-offset-1'
-                  } ${c.border ? 'border border-border' : ''}`}
-                  style={{ backgroundColor: c.color }}
-                />
-                <span className={`text-[9px] ${plainBgColor === c.name ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                  {c.name}
-                </span>
+                <div className="aspect-[4/3] overflow-hidden bg-muted">
+                  <img src={p.img} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
+                </div>
+                <div className="p-1.5">
+                  <p className="text-[11px] font-semibold">{p.name}</p>
+                  <p className="text-[9px] text-muted-foreground leading-tight">{p.desc}</p>
+                </div>
               </button>
             ))}
           </div>
-        </div>
-      )}
 
-      {/* Reference upload */}
-      <input ref={referenceInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onReferenceUpload} />
-      {referenceImage ? (
-        <div className="relative rounded-lg overflow-hidden border">
-          <img src={referenceImage} alt="Reference" className="w-full aspect-[4/3] object-cover" />
-          <button
-            onClick={() => { setReferenceImage(null); if (selectedPreset === 'custom') setSelectedPreset(null); }}
-            className="absolute top-1 right-1 h-5 w-5 rounded-full bg-background/80 flex items-center justify-center"
-          >
-            <X className="h-3 w-3" />
-          </button>
-          <div className="p-1.5">
-            <p className="text-[11px] font-semibold">Custom Reference</p>
-            {analyzingStyle && (
-              <div className="flex items-center gap-1 mt-0.5">
-                <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                <p className="text-[10px] text-primary">Extracting style...</p>
+          {/* Plain Background color picker for plain-bg style preset */}
+          {selectedPreset === 'plain-bg' && (
+            <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+              <p className="text-xs font-medium">Background Color</p>
+              <div className="flex flex-wrap gap-2">
+                {PLAIN_BG_COLORS.map(c => (
+                  <button
+                    key={c.name}
+                    onClick={() => setPlainBgColor(c.name)}
+                    className={`flex flex-col items-center gap-1 group`}
+                    title={c.name}
+                  >
+                    <div
+                      className={`w-8 h-8 rounded-full transition-all ${
+                        plainBgColor === c.name ? 'ring-2 ring-primary ring-offset-2' : 'hover:ring-2 hover:ring-muted-foreground/30 hover:ring-offset-1'
+                      } ${c.border ? 'border border-border' : ''}`}
+                      style={{ backgroundColor: c.color }}
+                    />
+                    <span className={`text-[9px] ${plainBgColor === c.name ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                      {c.name}
+                    </span>
+                  </button>
+                ))}
               </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        <button
-          onClick={() => referenceInputRef.current?.click()}
-          className="w-full h-16 rounded-lg border-2 border-dashed border-border flex items-center justify-center gap-2 hover:border-primary/50 transition-colors"
-        >
-          <Upload className="h-4 w-4 text-muted-foreground" />
-          <p className="text-xs text-muted-foreground">Upload reference image</p>
-        </button>
-      )}
-
-      {/* Style settings badges */}
-      {styleSettings && (
-        <>
-          <Separator />
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-foreground flex items-center gap-1.5">
-              <Sparkles className="h-3 w-3 text-primary" />
-              Auto-detected settings
-            </p>
-            <div className="space-y-1.5">
-              {[
-                { label: 'Pose', value: styleSettings.pose, icon: '🎯' },
-                { label: 'Angle', value: styleSettings.angle, icon: '📐' },
-                { label: 'Lighting', value: styleSettings.lighting, icon: '💡' },
-                { label: 'Composition', value: styleSettings.composition, icon: '🖼' },
-              ].map(item => (
-                <div key={item.label} className="rounded-md border bg-muted/50 p-2">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{item.icon} {item.label}</p>
-                  <p className="text-[11px] text-foreground mt-0.5 leading-snug">{item.value}</p>
-                </div>
-              ))}
             </div>
-          </div>
+          )}
+
+          {/* Reference upload */}
+          <input ref={referenceInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onReferenceUpload} />
+          {referenceImage ? (
+            <div className="relative rounded-lg overflow-hidden border">
+              <img src={referenceImage} alt="Reference" className="w-full aspect-[4/3] object-cover" />
+              <button
+                onClick={() => { setReferenceImage(null); if (selectedPreset === 'custom') setSelectedPreset(null); }}
+                className="absolute top-1 right-1 h-5 w-5 rounded-full bg-background/80 flex items-center justify-center"
+              >
+                <X className="h-3 w-3" />
+              </button>
+              <div className="p-1.5">
+                <p className="text-[11px] font-semibold">Custom Reference</p>
+                {analyzingStyle && (
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                    <p className="text-[10px] text-primary">Extracting style...</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => referenceInputRef.current?.click()}
+              className="w-full h-16 rounded-lg border-2 border-dashed border-border flex items-center justify-center gap-2 hover:border-primary/50 transition-colors"
+            >
+              <Upload className="h-4 w-4 text-muted-foreground" />
+              <p className="text-xs text-muted-foreground">Upload reference image</p>
+            </button>
+          )}
+
+          {/* Style settings badges */}
+          {styleSettings && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                  <Sparkles className="h-3 w-3 text-primary" />
+                  Auto-detected settings
+                </p>
+                <div className="space-y-1.5">
+                  {[
+                    { label: 'Pose', value: styleSettings.pose, icon: '🎯' },
+                    { label: 'Angle', value: styleSettings.angle, icon: '📐' },
+                    { label: 'Lighting', value: styleSettings.lighting, icon: '💡' },
+                    { label: 'Composition', value: styleSettings.composition, icon: '🖼' },
+                  ].map(item => (
+                    <div key={item.label} className="rounded-md border bg-muted/50 p-2">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{item.icon} {item.label}</p>
+                      <p className="text-[11px] text-foreground mt-0.5 leading-snug">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </>
       )}
 
-      {selectedPreset && (
+      {/* Shots, ratio, direction — shown for both flows */}
+      {showGenerationConfig && (
         <>
           <Separator />
           {/* Shot count */}
@@ -2044,7 +2120,6 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
             />
             <p className="text-[10px] text-right text-muted-foreground">{additionalContext.length}/200</p>
           </div>
-
         </>
       )}
     </div>
