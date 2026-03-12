@@ -3693,10 +3693,15 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
           )}
         </CardContent>
       </Card>
+      {/* Fullscreen view dialog */}
+      <Dialog open={!!viewingUrl} onOpenChange={() => setViewingUrl(null)}>
+        <DialogContent className="max-w-4xl p-2">
+          {viewingUrl && <img src={viewingUrl} alt="Shot preview" className="w-full h-auto rounded-lg" />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-
 /* ════════════════════════════════════════════════
    ShotCard Component
    ════════════════════════════════════════════════ */
