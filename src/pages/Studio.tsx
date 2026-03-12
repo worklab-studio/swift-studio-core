@@ -2999,11 +2999,9 @@ function Step1Viewport({ productImages, productInfo, setProductInfo, analyzingPr
                         : 'border-border hover:ring-2 hover:ring-primary/30'
                     }`}
                   />
-                  {viewLabel && (
-                    <span className="absolute bottom-0.5 left-0.5 right-0.5 bg-background/80 backdrop-blur-sm rounded-b-md text-[8px] font-semibold text-center py-0.5 text-foreground">
-                      {VIEW_LABEL_DISPLAY[viewLabel] || viewLabel}
-                    </span>
-                  )}
+                  <div className="absolute bottom-0.5 left-0.5 right-0.5 flex justify-center">
+                    <ViewTagPopover url={url} currentView={viewLabel || null} onSetView={onSetView} size="xs" />
+                  </div>
                   {removingBgIndex === i && (
                     <div className="absolute inset-0 rounded-lg bg-foreground/30 flex items-center justify-center">
                       <Loader2 className="h-4 w-4 animate-spin text-primary-foreground" />
