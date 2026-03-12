@@ -877,6 +877,14 @@ IMPORTANT: Each of the 6 shots MUST have a distinctly different pose and body po
       credits_remaining: profileData.credits_remaining - creditCost,
     }).eq("user_id", userId);
 
+    // Log credit transaction
+    await serviceClient.from("credit_transactions").insert({
+      user_id: userId,
+      amount: -creditCost,
+      description: `Generated ${insertedAssets.length} shot${insertedAssets.length > 1 ? 's' : ''}`,
+      transaction_type: "debit",
+    });
+
     // Update project status
     await supabase.from("projects").update({ status: "complete" }).eq("id", projectId);
 

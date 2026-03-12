@@ -204,6 +204,14 @@ serve(async (req) => {
       .update({ credits_remaining: profileData.credits_remaining - 1 })
       .eq("user_id", userId);
 
+    // Log credit transaction
+    await serviceClient.from("credit_transactions").insert({
+      user_id: userId,
+      amount: -1,
+      description: "Edited shot",
+      transaction_type: "debit",
+    });
+
     return new Response(JSON.stringify({ asset: updatedAsset }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
