@@ -1609,6 +1609,13 @@ const Studio = () => {
                     selectedPreset={selectedPreset}
                     selectedPresetData={selectedPresetData}
                     referenceImage={referenceImage}
+                    productImages={productImages}
+                    shootType={shootType}
+                    modelConfig={modelConfig}
+                    selectedModelData={selectedModelData}
+                    modelImages={modelImages}
+                    selectedTemplate={selectedTemplate}
+                    activeTemplates={dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES}
                   />
                 )}
                 {activeStep === 4 && (
@@ -2247,76 +2254,130 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
             {/* ── Background ── */}
             <div className="space-y-1">
               <label className="text-xs font-medium">Background</label>
-              <Select value={modelConfig.background} onValueChange={v => setModelConfig(prev => ({ ...prev, background: v }))}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-                <SelectContent>
-                  {/* AI-Suggested backgrounds (Layer 1) */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full h-8 text-xs justify-between font-normal">
+                    <span className="truncate">{(() => {
+                      const bg = modelConfig.background;
+                      if (!bg) return 'Select background';
+                      // Find display label
+                      const genericMap: Record<string, string> = {
+                        'white-sweep': 'White sweep', 'gray-seamless': 'Gray seamless', 'dark-studio': 'Dark studio',
+                        'colored-gel': 'Colored gel', 'pastel-gradient': 'Pastel gradient', 'warm-beige': 'Warm beige',
+                        'café': 'Café', 'street': 'Street', 'garden': 'Garden', 'beach': 'Beach',
+                        'urban-rooftop': 'Urban rooftop', 'living-room': 'Living room', 'office': 'Office',
+                        'pure-white': 'Pure white', 'light-gray': 'Light gray', 'soft-shadow': 'Soft shadow',
+                        'fog-mist': 'Fog / mist', 'neon-glow': 'Neon glow', 'dark-moody': 'Dark moody',
+                        'ethereal-light': 'Ethereal light', 'custom': 'Custom prompt',
+                      };
+                      if (genericMap[bg]) return genericMap[bg];
+                      if (bg.startsWith('ai-model-bg-')) {
+                        const idx = parseInt(bg.replace('ai-model-bg-', ''));
+                        const label = productInfo?.suggestedModelShootBackgrounds?.[idx];
+                        return label ? (label.length > 40 ? label.substring(0, 40) + '…' : label) : bg;
+                      }
+                      if (bg.startsWith('beauty-bg-') || bg.startsWith('fmcg-bg-')) return bg.split('-').slice(2).join(' ');
+                      return bg;
+                    })()}</span>
+                    <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-0 max-h-[320px] overflow-y-auto" align="start">
+                  {/* AI Suggested */}
                   {productInfo?.suggestedModelShootBackgrounds && productInfo.suggestedModelShootBackgrounds.length > 0 && (
-                    <SelectGroup>
-                      <SelectLabel className="flex items-center gap-1"><Sparkles className="h-3 w-3" /> AI Suggested</SelectLabel>
-                      {productInfo.suggestedModelShootBackgrounds.map((bg, i) => (
-                        <SelectItem key={`ai-bg-${i}`} value={`ai-model-bg-${i}`}>{bg.length > 50 ? bg.substring(0, 50) + '…' : bg}</SelectItem>
-                      ))}
-                    </SelectGroup>
+                    <div className="p-1.5">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1 flex items-center gap-1"><Sparkles className="h-3 w-3" /> AI Suggested</p>
+                      {productInfo.suggestedModelShootBackgrounds.map((bg, i) => {
+                        const val = `ai-model-bg-${i}`;
+                        return (
+                          <button key={val} onClick={() => setModelConfig(prev => ({ ...prev, background: val }))} className={`w-full text-left px-2 py-1.5 text-xs rounded-md flex items-center gap-2 transition-colors ${modelConfig.background === val ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}>
+                            {modelConfig.background === val && <Check className="h-3 w-3 shrink-0" />}
+                            <span className="truncate">{bg.length > 50 ? bg.substring(0, 50) + '…' : bg}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   )}
 
-                  {/* Category-specific backgrounds (Layer 2) */}
+                  {/* Category-specific */}
                   {productInfo && ['Skincare', 'Beauty'].includes(productInfo.category) && beautyApplication && MODEL_SHOOT_BEAUTY_BACKGROUNDS[beautyApplication] && (
-                    <SelectGroup>
-                      <SelectLabel>{beautyApplication.charAt(0).toUpperCase() + beautyApplication.slice(1)} Settings</SelectLabel>
-                      {MODEL_SHOOT_BEAUTY_BACKGROUNDS[beautyApplication].map((bg, i) => (
-                        <SelectItem key={`beauty-bg-${i}`} value={`beauty-bg-${beautyApplication}-${i}`}>{bg.length > 50 ? bg.substring(0, 50) + '…' : bg}</SelectItem>
-                      ))}
-                    </SelectGroup>
+                    <div className="p-1.5 border-t border-border">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1">{beautyApplication.charAt(0).toUpperCase() + beautyApplication.slice(1)} Settings</p>
+                      {MODEL_SHOOT_BEAUTY_BACKGROUNDS[beautyApplication].map((bg, i) => {
+                        const val = `beauty-bg-${beautyApplication}-${i}`;
+                        return (
+                          <button key={val} onClick={() => setModelConfig(prev => ({ ...prev, background: val }))} className={`w-full text-left px-2 py-1.5 text-xs rounded-md flex items-center gap-2 transition-colors ${modelConfig.background === val ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}>
+                            {modelConfig.background === val && <Check className="h-3 w-3 shrink-0" />}
+                            <span className="truncate">{bg.length > 50 ? bg.substring(0, 50) + '…' : bg}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   )}
                   {productInfo?.category === 'FMCG' && Object.entries(FMCG_MODEL_SHOOT_BACKGROUNDS).map(([group, bgs]) => (
-                    <SelectGroup key={group}>
-                      <SelectLabel>{group}</SelectLabel>
-                      {bgs.map((bg, i) => (
-                        <SelectItem key={`fmcg-bg-${group}-${i}`} value={`fmcg-bg-${group}-${i}`}>{bg.length > 50 ? bg.substring(0, 50) + '…' : bg}</SelectItem>
-                      ))}
-                    </SelectGroup>
+                    <div key={group} className="p-1.5 border-t border-border">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1">{group}</p>
+                      {bgs.map((bg, i) => {
+                        const val = `fmcg-bg-${group}-${i}`;
+                        return (
+                          <button key={val} onClick={() => setModelConfig(prev => ({ ...prev, background: val }))} className={`w-full text-left px-2 py-1.5 text-xs rounded-md flex items-center gap-2 transition-colors ${modelConfig.background === val ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}>
+                            {modelConfig.background === val && <Check className="h-3 w-3 shrink-0" />}
+                            <span className="truncate">{bg.length > 50 ? bg.substring(0, 50) + '…' : bg}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   ))}
 
-                  {/* Generic backgrounds (Layer 3) */}
-                  <SelectGroup>
-                    <SelectLabel>Studio</SelectLabel>
-                    <SelectItem value="white-sweep">White sweep</SelectItem>
-                    <SelectItem value="gray-seamless">Gray seamless</SelectItem>
-                    <SelectItem value="dark-studio">Dark studio</SelectItem>
-                    <SelectItem value="colored-gel">Colored gel</SelectItem>
-                    <SelectItem value="pastel-gradient">Pastel gradient</SelectItem>
-                    <SelectItem value="warm-beige">Warm beige</SelectItem>
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel>Lifestyle</SelectLabel>
-                    <SelectItem value="café">Café</SelectItem>
-                    <SelectItem value="street">Street</SelectItem>
-                    <SelectItem value="garden">Garden</SelectItem>
-                    <SelectItem value="beach">Beach</SelectItem>
-                    <SelectItem value="urban-rooftop">Urban rooftop</SelectItem>
-                    <SelectItem value="living-room">Living room</SelectItem>
-                    <SelectItem value="office">Office</SelectItem>
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel>E-commerce</SelectLabel>
-                    <SelectItem value="pure-white">Pure white</SelectItem>
-                    <SelectItem value="light-gray">Light gray</SelectItem>
-                    <SelectItem value="soft-shadow">Soft shadow</SelectItem>
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel>Mystic</SelectLabel>
-                    <SelectItem value="fog-mist">Fog / mist</SelectItem>
-                    <SelectItem value="neon-glow">Neon glow</SelectItem>
-                    <SelectItem value="dark-moody">Dark moody</SelectItem>
-                    <SelectItem value="ethereal-light">Ethereal light</SelectItem>
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel>Custom</SelectLabel>
-                    <SelectItem value="custom">Custom prompt</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+                  {/* Studio */}
+                  <div className="p-1.5 border-t border-border">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1">Studio</p>
+                    {[['white-sweep','White sweep'],['gray-seamless','Gray seamless'],['dark-studio','Dark studio'],['colored-gel','Colored gel'],['pastel-gradient','Pastel gradient'],['warm-beige','Warm beige']].map(([val, label]) => (
+                      <button key={val} onClick={() => setModelConfig(prev => ({ ...prev, background: val }))} className={`w-full text-left px-2 py-1.5 text-xs rounded-md flex items-center gap-2 transition-colors ${modelConfig.background === val ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}>
+                        {modelConfig.background === val && <Check className="h-3 w-3 shrink-0" />}
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Lifestyle */}
+                  <div className="p-1.5 border-t border-border">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1">Lifestyle</p>
+                    {[['café','Café'],['street','Street'],['garden','Garden'],['beach','Beach'],['urban-rooftop','Urban rooftop'],['living-room','Living room'],['office','Office']].map(([val, label]) => (
+                      <button key={val} onClick={() => setModelConfig(prev => ({ ...prev, background: val }))} className={`w-full text-left px-2 py-1.5 text-xs rounded-md flex items-center gap-2 transition-colors ${modelConfig.background === val ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}>
+                        {modelConfig.background === val && <Check className="h-3 w-3 shrink-0" />}
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {/* E-commerce */}
+                  <div className="p-1.5 border-t border-border">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1">E-commerce</p>
+                    {[['pure-white','Pure white'],['light-gray','Light gray'],['soft-shadow','Soft shadow']].map(([val, label]) => (
+                      <button key={val} onClick={() => setModelConfig(prev => ({ ...prev, background: val }))} className={`w-full text-left px-2 py-1.5 text-xs rounded-md flex items-center gap-2 transition-colors ${modelConfig.background === val ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}>
+                        {modelConfig.background === val && <Check className="h-3 w-3 shrink-0" />}
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Mystic */}
+                  <div className="p-1.5 border-t border-border">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1">Mystic</p>
+                    {[['fog-mist','Fog / mist'],['neon-glow','Neon glow'],['dark-moody','Dark moody'],['ethereal-light','Ethereal light']].map(([val, label]) => (
+                      <button key={val} onClick={() => setModelConfig(prev => ({ ...prev, background: val }))} className={`w-full text-left px-2 py-1.5 text-xs rounded-md flex items-center gap-2 transition-colors ${modelConfig.background === val ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}>
+                        {modelConfig.background === val && <Check className="h-3 w-3 shrink-0" />}
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Custom */}
+                  <div className="p-1.5 border-t border-border">
+                    <button onClick={() => setModelConfig(prev => ({ ...prev, background: 'custom' }))} className={`w-full text-left px-2 py-1.5 text-xs rounded-md flex items-center gap-2 transition-colors ${modelConfig.background === 'custom' ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}>
+                      {modelConfig.background === 'custom' && <Check className="h-3 w-3 shrink-0" />}
+                      Custom prompt
+                    </button>
+                  </div>
+                </PopoverContent>
+              </Popover>
               {modelConfig.background === 'custom' ? (
                 <Textarea
                   className="mt-2 text-xs min-h-[60px]"
@@ -2436,7 +2497,7 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
                   selectedPreset === p.id ? 'ring-2 ring-primary ring-offset-1' : 'hover:border-primary/50'
                 } ${p.id === 'plain-bg' ? 'col-span-2' : ''}`}
               >
-                <div className="aspect-[4/3] overflow-hidden bg-muted">
+                <div className={`${p.id === 'plain-bg' ? 'aspect-[4/3]' : 'aspect-square'} overflow-hidden bg-muted`}>
                   <img src={['apparel', 'fashion'].includes((projectCategory || '').toLowerCase().trim()) ? (APPAREL_PRESET_IMAGES[p.id] || p.img) : p.img} alt={p.name} className="w-full h-full object-cover" loading="lazy" onError={(e) => { e.currentTarget.src = p.img; }} />
                 </div>
                 <div className="p-1.5">
@@ -3227,52 +3288,116 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
 }
 
 /* ── Step 3 Viewport ── */
-function Step3Viewport({ selectedPreset, selectedPresetData, referenceImage }: {
+function Step3Viewport({ selectedPreset, selectedPresetData, referenceImage, productImages, shootType, modelConfig, selectedModelData, modelImages, selectedTemplate, activeTemplates }: {
   selectedPreset: string | null;
   selectedPresetData: typeof STYLE_PRESETS[0] | undefined;
   referenceImage: string | null;
+  productImages: string[];
+  shootType: 'product' | 'model' | null;
+  modelConfig: ModelConfig;
+  selectedModelData: typeof PLACEHOLDER_MODELS[0] | undefined;
+  modelImages: Record<string, string>;
+  selectedTemplate: string | null;
+  activeTemplates: ProductTemplate[];
 }) {
-  // Show reference image
-  if (selectedPreset === 'custom' && referenceImage) {
-    return (
-      <div className="flex items-center justify-center h-full animate-in fade-in duration-300">
-        <div className="max-w-lg w-full">
-          <img src={referenceImage} alt="Custom reference" className="w-full rounded-2xl shadow-lg object-cover" />
-          <p className="text-center mt-4 font-medium">Custom Reference</p>
-          <p className="text-sm text-muted-foreground text-center mt-1">Your uploaded style reference</p>
-        </div>
-      </div>
-    );
-  }
+  const tpl = selectedTemplate ? activeTemplates.find(t => t.id === selectedTemplate) : null;
 
-  // Show selected preset
-  if (selectedPresetData) {
-    return (
-      <div className="flex items-center justify-center h-full animate-in fade-in duration-300">
-        <div className="max-w-lg w-full">
-          <div className="relative rounded-2xl overflow-hidden shadow-lg">
-            <img src={selectedPresetData.img} alt={selectedPresetData.name} className="w-full aspect-[4/3] object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-6">
-              <p className="text-white font-semibold text-xl">{selectedPresetData.name}</p>
-              <p className="text-white/80 text-sm mt-1">{selectedPresetData.desc}</p>
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-6 animate-in fade-in duration-300 p-8">
+      {/* Product Images */}
+      {productImages.length > 0 && (
+        <div className="w-full max-w-md">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Your Product</p>
+          <div className="flex gap-3 items-start">
+            <div className="w-32 h-32 rounded-xl overflow-hidden border border-border shadow-sm shrink-0">
+              <img src={productImages[0]} alt="Product" className="w-full h-full object-cover" />
+            </div>
+            {productImages.length > 1 && (
+              <div className="flex flex-wrap gap-2">
+                {productImages.slice(1).map((img, i) => (
+                  <div key={i} className="w-16 h-16 rounded-lg overflow-hidden border border-border">
+                    <img src={img} alt={`Product ${i + 2}`} className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Shoot Type Card */}
+      {shootType && (
+        <div className="w-full max-w-md">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Shoot Type</p>
+          <div className="rounded-xl border border-border bg-card p-4 flex items-center gap-4">
+            <div className={`h-12 w-12 rounded-lg flex items-center justify-center shrink-0 ${shootType === 'model' ? 'bg-primary/10' : 'bg-accent'}`}>
+              {shootType === 'model' ? <Camera className="h-5 w-5 text-primary" /> : <Package className="h-5 w-5 text-muted-foreground" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold">{shootType === 'model' ? 'Model Shoot' : 'Product Shoot'}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {shootType === 'model' ? 'AI model wearing/holding your product' : 'Product-focused scene composition'}
+              </p>
             </div>
           </div>
         </div>
-      </div>
-    );
-  }
+      )}
 
-  // Empty state
-  return (
-    <div className="flex flex-col items-center justify-center h-full gap-4 text-center animate-in fade-in duration-300">
-      <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center">
-        <Palette className="h-8 w-8 text-muted-foreground" />
-      </div>
-      <div>
-        <p className="font-medium">Choose a style</p>
-        <p className="text-sm text-muted-foreground mt-1">Select a preset to preview the visual direction.</p>
-      </div>
+      {/* Model Card (if model shoot) */}
+      {shootType === 'model' && (selectedModelData || modelConfig.uploadedModelUrl) && (
+        <div className="w-full max-w-md">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Selected Model</p>
+          <div className="rounded-xl border border-border bg-card p-4 flex items-center gap-4">
+            <div className="w-14 h-[72px] rounded-lg overflow-hidden shrink-0 border border-border">
+              {selectedModelData && modelImages[selectedModelData.id] ? (
+                <img src={modelImages[selectedModelData.id]} alt={selectedModelData.name} className="w-full h-full object-cover" />
+              ) : modelConfig.uploadedModelUrl ? (
+                <img src={modelConfig.uploadedModelUrl} alt="Custom model" className="w-full h-full object-cover" />
+              ) : selectedModelData ? (
+                <div className="w-full h-full flex items-center justify-center" style={{ background: selectedModelData.color }}>
+                  <span className="text-lg font-bold text-foreground/40">{selectedModelData.name[0]}</span>
+                </div>
+              ) : null}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold">{selectedModelData ? selectedModelData.name : 'Custom Model'}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{selectedModelData ? selectedModelData.attrs : 'Uploaded image'}</p>
+              {selectedModelData && <p className="text-xs text-muted-foreground mt-0.5">Age: {selectedModelData.ageRange}</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Template Card (if product shoot with template) */}
+      {shootType === 'product' && tpl && (
+        <div className="w-full max-w-md">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Scene Template</p>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: tpl.color }}>
+                <LayoutGrid className="h-4 w-4 text-foreground/60" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">{tpl.name}</p>
+                <Badge variant="secondary" className="text-[10px] mt-1">{tpl.category}</Badge>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {productImages.length === 0 && !shootType && (
+        <div className="flex flex-col items-center justify-center gap-4 text-center">
+          <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center">
+            <Palette className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <div>
+            <p className="font-medium">Configure your shoot</p>
+            <p className="text-sm text-muted-foreground mt-1">Select style options on the left panel.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
