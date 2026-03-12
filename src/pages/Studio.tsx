@@ -1510,7 +1510,7 @@ const Studio = () => {
         {toolbarView === 'studio' && (
           <>
             {activeStep === 1 && (
-              <Step1Viewport productImages={productImages} productInfo={productInfo} analyzingProduct={analyzingProduct} analysisPhase={analysisPhase} productName={productName} setProductName={setProductName} modelChoice={modelChoice} removingBackground={removingBackground} removingBgIndex={removingBgIndex} onRemoveBackground={handleRemoveBackground} onKeepModel={handleKeepModel} imageViews={imageViews} detectingViews={detectingViews} />
+              <Step1Viewport productImages={productImages} productInfo={productInfo} setProductInfo={setProductInfo} analyzingProduct={analyzingProduct} analysisPhase={analysisPhase} productName={productName} setProductName={setProductName} modelChoice={modelChoice} removingBackground={removingBackground} removingBgIndex={removingBgIndex} onRemoveBackground={handleRemoveBackground} onKeepModel={handleKeepModel} imageViews={imageViews} detectingViews={detectingViews} />
             )}
             {activeStep !== 1 && (
               <div className="p-8 min-h-full overflow-y-auto h-full">
