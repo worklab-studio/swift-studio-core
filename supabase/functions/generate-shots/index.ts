@@ -624,6 +624,43 @@ serve(async (req) => {
         editorial: "Editorial shot — high-fashion dramatic pose with strong angles: a confident lean, crossed arms, or asymmetric weight shift. Shot from a low camera angle or slight Dutch tilt for drama. Strong directional lighting with deep shadows on one side. Asymmetric composition with intentional negative space. Magazine cover worthy, fashion-forward, artistic and bold. Completely different mood from the hero shot.",
         flat_lay: "Flat lay — top-down bird's eye view from directly above, product laid flat on a clean surface, styled arrangement with complementary props (accessories, fabrics, botanicals), organized grid or artful scatter composition. No model visible.",
       };
+
+      // ── Apparel model shoot: use pose matrix + background control ──
+      const isApparelModel = ["Apparel", "Fashion"].includes(category) && shotType === "model_shot";
+      const effectivePresetId = presetId || preset || "classic";
+
+      if (isApparelModel && modelConfig) {
+        const poseMatrix = APPAREL_POSE_MATRIX[effectivePresetId] || APPAREL_POSE_MATRIX["classic"];
+        const poseDirective = poseMatrix[label] || poseMatrix["hero"];
+
+        // Background control: plain-bg/ecommerce = solid color ONLY; others = Step 2 background only
+        const isPlainBg = effectivePresetId === "plain-bg";
+        let backgroundDirective: string;
+        if (isPlainBg) {
+          // Extract color from stylePrompt or modelConfig
+          const colorMatch = (stylePrompt || "").match(/solid\s+([\w\s]+?)\s+color/i);
+          const bgColor = colorMatch?.[1] || "white";
+          backgroundDirective = `BACKGROUND: Pure solid ${bgColor} background. No texture, no gradient, no environment, no props, no floor, no shadows on backdrop — completely clean flat ${bgColor} color filling the entire background.`;
+        } else {
+          const stepTwoBg = modelConfig.backgroundPrompt || modelConfig.background || "studio";
+          backgroundDirective = `BACKGROUND: ${stepTwoBg}. Show this environment from a different angle/perspective for each shot but do NOT change the setting itself.`;
+        }
+
+        const modelDesc = `The product is worn by a ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""} model with ${modelConfig.bodyType || "average"} build.`;
+        const outfitDirective = productInfo?.selectedOutfit ? ` OUTFIT: The model is wearing: ${productInfo.selectedOutfit}.` : "";
+        const garmentInfo = productInfo?.garmentType ? ` The garment is a ${productInfo.garmentType}.` : "";
+
+        return `APPAREL MODEL SHOOT — ${label.toUpperCase()} SHOT.
+POSE: ${poseDirective}
+${backgroundDirective}
+${modelDesc}${garmentInfo}${outfitDirective}
+Style: ${baseStyle}. Category: ${category}.
+${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}
+${ratioInstruction} Professional commercial ecommerce photography, high resolution, no text, no watermarks.
+IMPORTANT: Each of the 6 shots MUST have a distinctly different pose and body position. Never repeat the same pose across shots.`;
+      }
+
+      // ── Non-apparel model shots (beauty, etc.) ──
       const modelDesc = shotType === "model_shot" && modelConfig
         ? `The product is worn/held by a ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""} model with ${modelConfig.bodyType || "average"} build. Background: ${modelConfig.backgroundPrompt || modelConfig.background || "studio"}.`
         : "Product-only shot, no human model.";

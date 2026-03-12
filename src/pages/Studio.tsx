@@ -892,6 +892,13 @@ const Studio = () => {
       ? ` CRITICAL: The background MUST be a pure solid ${bgColor} color. No texture, no gradient, no patterns, no props, no environment — completely clean flat ${bgColor} backdrop filling the entire background.`
       : '';
 
+    // For apparel model shoots, exclude background/composition from preset — background comes from Step 2
+    const isApparelModel = isModel && info?.category && ['Apparel', 'Fashion'].includes(info.category);
+    if (isApparelModel) {
+      return `${preset.name} style photography for a ${productDesc}${garmentInfo}. ` +
+        `Lighting: ${settings.lighting}.${outfitInfo}${plainBgInstruction}`;
+    }
+
     return `${preset.name} style photography for a ${productDesc}${garmentInfo}. ` +
       `Pose: ${settings.pose}. ` +
       `Camera angle: ${settings.angle}. ` +
