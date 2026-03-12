@@ -1771,11 +1771,18 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
               </button>
             ))}
           </div>
-          <p className="text-[10px] text-muted-foreground">
-            {selectedTemplate
-              ? `Selected: ${PRODUCT_SHOOT_TEMPLATES.find(t => t.id === selectedTemplate)?.name}`
-              : 'Select a template from the grid on the right →'}
-          </p>
+          {loadingTemplates ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+              <p className="text-[10px] text-muted-foreground">Generating tailored templates…</p>
+            </div>
+          ) : (
+            <p className="text-[10px] text-muted-foreground">
+              {selectedTemplate
+                ? `Selected: ${activeTemplates.find(t => t.id === selectedTemplate)?.name}`
+                : 'Select a template from the grid on the right →'}
+            </p>
+          )}
         </div>
       )}
 
