@@ -3317,7 +3317,7 @@ function Step4Viewport({ progress, stage, shotCount, aspectRatio }: {
 }
 
 /* ── Step 5 Viewport (Results) ── */
-function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, onCopyLink, updateShot, videoExpanded, setVideoExpanded, videoConfig, setVideoConfig, videoGenerating, videoStage, generatedVideo, onGenerateVideo, onCancelVideo, setGeneratedVideo, creditsRemaining, onGenerate, onGenerateCampaignAdd, videoPrompts, videoPromptsLoading, videoPromptStep, setVideoPromptStep, onGenerateVideoPrompts }: {
+function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, onCopyLink, updateShot, videoExpanded, setVideoExpanded, videoConfig, setVideoConfig, videoGenerating, videoStage, generatedVideo, onGenerateVideo, onCancelVideo, setGeneratedVideo, creditsRemaining, onGenerate, onGenerateCampaignAdd, videoPrompts, videoPromptsLoading, videoPromptStep, setVideoPromptStep, onGenerateVideoPrompts, isAddingMore = false }: {
   shots: GeneratedShot[];
   shotCount: string;
   aspectRatio: string;
@@ -3343,14 +3343,17 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
   videoPromptStep: 'config' | 'prompts' | 'generating' | 'done';
   setVideoPromptStep: (step: 'config' | 'prompts' | 'generating' | 'done') => void;
   onGenerateVideoPrompts: () => void;
+  isAddingMore?: boolean;
 }) {
-  const isCampaign = shots.length > 1;
+  const isCampaign = shots.length > 1 || isAddingMore;
   const videoCreditCost = calculateVideoCreditCost(videoConfig.duration, videoConfig.resolution);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div>
-        <h2 className="text-xl font-medium" style={{ fontFamily: "'Instrument Serif', serif" }}>Your shots are ready</h2>
+        <h2 className="text-xl font-medium" style={{ fontFamily: "'Instrument Serif', serif" }}>
+          {isAddingMore ? 'Generating more shots...' : 'Your shots are ready'}
+        </h2>
         <p className="text-sm text-muted-foreground mt-1">Click any shot to edit with a prompt. Use the export panel on the left to download.</p>
       </div>
 
@@ -3360,6 +3363,15 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
           {shots.map((shot, i) => (
             <ShotCard key={shot.id} shot={shot} index={i} aspectRatio={aspectRatio} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />
           ))}
+          {isAddingMore && Array.from({ length: 5 }).map((_, i) => (
+            <div key={`skeleton-${i}`} className="rounded-xl overflow-hidden border bg-card animate-in fade-in duration-300" style={{ animationDelay: `${i * 80}ms` }}>
+              <Skeleton className="w-full" style={{ aspectRatio: ratioToCss(aspectRatio) }} />
+              <div className="p-4 space-y-2">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-3 w-32" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="max-w-lg">
@@ -3368,7 +3380,7 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
       )}
 
       {/* Single shot actions */}
-      {!isCampaign && (
+      {!isCampaign && !isAddingMore && (
         <div className="max-w-lg space-y-3">
           <Button variant="outline" className="w-full" onClick={onGenerate}>
             Generate another variation — 1 credit
