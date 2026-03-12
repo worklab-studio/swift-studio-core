@@ -1,4 +1,23 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
+import apparelClassic from '@/assets/presets/Classic.png';
+import apparelMinimal from '@/assets/presets/Minimal.png';
+import apparelLuxury from '@/assets/presets/Luxury.png';
+import apparelLoudLuxury from '@/assets/presets/Loud_luxury.png';
+import apparelMagazine from '@/assets/presets/Magazine.png';
+import apparelAvantGarde from '@/assets/presets/Avant_Grande.png';
+import apparelInfluencer from '@/assets/presets/Influencer.png';
+import apparelLifestyle from '@/assets/presets/Lifestyle.png';
+
+const APPAREL_PRESET_IMAGES: Record<string, string> = {
+  classic: apparelClassic,
+  minimalist: apparelMinimal,
+  luxury: apparelLuxury,
+  'loud-luxury': apparelLoudLuxury,
+  magazine: apparelMagazine,
+  'avant-garde': apparelAvantGarde,
+  influencer: apparelInfluencer,
+  lifestyle: apparelLifestyle,
+};
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -1341,6 +1360,7 @@ const Studio = () => {
                     shootType={shootType}
                     selectedTemplate={selectedTemplate}
                     activeTemplates={dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES}
+                    projectCategory={project?.category || ''}
                   />
                 )}
                 {activeStep === 4 && (
@@ -2251,7 +2271,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
 }
 
 /* ── Step 3 Config (Left) ── */
-function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, aspectRatio, setAspectRatio, additionalContext, setAdditionalContext, styleSettings, analyzingStyle, plainBgColor, setPlainBgColor, shootType, selectedTemplate, activeTemplates }: {
+function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, aspectRatio, setAspectRatio, additionalContext, setAdditionalContext, styleSettings, analyzingStyle, plainBgColor, setPlainBgColor, shootType, selectedTemplate, activeTemplates, projectCategory }: {
   selectedPreset: string | null;
   setSelectedPreset: (v: string | null) => void;
   referenceImage: string | null;
@@ -2271,6 +2291,7 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
   shootType: 'product' | 'model' | null;
   selectedTemplate: string | null;
   activeTemplates: ProductTemplate[];
+  projectCategory: string;
 }) {
   const isProductWithTemplate = shootType === 'product' && !!selectedTemplate;
   const isPlainBgTemplate = selectedTemplate === 'pt-plain-bg';
@@ -2333,7 +2354,7 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
                 } ${p.id === 'plain-bg' ? 'col-span-2' : ''}`}
               >
                 <div className="aspect-[4/3] overflow-hidden bg-muted">
-                  <img src={p.img} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
+                  <img src={['Apparel', 'Fashion'].includes(projectCategory) ? (APPAREL_PRESET_IMAGES[p.id] || p.img) : p.img} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
                 </div>
                 <div className="p-1.5">
                   <p className="text-[11px] font-semibold">{p.name}</p>
