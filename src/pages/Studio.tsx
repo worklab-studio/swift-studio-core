@@ -1127,16 +1127,75 @@ const Studio = () => {
     });
   };
 
-  const handleDownload = () => {
-    const selected = generatedShots.filter(s => selectedExportShots.has(s.id));
-    selected.forEach(shot => {
-      const link = document.createElement('a');
-      link.href = shot.url;
-      link.download = `${project?.name || 'shot'}-${shot.shotLabel}.${exportFormat}`;
-      link.target = '_blank';
-      link.click();
+  const convertImageToFormat = async (imageUrl: string, format: string): Promise<Blob> => {
+    const response = await fetch(imageUrl);
+    const blob = await response.blob();
+    if (format === 'png' && blob.type === 'image/png') return blob;
+    if (format === 'jpg' && (blob.type === 'image/jpeg')) return blob;
+    // Convert via canvas
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d')!;
+        if (format === 'jpg') {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob(
+          (b) => b ? resolve(b) : reject(new Error('Canvas conversion failed')),
+          format === 'jpg' ? 'image/jpeg' : 'image/png',
+          0.95
+        );
+      };
+      img.onerror = () => reject(new Error('Image load failed'));
+      img.src = imageUrl;
     });
-    toast({ title: `Downloading ${selected.length} shot${selected.length > 1 ? 's' : ''}` });
+  };
+
+  const handleDownload = async () => {
+    const selected = generatedShots.filter(s => selectedExportShots.has(s.id));
+    if (selected.length === 0) return;
+    const ext = exportFormat === 'jpg' ? 'jpg' : 'png';
+    const projectName = project?.name || 'shot';
+
+    try {
+      if (selected.length === 1) {
+        toast({ title: 'Preparing download...' });
+        const blob = await convertImageToFormat(selected[0].url, exportFormat);
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${projectName}-${selected[0].shotLabel}.${ext}`;
+        link.click();
+        URL.revokeObjectURL(url);
+        toast({ title: 'Download started' });
+      } else {
+        toast({ title: `Preparing ${selected.length} images...` });
+        const zip = new JSZip();
+        await Promise.all(
+          selected.map(async (shot, i) => {
+            const blob = await convertImageToFormat(shot.url, exportFormat);
+            zip.file(`${projectName}-${shot.shotLabel}-${i + 1}.${ext}`, blob);
+          })
+        );
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(zipBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${projectName}-shots.zip`;
+        link.click();
+        URL.revokeObjectURL(url);
+        toast({ title: `Downloaded ${selected.length} shots as ZIP` });
+      }
+    } catch (err) {
+      console.error('Download error:', err);
+      toast({ title: 'Download failed', description: 'Could not download images', variant: 'destructive' });
+    }
   };
 
   const handleCopyLink = (url: string) => {
