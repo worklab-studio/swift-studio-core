@@ -176,7 +176,8 @@ async function generateWithVeo(
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!pollRes.ok) {
-      console.error("[Veo] Poll error:", pollRes.status);
+      const errBody = await pollRes.text();
+      console.error("[Veo] Poll error:", pollRes.status, errBody);
       continue;
     }
 

@@ -3699,7 +3699,7 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
 /* ════════════════════════════════════════════════
    ShotCard Component
    ════════════════════════════════════════════════ */
-function ShotCard({ shot, index, aspectRatio = '1:1', onEdit, onUndo, onCopyLink, updateShot }: {
+function ShotCard({ shot, index, aspectRatio = '1:1', onEdit, onUndo, onCopyLink, updateShot, onView }: {
   shot: GeneratedShot;
   index: number;
   aspectRatio?: string;
@@ -3707,10 +3707,11 @@ function ShotCard({ shot, index, aspectRatio = '1:1', onEdit, onUndo, onCopyLink
   onUndo: (shot: GeneratedShot) => void;
   onCopyLink: (url: string) => void;
   updateShot: (id: string, updates: Partial<GeneratedShot>) => void;
+  onView?: (url: string) => void;
 }) {
   return (
     <div className="rounded-xl overflow-hidden border bg-card animate-in fade-in duration-300" style={{ animationDelay: `${index * 100}ms` }}>
-      <div className="relative overflow-hidden bg-muted" style={{ aspectRatio: ratioToCss(aspectRatio) }}>
+      <div className="relative overflow-hidden bg-muted cursor-pointer group" style={{ aspectRatio: ratioToCss(aspectRatio) }} onClick={() => onView?.(shot.url)}>
         <img
           src={shot.url}
           alt={SHOT_LABEL_DISPLAY[shot.shotLabel] || shot.shotLabel}
@@ -3719,6 +3720,11 @@ function ShotCard({ shot, index, aspectRatio = '1:1', onEdit, onUndo, onCopyLink
         {shot.isRegenerating && (
           <div className="absolute inset-0 flex items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
+        {!shot.isRegenerating && (
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+            <Eye className="h-6 w-6 text-white" />
           </div>
         )}
       </div>
