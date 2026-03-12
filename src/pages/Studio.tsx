@@ -714,6 +714,26 @@ const Studio = () => {
     setAnalyzingProduct(false);
   }, []);
 
+  /* ── Detect views for multiple images ── */
+  const detectViews = useCallback(async (urls: string[]) => {
+    if (urls.length < 2) return;
+    setDetectingViews(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('detect-views', {
+        body: { images: urls },
+      });
+      if (error || !data?.views) {
+        console.error('View detection failed:', error);
+        return;
+      }
+      setImageViews(prev => ({ ...prev, ...data.views }));
+    } catch (e) {
+      console.error('View detection error:', e);
+    } finally {
+      setDetectingViews(false);
+    }
+  }, []);
+
   /* ── Step 1 handlers ── */
   const handleProductImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
