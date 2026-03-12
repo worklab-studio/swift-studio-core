@@ -164,9 +164,14 @@ async function generateWithVeo(
 
   console.log(`[Veo] Operation: ${operationName}`);
 
-  // Poll for completion
-  const pollUrl = `https://us-central1-aiplatform.googleapis.com/v1/${operationName}`;
-  const maxAttempts = 36; // ~3 minutes at 5s intervals
+  // Fix polling URL: strip publisher/model path from operation name
+  // "projects/{p}/locations/{l}/publishers/.../operations/{id}" → "projects/{p}/locations/{l}/operations/{id}"
+  const parts = operationName.match(/^(projects\/[^/]+\/locations\/[^/]+)\/.*\/(operations\/[^/]+)$/);
+  const pollPath = parts ? `${parts[1]}/${parts[2]}` : operationName;
+  const pollUrl = `https://us-central1-aiplatform.googleapis.com/v1/${pollPath}`;
+  console.log(`[Veo] Poll URL: ${pollUrl}`);
+
+  const maxAttempts = 24; // ~2 minutes at 5s intervals (stay within edge function limits)
   for (let i = 0; i < maxAttempts; i++) {
     await new Promise((r) => setTimeout(r, 5000));
 
@@ -183,7 +188,6 @@ async function generateWithVeo(
       if (pollData.error) {
         throw new Error(`Veo failed: ${JSON.stringify(pollData.error)}`);
       }
-      // Extract video URL from response
       const videos =
         pollData.response?.generateVideoResponse?.generatedSamples ||
         pollData.response?.predictions;
@@ -200,7 +204,7 @@ async function generateWithVeo(
     console.log(`[Veo] Polling... attempt ${i + 1}/${maxAttempts}`);
   }
 
-  throw new Error("Veo generation timed out after 3 minutes");
+  throw new Error("Veo generation timed out after 2 minutes");
 }
 
 // ─── Runway ML ───
