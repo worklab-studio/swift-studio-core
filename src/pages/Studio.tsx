@@ -2537,7 +2537,7 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
 }
 
 /* ── Step 2 Viewport ── */
-function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelData, selectedTemplate, setSelectedTemplate, templateCategory, modelImages, generatingPortraits, portraitProgress, portraitTotal, onGeneratePortraits }: {
+function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelData, selectedTemplate, setSelectedTemplate, templateCategory, modelImages, generatingPortraits, portraitProgress, portraitTotal, onGeneratePortraits, activeTemplates, loadingTemplates, onRegenerateTemplates }: {
   shootType: 'product' | 'model' | null;
   modelConfig: ModelConfig;
   setModelConfig: React.Dispatch<React.SetStateAction<ModelConfig>>;
@@ -2550,10 +2550,13 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
   portraitProgress: number;
   portraitTotal: number;
   onGeneratePortraits: () => void;
+  activeTemplates: ProductTemplate[];
+  loadingTemplates: boolean;
+  onRegenerateTemplates: () => void;
 }) {
   const filteredTemplates = templateCategory === 'All'
-    ? PRODUCT_SHOOT_TEMPLATES
-    : PRODUCT_SHOOT_TEMPLATES.filter(t => t.category === templateCategory);
+    ? activeTemplates
+    : activeTemplates.filter(t => t.category === templateCategory);
 
   if (!shootType) {
     return (
@@ -2572,14 +2575,43 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
   if (shootType === 'product') {
     return (
       <div className="h-full flex flex-col animate-in fade-in duration-300">
-        <div className="shrink-0 mb-4">
-          <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Scene Templates</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {selectedTemplate
-              ? `Selected: ${PRODUCT_SHOOT_TEMPLATES.find(t => t.id === selectedTemplate)?.name}`
-              : 'Choose a scene template for your product shoot.'}
-          </p>
+        <div className="shrink-0 mb-4 flex items-start justify-between">
+          <div>
+            <p className="font-medium text-lg" style={{ fontFamily: "'Instrument Serif', serif" }}>Scene Templates</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {loadingTemplates
+                ? 'Generating templates tailored to your product…'
+                : selectedTemplate
+                  ? `Selected: ${activeTemplates.find(t => t.id === selectedTemplate)?.name}`
+                  : 'Choose a scene template for your product shoot.'}
+            </p>
+          </div>
+          {!loadingTemplates && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 shrink-0"
+              onClick={onRegenerateTemplates}
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Regenerate
+            </Button>
+          )}
         </div>
+        {loadingTemplates ? (
+          <div className="grid grid-cols-4 gap-3 pb-4">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="rounded-xl overflow-hidden border">
+                <Skeleton className="aspect-square w-full" />
+                <div className="p-2 space-y-1.5">
+                  <Skeleton className="h-3 w-3/4" />
+                  <Skeleton className="h-2 w-full" />
+                  <Skeleton className="h-2 w-2/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
         <ScrollArea className="flex-1 bg-background relative z-10">
           <div className="grid grid-cols-4 gap-3 pb-4">
             {filteredTemplates.map((t) => {
