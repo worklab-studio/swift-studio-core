@@ -1009,11 +1009,11 @@ const Studio = () => {
       });
       setVideoGenerating(false);
       setVideoPromptStep('done');
-    } catch {
+    } catch (e: any) {
       clearInterval(stageInterval);
       setVideoGenerating(false);
       setVideoPromptStep('prompts');
-      toast({ title: 'Video generation failed', description: 'Network error', variant: 'destructive' });
+      toast({ title: 'Video generation failed', description: e?.message || 'Network error — the generation may still be processing', variant: 'destructive' });
     }
   };
 
