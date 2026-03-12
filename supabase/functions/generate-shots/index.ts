@@ -11,6 +11,229 @@ const SHOT_LABELS_CAMPAIGN = ["hero", "detail", "lifestyle", "alternate", "edito
 const SHOT_LABELS_CAMPAIGN_ADD = ["detail", "lifestyle", "alternate", "editorial", "flat_lay"];
 const SHOT_LABELS_SINGLE = ["hero"];
 
+/* ── Fidelity & Editing Blocks ── */
+const FIDELITY_BLOCK = "PRODUCT FIDELITY: Product branding MUST be razor-sharp. Preserve EVERY letter, logo, symbol, color, shape, texture EXACTLY as in the reference image. Zero distortion, zero invention.";
+const EDITING_INSTRUCTION = "EDITING DIRECTIVE: Treat the product as an IMMUTABLE, FIXED pixel element. DO NOT redraw, regenerate, or alter the product in any way. Only modify the environment, lighting, and surroundings around it.";
+
+/* ── Mystic background keywords ── */
+const MYSTIC_KEYWORDS = /moss|forest|fog|ethereal|temple|volcanic|aurora|enchanted|mystical|ancient|sacred|crystal cave|waterfall|moonlit|starlit|celestial|garden of eden|zen|bamboo|misty|otherworldly/i;
+const ARTISTIC_KEYWORDS = /rose petal|crushed ice|antique mirror|candlelight|dark slate|moody|dramatic|spotlight|velvet|silk|raw stone|marble noir|obsidian/i;
+
+/* ── Step 1: Product Description Extraction ── */
+async function describeProduct(productImageUrl: string, apiKey: string): Promise<string> {
+  try {
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "system",
+            content: "You are a product packaging analyst. Describe products precisely for an AI image generator. Never mention people, faces, or models — only describe the physical product container/packaging. Be exhaustive: packaging shape, approximate dimensions, ALL colors with exact placement, material finish (matte/glossy/metallic/frosted), every piece of text/branding visible, logo design and placement, cap/lid/closure style, graphics, patterns, gradients. Keep it factual and visual. Max 200 words."
+          },
+          {
+            role: "user",
+            content: [
+              { type: "text", text: "Describe this product in precise visual detail for an AI image generator." },
+              { type: "image_url", image_url: { url: productImageUrl } }
+            ]
+          }
+        ],
+      }),
+    });
+
+    if (!resp.ok) {
+      console.error("describeProduct failed:", resp.status);
+      return "";
+    }
+
+    const data = await resp.json();
+    return data.choices?.[0]?.message?.content || "";
+  } catch (e) {
+    console.error("describeProduct error:", e);
+    return "";
+  }
+}
+
+/* ── Beauty Showcase Prompt Builder ── */
+function buildBeautyShowcasePrompt(
+  label: string,
+  productDescription: string,
+  background: string,
+  productInfo: any,
+  shotDesc: string,
+): string {
+  const isMystic = MYSTIC_KEYWORDS.test(background);
+
+  // Application-aware props
+  const application = (productInfo?.description || "").toLowerCase();
+  let applicationProps = "";
+  if (/hair/.test(application)) {
+    applicationProps = "Botanical elements nearby — delicate leaves, a single orchid bloom, fine hair-strand textured props suggesting silk and flow.";
+  } else if (/face|body|skin|moistur/.test(application)) {
+    applicationProps = "A small elegant cream swatch nearby showing the product's texture, fresh dew drops glistening on the surface.";
+  } else if (/lip/.test(application)) {
+    applicationProps = "Product shown slightly open with color visible at the tip, tiny water droplets catching light on the surface.";
+  } else if (/eye/.test(application)) {
+    applicationProps = "Applicator tip subtly visible, sparkle elements and morning dew drops catching prismatic light nearby.";
+  } else if (/nail/.test(application)) {
+    applicationProps = "Brush resting elegantly beside the bottle, a small color swatch, scattered soft petals complementing the shade.";
+  } else if (/fragrance|perfume|cologne|scent/.test(application)) {
+    applicationProps = "Ethereal mist or vapor wisping from the bottle, light refracting beautifully through the glass creating caustic patterns.";
+  } else {
+    applicationProps = "Subtle dew drops on the product surface for freshness, a hint of the product's key ingredient nearby.";
+  }
+
+  // Size-aware scale
+  const material = (productInfo?.material || "").toLowerCase();
+  let sizeDesc = "Standard-sized product.";
+  if (/mini|travel|sample|deluxe sample/.test(material)) {
+    sizeDesc = "This is a MINI/TRAVEL size product — fits in a palm, render at exact small real-world scale. Do NOT enlarge.";
+  } else if (/large|family|jumbo|pump/.test(material)) {
+    sizeDesc = "This is a LARGE format product — pump bottle or family-size container. Render at generous real-world scale.";
+  }
+
+  const settingFallback = isMystic
+    ? "enchanted forest with moss-covered rocks, soft dappled sunlight filtering through ancient canopy"
+    : "clean minimalist marble surface with soft gradient backdrop";
+
+  const setting = background || settingFallback;
+
+  if (isMystic) {
+    return `EDIT this product image: Place this EXACT product into an ETHEREAL, OTHERWORLDLY setting.
+PRODUCT-ONLY — NO human model, NO hands, NO skin, NO face, NO body parts. Any human element is a CRITICAL FAILURE.
+DO NOT redraw or regenerate the product. ${productDescription ? `\nPRODUCT DETAILS: ${productDescription}` : ""}
+${sizeDesc} Render at exact real-world scale.
+Application area context: ${applicationProps}
+${shotDesc}
+Setting: ${setting}
+Composition: Cinematic depth of field with foreground elements (moss, petals, mist) framing the product naturally.
+Lighting: Atmospheric, natural environmental light — dappled sunlight, golden hour glow filtering through foliage, volumetric light rays.
+Fresh dew drops on the product surface for freshness and tactile appeal.
+Feel: Magical, aspirational — like discovering a sacred beauty product in an untouched natural sanctuary.
+FINAL REMINDER: ABSOLUTELY ZERO humans, hands, fingers, skin, or body parts anywhere in the image.
+${FIDELITY_BLOCK}
+${EDITING_INSTRUCTION}
+Image aspect ratio MUST be 4:5 portrait.`;
+  }
+
+  // Simple / clean mode
+  return `EDIT this product image: Place this EXACT product into a CLEAN, MINIMALIST luxury setting.
+PRODUCT-ONLY — NO human model, NO hands, NO skin, NO face, NO body parts. Any human element is a CRITICAL FAILURE.
+DO NOT redraw or regenerate the product. ${productDescription ? `\nPRODUCT DETAILS: ${productDescription}` : ""}
+${sizeDesc} Render at exact real-world scale.
+Application area context: ${applicationProps}
+${shotDesc}
+Setting: ${setting}
+Composition: Clean, centered, with subtle depth — product hero with refined negative space.
+Lighting: Dramatic studio lighting with soft key light from above-left, subtle fill from right, gentle rim light separating product from background.
+Subtle dew drops or condensation on the product surface for freshness.
+Feel: High-end department store display — clean elegance, aspirational luxury, editorial precision.
+FINAL REMINDER: ABSOLUTELY ZERO humans, hands, fingers, skin, or body parts anywhere in the image.
+${FIDELITY_BLOCK}
+${EDITING_INSTRUCTION}
+Image aspect ratio MUST be 4:5 portrait.`;
+}
+
+/* ── Jewellery Showcase Prompt Builder ── */
+function buildJewelleryShowcasePrompt(
+  label: string,
+  productDescription: string,
+  background: string,
+  productInfo: any,
+  shotDesc: string,
+): string {
+  const isArtistic = ARTISTIC_KEYWORDS.test(background);
+
+  // Type-aware display instructions
+  const desc = (productInfo?.description || "").toLowerCase();
+  const displayByType: Record<string, string> = {
+    ring: "The ring should be standing upright on a small ring holder or stand, tilted at a slight elegant angle to catch light on every facet.",
+    necklace: "The necklace should be draped gracefully over a velvet mannequin bust or laid in a gentle flowing curve on a plush surface, showing the full chain and pendant.",
+    chain: "The chain should be laid in a graceful S-curve showing individual links catching light, with clasp detail visible.",
+    pendant: "The pendant should be centered with the chain arranged in a gentle arc above it, focal point on the pendant design.",
+    earring: "The earrings should be displayed as a symmetrical pair on a small cushion or elegant stand, at matching angles.",
+    bracelet: "The bracelet should be wrapped around a slim mannequin wrist form or displayed as an open circle on dark velvet.",
+    bangle: "The bangle should be standing upright at a slight lean, showing the full circumference and inner/outer finish.",
+    watch: "The watch should be standing upright on its side showing the dial face, crown, and bracelet links, at a slight 3/4 angle.",
+  };
+
+  let displayInstruction = "Display the jewellery piece at its most flattering angle on an elegant surface.";
+  for (const [type, instruction] of Object.entries(displayByType)) {
+    if (desc.includes(type)) {
+      displayInstruction = instruction;
+      break;
+    }
+  }
+
+  // Metal-aware lighting
+  const colors = (productInfo?.colors || []).map((c: string) => c.toLowerCase()).join(" ");
+  let metalLighting = "Professional studio lighting emphasising natural sparkle and material lustre.";
+  if (/gold|yellow gold/.test(colors)) {
+    metalLighting = "Warm golden lighting to enhance gold lustre — amber-toned key light with soft warm fill.";
+  } else if (/silver|platinum|white gold/.test(colors)) {
+    metalLighting = "Cool, crisp lighting to emphasise silver brilliance — clean white key light with subtle blue rim.";
+  } else if (/rose gold|pink gold/.test(colors)) {
+    metalLighting = "Soft warm-pink toned lighting to flatter rose gold — gentle peach key light with warm fill.";
+  }
+
+  const settingFallback = isArtistic
+    ? "raw stone slab with scattered rose petals and warm bokeh orbs in the background"
+    : "clean dark velvet display surface with soft gradient background";
+
+  const setting = background || settingFallback;
+
+  if (isArtistic) {
+    return `EDIT this product image: Place this EXACT jewellery piece into an ARTISTIC, EDITORIAL setting.
+PRODUCT-ONLY — NO human model, NO hands, NO skin, NO face, NO body parts, NO fingers wearing the jewellery. Any human element is a CRITICAL FAILURE.
+DO NOT redraw or regenerate the product. ${productDescription ? `\nPRODUCT DETAILS: ${productDescription}` : ""}
+${displayInstruction}
+${metalLighting}
+${shotDesc}
+Setting: ${setting}
+Composition: Dramatic depth of field, light catching every facet and metalwork detail, bold editorial framing.
+Include subtle environmental elements — petals, water droplets, reflections, light caustics dancing across surfaces.
+Every facet, gemstone, engraving, hallmark, and setting detail must be RAZOR-SHARP.
+Feel: High-art jewellery editorial — moody, dramatic, museum-worthy, the piece as sculptural art.
+FINAL REMINDER: ABSOLUTELY ZERO humans, hands, fingers, skin, or body parts anywhere in the image.
+${FIDELITY_BLOCK}
+${EDITING_INSTRUCTION}
+Image aspect ratio MUST be 4:5 portrait.`;
+  }
+
+  // Luxury display mode
+  return `EDIT this product image: Place this EXACT jewellery piece on a LUXURY DISPLAY surface.
+PRODUCT-ONLY — NO human model, NO hands, NO skin, NO face, NO body parts, NO fingers wearing the jewellery. Any human element is a CRITICAL FAILURE.
+DO NOT redraw or regenerate the product. ${productDescription ? `\nPRODUCT DETAILS: ${productDescription}` : ""}
+${displayInstruction}
+${metalLighting}
+${shotDesc}
+Setting: ${setting}
+Composition: Clean, elegant framing with soft background blur, premium display feel.
+Every facet, gemstone, engraving, hallmark, and setting detail must be RAZOR-SHARP.
+Feel: Luxury jewellery house campaign — refined, aspirational, immaculate presentation.
+FINAL REMINDER: ABSOLUTELY ZERO humans, hands, fingers, skin, or body parts anywhere in the image.
+${FIDELITY_BLOCK}
+${EDITING_INSTRUCTION}
+Image aspect ratio MUST be 4:5 portrait.`;
+}
+
+/* ── Safe fallback prompt for content policy blocks ── */
+function buildSafePrompt(productDescription: string, background: string): string {
+  return `Place this product on a ${background || "clean white surface"}. Product-only photograph, no people, no hands, no models. Simple clean commercial product photography. ${productDescription ? `Product: ${productDescription}` : ""} ${FIDELITY_BLOCK} ${EDITING_INSTRUCTION}`;
+}
+
+/* ── Showcase category detection ── */
+function isShowcaseCategory(category: string): "beauty" | "jewellery" | null {
+  if (["Skincare", "Beauty"].includes(category)) return "beauty";
+  if (["Jewelry", "Jewellery", "Watch"].includes(category)) return "jewellery";
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -40,7 +263,7 @@ serve(async (req) => {
     }
     const userId = user.id;
 
-    const { projectId, preset, shotCount, additionalContext, category, shotType, modelConfig, stylePrompt, productImageUrl, aspectRatio, keepOriginalModel, productLabel, sceneTemplate } = await req.json();
+    const { projectId, preset, shotCount, additionalContext, category, shotType, modelConfig, stylePrompt, productImageUrl, aspectRatio, keepOriginalModel, productLabel, sceneTemplate, productInfo } = await req.json();
 
     if (!projectId || !preset || !shotCount) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -104,6 +327,17 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // ── Step 1: Product description extraction for showcase categories ──
+    const showcaseType = isShowcaseCategory(category);
+    const isProductShootWithTemplate = sceneTemplate?.description && shotType !== "model_shot";
+    let productDescription = "";
+
+    if (isProductShootWithTemplate && showcaseType && productImageUrl) {
+      console.log(`Showcase mode: ${showcaseType} — extracting product description...`);
+      productDescription = await describeProduct(productImageUrl, LOVABLE_API_KEY);
+      console.log(`Product description extracted: ${productDescription.substring(0, 100)}...`);
+    }
+
     // Build prompts for each shot
     const ratioInstruction = aspectRatio ? `Image aspect ratio: ${aspectRatio}.` : "";
     const keepModelInstruction = keepOriginalModel
@@ -124,6 +358,7 @@ serve(async (req) => {
       "Skincare": "Show the product with its texture — cream swirls, liquid droplets, ingredient splashes (botanicals, honey, citrus). The packaging should gleam with dewy freshness.",
       "Beauty": "Show the product with its texture — cream swirls, liquid droplets, ingredient splashes (botanicals, honey, citrus). The packaging should gleam with dewy freshness and luminosity.",
       "Jewelry": "Capture light refractions, gemstone fire, metal luster. Dramatic macro-close energy even in wide shots. Every facet should sparkle with brilliance.",
+      "Jewellery": "Capture light refractions, gemstone fire, metal luster. Dramatic macro-close energy even in wide shots. Every facet should sparkle with brilliance.",
       "Watch": "Capture light refractions, metal luster, dial details, crystal clarity. Dramatic macro-close energy even in wide shots. Precision engineering visible.",
       "Electronics": "Sleek tech product launch feel — screen glow, interface reflections, precision engineering visible. Futuristic and minimal aesthetic.",
       "Food": "Appetite appeal — condensation, steam, fresh ingredients, pour shots, splashes frozen in time. Sensory and visceral.",
@@ -159,6 +394,18 @@ serve(async (req) => {
 
       if (isProductShoot) {
         const shotDesc = productShotTypeDesc[label] || label;
+
+        // ── Showcase pipeline for Beauty & Jewellery ──
+        if (showcaseType && productDescription) {
+          if (showcaseType === "beauty") {
+            return buildBeautyShowcasePrompt(label, productDescription, sceneTemplate.description, productInfo, shotDesc);
+          }
+          if (showcaseType === "jewellery") {
+            return buildJewelleryShowcasePrompt(label, productDescription, sceneTemplate.description, productInfo, shotDesc);
+          }
+        }
+
+        // ── Default product shoot (non-showcase categories) ──
         const apparelDirective = isApparel ? ` GARMENT SHAPE: ${apparelShotShapes[label] || apparelShotShapes.hero}` : "";
         return `${MASTERPIECE_BOOSTER} PRODUCT STYLE: ${categoryModifier}${apparelDirective} ${shotDesc} SCENE DIRECTION: ${sceneTemplate.description}. Product category: ${category}. Product-only shot, absolutely no human model in the image. ${consistencyInstruction}${additionalContext ? ` Additional creative direction: ${additionalContext}` : ""}. ${ratioInstruction} No text, no watermarks, no logos.`;
       }
@@ -184,12 +431,17 @@ serve(async (req) => {
     const insertedAssets: any[] = [];
 
     async function generateSingleShot(label: string, prompt: string): Promise<any | null> {
+      const isShowcase = showcaseType && isProductShootWithTemplate && productDescription;
       const messageContent: any[] = [{ type: "text", text: prompt }];
       if (productImageUrl) {
         messageContent.push({ type: "image_url", image_url: { url: productImageUrl } });
       }
 
-      const callAI = async () => {
+      const callAI = async (overridePrompt?: string) => {
+        const content = overridePrompt
+          ? [{ type: "text", text: overridePrompt }, ...(productImageUrl ? [{ type: "image_url", image_url: { url: productImageUrl } }] : [])]
+          : messageContent;
+
         const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -198,7 +450,7 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             model: "google/gemini-3-pro-image-preview",
-            messages: [{ role: "user", content: messageContent }],
+            messages: [{ role: "user", content }],
             modalities: ["image", "text"],
           }),
         });
@@ -215,6 +467,14 @@ serve(async (req) => {
 
       if (aiResponse.status === 402) {
         throw new Error("INSUFFICIENT_AI_CREDITS");
+      }
+
+      // Content safety fallback for showcase modes
+      if (!aiResponse.ok && isShowcase) {
+        const errText = await aiResponse.text();
+        console.warn(`Showcase ${label} blocked (${aiResponse.status}), trying safe fallback. Error: ${errText}`);
+        const safePrompt = buildSafePrompt(productDescription, sceneTemplate?.description || "");
+        aiResponse = await callAI(safePrompt);
       }
 
       if (!aiResponse.ok) {
