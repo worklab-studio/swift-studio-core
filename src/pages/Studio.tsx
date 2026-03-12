@@ -427,6 +427,11 @@ const Studio = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [templateCategory, setTemplateCategory] = useState<string>('All');
 
+  // Category-specific settings (Beauty & FMCG)
+  const [beautyApplication, setBeautyApplication] = useState<string>('');
+  const [productSize, setProductSize] = useState<string>('');
+  const [selectedOutfit, setSelectedOutfit] = useState<string>('');
+
   // Dynamic AI-generated templates
   const [dynamicTemplates, setDynamicTemplates] = useState<ProductTemplate[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
