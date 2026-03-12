@@ -1510,7 +1510,7 @@ const Studio = () => {
         {toolbarView === 'studio' && (
           <>
             {activeStep === 1 && (
-              <Step1Viewport productImages={productImages} productInfo={productInfo} analyzingProduct={analyzingProduct} analysisPhase={analysisPhase} productName={productName} setProductName={setProductName} modelChoice={modelChoice} removingBackground={removingBackground} removingBgIndex={removingBgIndex} onRemoveBackground={handleRemoveBackground} onKeepModel={handleKeepModel} imageViews={imageViews} detectingViews={detectingViews} />
+              <Step1Viewport productImages={productImages} productInfo={productInfo} setProductInfo={setProductInfo} analyzingProduct={analyzingProduct} analysisPhase={analysisPhase} productName={productName} setProductName={setProductName} modelChoice={modelChoice} removingBackground={removingBackground} removingBgIndex={removingBgIndex} onRemoveBackground={handleRemoveBackground} onKeepModel={handleKeepModel} imageViews={imageViews} detectingViews={detectingViews} />
             )}
             {activeStep !== 1 && (
               <div className="p-8 min-h-full overflow-y-auto h-full">
@@ -2604,9 +2604,10 @@ function Step5Config({ shots, exportFormat, setExportFormat, selectedShots, setS
    ════════════════════════════════════════════════════════════════ */
 
 /* ── Step 1 Viewport ── */
-function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisPhase, productName, setProductName, modelChoice, removingBackground, removingBgIndex, onRemoveBackground, onKeepModel, imageViews, detectingViews }: { 
+function Step1Viewport({ productImages, productInfo, setProductInfo, analyzingProduct, analysisPhase, productName, setProductName, modelChoice, removingBackground, removingBgIndex, onRemoveBackground, onKeepModel, imageViews, detectingViews }: { 
   productImages: string[]; 
   productInfo: ProductInfo | null;
+  setProductInfo: React.Dispatch<React.SetStateAction<ProductInfo | null>>;
   analyzingProduct: boolean;
   analysisPhase: 'idle' | 'analyzing' | 'done';
   productName: string;
@@ -2628,6 +2629,11 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
   ];
   const [cycleIndex, setCycleIndex] = useState(0);
   const [selectedThumbIndex, setSelectedThumbIndex] = useState<number | null>(null);
+  const [editingCategory, setEditingCategory] = useState(false);
+  const [editCategoryVal, setEditCategoryVal] = useState('');
+  const [editGarmentVal, setEditGarmentVal] = useState('');
+  const [editingOutfit, setEditingOutfit] = useState(false);
+  const [editOutfitVal, setEditOutfitVal] = useState('');
 
   useEffect(() => {
     if (analysisPhase !== 'analyzing') return;
@@ -2810,10 +2816,30 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
             {/* Category + Garment Type + Material + Colors inline — uniform height */}
             <div className="flex flex-wrap items-stretch gap-3">
               <div className="rounded-xl border border-border bg-card px-3 py-2 flex flex-col justify-center min-h-[52px]">
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Category</p>
-                <p className="text-xs font-semibold text-foreground">{productInfo.category}</p>
-                {productInfo.garmentType && (
-                  <p className="text-[10px] text-muted-foreground">{productInfo.garmentType}</p>
+                <div className="flex items-center gap-1">
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Category</p>
+                  {!editingCategory && (
+                    <button onClick={() => { setEditCategoryVal(productInfo.category); setEditGarmentVal(productInfo.garmentType || ''); setEditingCategory(true); }} className="text-muted-foreground hover:text-primary transition-colors">
+                      <Pencil className="h-2.5 w-2.5" />
+                    </button>
+                  )}
+                </div>
+                {editingCategory ? (
+                  <div className="space-y-1 mt-1">
+                    <input value={editCategoryVal} onChange={e => setEditCategoryVal(e.target.value)} className="w-full text-xs font-semibold bg-background border border-input rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-ring" />
+                    <input value={editGarmentVal} onChange={e => setEditGarmentVal(e.target.value)} placeholder="Garment type (optional)" className="w-full text-[10px] bg-background border border-input rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-ring" />
+                    <div className="flex gap-1">
+                      <button onClick={() => { setProductInfo(prev => prev ? { ...prev, category: editCategoryVal, garmentType: editGarmentVal || null } : prev); setEditingCategory(false); }} className="text-[10px] text-primary hover:underline">Save</button>
+                      <button onClick={() => setEditingCategory(false)} className="text-[10px] text-muted-foreground hover:underline">Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-xs font-semibold text-foreground">{productInfo.category}</p>
+                    {productInfo.garmentType && (
+                      <p className="text-[10px] text-muted-foreground">{productInfo.garmentType}</p>
+                    )}
+                  </>
                 )}
               </div>
               <div className="rounded-xl border border-border bg-card px-3 py-2 flex flex-col justify-center min-h-[52px]">
@@ -2898,8 +2924,25 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
             {/* Outfit suggestion for apparel */}
             {productInfo.outfitSuggestion && (
               <div className="rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 space-y-0.5">
-                <p className="text-[10px] font-medium text-primary uppercase tracking-wider">Outfit Pairing</p>
-                <p className="text-xs text-foreground leading-relaxed">{productInfo.outfitSuggestion}</p>
+                <div className="flex items-center gap-1">
+                  <p className="text-[10px] font-medium text-primary uppercase tracking-wider">Outfit Pairing</p>
+                  {!editingOutfit && (
+                    <button onClick={() => { setEditOutfitVal(productInfo.outfitSuggestion || ''); setEditingOutfit(true); }} className="text-primary/60 hover:text-primary transition-colors">
+                      <Pencil className="h-2.5 w-2.5" />
+                    </button>
+                  )}
+                </div>
+                {editingOutfit ? (
+                  <div className="space-y-1">
+                    <Textarea value={editOutfitVal} onChange={e => setEditOutfitVal(e.target.value)} className="text-xs min-h-[60px] bg-background" />
+                    <div className="flex gap-1">
+                      <button onClick={() => { setProductInfo(prev => prev ? { ...prev, outfitSuggestion: editOutfitVal } : prev); setEditingOutfit(false); }} className="text-[10px] text-primary hover:underline">Save</button>
+                      <button onClick={() => setEditingOutfit(false)} className="text-[10px] text-muted-foreground hover:underline">Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-foreground leading-relaxed">{productInfo.outfitSuggestion}</p>
+                )}
               </div>
             )}
 
