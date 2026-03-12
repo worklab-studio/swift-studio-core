@@ -1067,7 +1067,8 @@ const Studio = () => {
         const allShots = [...generatedShots, ...newShots];
         setGeneratedShots(allShots);
         setSelectedExportShots(new Set(allShots.map(s => s.id)));
-        completeStep(4, `${allShots.length} shot${allShots.length > 1 ? 's' : ''}`, 5);
+        setIsAddingMore(false);
+        // Stay on step 5, just update the shots
       } else {
         setGeneratedShots(newShots);
         setSelectedExportShots(new Set(newShots.map(s => s.id)));
