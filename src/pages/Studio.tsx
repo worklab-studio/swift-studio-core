@@ -567,6 +567,7 @@ const Studio = () => {
     setReferenceImage(null);
     setShotCount('campaign');
     setAspectRatio('1:1');
+    setPlainBgColor('White');
     setAdditionalContext('');
     setGenerationProgress(0);
     setGenerationStage('');
