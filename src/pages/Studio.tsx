@@ -453,6 +453,48 @@ const Studio = () => {
     loadPortraits();
   }, []);
 
+  /* ── Fetch dynamic scene templates from AI ── */
+  const fetchDynamicTemplates = useCallback(async () => {
+    if (!productImages.length || !productInfo) return;
+    setLoadingTemplates(true);
+    setSelectedTemplate(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-scene-templates', {
+        body: {
+          imageUrl: productImages[0],
+          category: productInfo.category,
+          productInfo: {
+            productName: productInfo.productName,
+            colors: productInfo.colors,
+            material: productInfo.material,
+            description: productInfo.description,
+          },
+        },
+      });
+      if (error) throw error;
+      if (data?.templates?.length) {
+        setDynamicTemplates(data.templates);
+        setTemplatesCached(true);
+      } else {
+        // Fallback to static
+        setDynamicTemplates([]);
+      }
+    } catch (e) {
+      console.error('Failed to generate dynamic templates:', e);
+      toast({ title: 'Template generation failed', description: 'Using default templates instead.', variant: 'destructive' });
+      setDynamicTemplates([]);
+    } finally {
+      setLoadingTemplates(false);
+    }
+  }, [productImages, productInfo]);
+
+  // Auto-fetch templates when product shoot is selected and productInfo is available
+  useEffect(() => {
+    if (shootType === 'product' && productInfo && !templatesCached) {
+      fetchDynamicTemplates();
+    }
+  }, [shootType, productInfo, templatesCached]);
+
   /* ── Generate all model portraits (skip existing) ── */
   const handleGeneratePortraits = useCallback(async () => {
     // Filter out models that already have portraits
