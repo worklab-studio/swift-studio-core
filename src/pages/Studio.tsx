@@ -1670,6 +1670,34 @@ const BACKGROUND_PROMPTS: Record<string, (info?: ProductInfo | null) => string> 
 function buildBackgroundPrompt(backgroundKey: string, productInfo?: ProductInfo | null): string {
   const builder = BACKGROUND_PROMPTS[backgroundKey];
   if (builder) return builder(productInfo);
+
+  // AI-suggested model shoot backgrounds
+  if (backgroundKey.startsWith('ai-model-bg-') && productInfo?.suggestedModelShootBackgrounds) {
+    const idx = parseInt(backgroundKey.replace('ai-model-bg-', ''), 10);
+    const bg = productInfo.suggestedModelShootBackgrounds[idx];
+    if (bg) return `${bg}, professional product photography${productInfo ? ` for ${productInfo.category}` : ''}`;
+  }
+
+  // Beauty application-specific backgrounds
+  if (backgroundKey.startsWith('beauty-bg-')) {
+    const parts = backgroundKey.replace('beauty-bg-', '').split('-');
+    const idx = parseInt(parts.pop() || '0', 10);
+    const area = parts.join('-');
+    const bgs = MODEL_SHOOT_BEAUTY_BACKGROUNDS[area];
+    if (bgs?.[idx]) return `${bgs[idx]}, professional beauty photography${productInfo ? ` for ${productInfo.category} ${area} product` : ''}`;
+  }
+
+  // FMCG backgrounds
+  if (backgroundKey.startsWith('fmcg-bg-')) {
+    const match = backgroundKey.match(/^fmcg-bg-(.+)-(\d+)$/);
+    if (match) {
+      const group = match[1];
+      const idx = parseInt(match[2], 10);
+      const bgs = FMCG_MODEL_SHOOT_BACKGROUNDS[group];
+      if (bgs?.[idx]) return `${bgs[idx]}, professional FMCG product photography`;
+    }
+  }
+
   // Fallback for unknown keys
   return `${backgroundKey.replace(/-/g, ' ')} background, professional product photography${productInfo ? ` for ${productInfo.category}` : ''}`;
 }
