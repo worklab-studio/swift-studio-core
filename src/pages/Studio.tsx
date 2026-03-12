@@ -1679,6 +1679,11 @@ function Step1Config({ productImages, productUploadRef, onUpload, onRemove, imag
                   >
                     <X className="h-2.5 w-2.5" />
                   </button>
+                  {imageViews[url] && (
+                    <span className="absolute bottom-0 inset-x-0 bg-background/70 backdrop-blur-sm text-[8px] font-semibold text-center py-0.5 text-foreground">
+                      {VIEW_LABEL_SHORT[imageViews[url]] || imageViews[url]}
+                    </span>
+                  )}
                 </>
               ) : (
                 <div className="flex items-center justify-center h-full">
