@@ -54,7 +54,7 @@ const STEPS = [
     num: '02',
     icon: Palette,
     title: 'Choose your style',
-    desc: 'Pick from 40+ diverse AI models, studio templates, or lifestyle scenes. Apparel? We'll even suggest outfit pairings.',
+    desc: "Pick from 40+ diverse AI models, studio templates, or lifestyle scenes. Apparel? We'll even suggest outfit pairings.",
   },
   {
     num: '03',
