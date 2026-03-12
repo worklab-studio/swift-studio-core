@@ -1847,7 +1847,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
 }
 
 /* ── Step 3 Config (Left) ── */
-function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, aspectRatio, setAspectRatio, additionalContext, setAdditionalContext, styleSettings, analyzingStyle }: {
+function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, aspectRatio, setAspectRatio, additionalContext, setAdditionalContext, styleSettings, analyzingStyle, plainBgColor, setPlainBgColor }: {
   selectedPreset: string | null;
   setSelectedPreset: (v: string | null) => void;
   referenceImage: string | null;
@@ -1862,7 +1862,19 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
   setAdditionalContext: (v: string) => void;
   styleSettings: StyleSettings | null;
   analyzingStyle: boolean;
+  plainBgColor: string;
+  setPlainBgColor: (v: string) => void;
 }) {
+  const PLAIN_BG_COLORS = [
+    { name: 'White', color: '#FFFFFF', border: true },
+    { name: 'Light Gray', color: '#F0F0F0', border: false },
+    { name: 'Beige', color: '#F5F0E8', border: false },
+    { name: 'Cream', color: '#FFFDD0', border: false },
+    { name: 'Soft Pink', color: '#FDE8E8', border: false },
+    { name: 'Light Blue', color: '#E0EEFF', border: false },
+    { name: 'Sage Green', color: '#E0EBE0', border: false },
+    { name: 'Black', color: '#1A1A1A', border: false },
+  ];
   return (
     <div className="space-y-4">
       <p className="text-sm font-semibold text-foreground">Style preset</p>
