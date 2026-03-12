@@ -2923,8 +2923,25 @@ function Step1Viewport({ productImages, productInfo, analyzingProduct, analysisP
             {/* Outfit suggestion for apparel */}
             {productInfo.outfitSuggestion && (
               <div className="rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 space-y-0.5">
-                <p className="text-[10px] font-medium text-primary uppercase tracking-wider">Outfit Pairing</p>
-                <p className="text-xs text-foreground leading-relaxed">{productInfo.outfitSuggestion}</p>
+                <div className="flex items-center gap-1">
+                  <p className="text-[10px] font-medium text-primary uppercase tracking-wider">Outfit Pairing</p>
+                  {!editingOutfit && (
+                    <button onClick={() => { setEditOutfitVal(productInfo.outfitSuggestion || ''); setEditingOutfit(true); }} className="text-primary/60 hover:text-primary transition-colors">
+                      <Pencil className="h-2.5 w-2.5" />
+                    </button>
+                  )}
+                </div>
+                {editingOutfit ? (
+                  <div className="space-y-1">
+                    <Textarea value={editOutfitVal} onChange={e => setEditOutfitVal(e.target.value)} className="text-xs min-h-[60px] bg-background" />
+                    <div className="flex gap-1">
+                      <button onClick={() => { setProductInfo(prev => prev ? { ...prev, outfitSuggestion: editOutfitVal } : prev); setEditingOutfit(false); }} className="text-[10px] text-primary hover:underline">Save</button>
+                      <button onClick={() => setEditingOutfit(false)} className="text-[10px] text-muted-foreground hover:underline">Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-foreground leading-relaxed">{productInfo.outfitSuggestion}</p>
+                )}
               </div>
             )}
 
