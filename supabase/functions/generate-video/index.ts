@@ -513,6 +513,14 @@ Deno.serve(async (req) => {
       })
       .eq("user_id", user.id);
 
+    // Log credit transaction
+    await supabase.from("credit_transactions").insert({
+      user_id: user.id,
+      amount: -creditCost,
+      description: "Generated video",
+      transaction_type: "debit",
+    });
+
     return new Response(
       JSON.stringify({
         asset: videoAsset,
