@@ -946,7 +946,7 @@ const Studio = () => {
       : '';
 
     // For apparel model shoots, exclude background/composition from preset — background comes from Step 2
-    const isApparelModel = isModel && info?.category && ['Apparel', 'Fashion'].includes(info.category);
+    const isApparelModel = isModel && info?.category && ['apparel', 'fashion'].includes(info.category.toLowerCase().trim());
     if (isApparelModel) {
       return `${preset.name} style photography for a ${productDesc}${garmentInfo}. ` +
         `Lighting: ${settings.lighting}.${outfitInfo}${plainBgInstruction}`;
@@ -2354,7 +2354,7 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
                 } ${p.id === 'plain-bg' ? 'col-span-2' : ''}`}
               >
                 <div className="aspect-[4/3] overflow-hidden bg-muted">
-                  <img src={['Apparel', 'Fashion'].includes(projectCategory) ? (APPAREL_PRESET_IMAGES[p.id] || p.img) : p.img} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
+                  <img src={['apparel', 'fashion'].includes((projectCategory || '').toLowerCase().trim()) ? (APPAREL_PRESET_IMAGES[p.id] || p.img) : p.img} alt={p.name} className="w-full h-full object-cover" loading="lazy" onError={(e) => { e.currentTarget.src = p.img; }} />
                 </div>
                 <div className="p-1.5">
                   <p className="text-[11px] font-semibold">{p.name}</p>
