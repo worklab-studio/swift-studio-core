@@ -216,6 +216,19 @@ async function generateWithVeo(
         .find((value): value is string => Boolean(value));
 
       if (!videoUri) {
+        const filteredReasons = pollData.response?.raiMediaFilteredReasons;
+        const filteredCount = Number(pollData.response?.raiMediaFilteredCount ?? 0);
+
+        if (filteredCount > 0 || (Array.isArray(filteredReasons) && filteredReasons.length > 0)) {
+          throw new Error(
+            `VEO_CONTENT_FILTERED: ${
+              Array.isArray(filteredReasons) && filteredReasons.length > 0
+                ? filteredReasons.join(" ")
+                : "Prompt violated usage guidelines. Try rephrasing your prompt."
+            }`
+          );
+        }
+
         const finishReason =
           pollData.response?.finishReason ||
           pollData.response?.generateVideoResponse?.finishReason ||
@@ -225,8 +238,8 @@ async function generateWithVeo(
         console.error("[Veo] Completed without video payload:", JSON.stringify(pollData).slice(0, 2000));
         throw new Error(
           finishReason
-            ? `Veo finished without a video output (${finishReason}). Try a safer or simpler prompt.`
-            : "Veo finished without a video output. Try a different prompt."
+            ? `Veo finished without a video output (${finishReason}). Try a simpler prompt.`
+            : "Veo finished without a video output. Try a simpler prompt."
         );
       }
 
@@ -512,13 +525,19 @@ Deno.serve(async (req) => {
       }
     } catch (genError) {
       console.error(`[${engine}] Generation failed:`, genError);
+      const message = genError instanceof Error ? genError.message : "Video generation failed";
+      const isContentFiltered = message.startsWith("VEO_CONTENT_FILTERED:");
+
       // Do NOT deduct credits on failure
       return new Response(
         JSON.stringify({
-          error: genError instanceof Error ? genError.message : "Video generation failed",
+          error: isContentFiltered
+            ? message.replace("VEO_CONTENT_FILTERED:", "").trim()
+            : message,
+          code: isContentFiltered ? "CONTENT_FILTERED" : "GENERATION_FAILED",
         }),
         {
-          status: 500,
+          status: isContentFiltered ? 400 : 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
