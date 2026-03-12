@@ -1066,7 +1066,7 @@ const Studio = () => {
   };
 
   const credits = shotCount === 'campaign' ? 6 : 1;
-  const canGenerate = (selectedPreset || referenceImage) && shotCount;
+  const canGenerate = ((selectedPreset || referenceImage) && shotCount) || (shootType === 'product' && selectedTemplate && shotCount);
 
   if (loading) {
     return (
