@@ -164,17 +164,22 @@ async function generateWithVeo(
 
   console.log(`[Veo] Operation: ${operationName}`);
 
-  // Poll using the full operation name — do NOT strip the publisher/model path
-  const pollUrl = `https://us-central1-aiplatform.googleapis.com/v1/${operationName}`;
-  console.log(`[Veo] Poll URL: ${pollUrl}`);
+  const pollEndpoint = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${modelId}:fetchPredictOperation`;
+  console.log(`[Veo] Poll endpoint: ${pollEndpoint}`);
 
-  const maxAttempts = 24; // ~2 minutes at 5s intervals (stay within edge function limits)
+  const maxAttempts = 48; // ~4 minutes at 5s intervals
   for (let i = 0; i < maxAttempts; i++) {
     await new Promise((r) => setTimeout(r, 5000));
 
-    const pollRes = await fetch(pollUrl, {
-      headers: { Authorization: `Bearer ${token}` },
+    const pollRes = await fetch(pollEndpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ operationName }),
     });
+
     if (!pollRes.ok) {
       const errBody = await pollRes.text();
       console.error("[Veo] Poll error:", pollRes.status, errBody);
@@ -186,23 +191,34 @@ async function generateWithVeo(
       if (pollData.error) {
         throw new Error(`Veo failed: ${JSON.stringify(pollData.error)}`);
       }
+
       const videos =
+        pollData.response?.videos ||
         pollData.response?.generateVideoResponse?.generatedSamples ||
         pollData.response?.predictions;
+
       if (!videos || videos.length === 0) {
         throw new Error("Veo returned no videos");
       }
-      const videoUri = videos[0]?.video?.gcsUri || videos[0]?.video?.uri;
+
+      const videoUri =
+        videos[0]?.gcsUri ||
+        videos[0]?.uri ||
+        videos[0]?.video?.gcsUri ||
+        videos[0]?.video?.uri;
+
       if (!videoUri) {
         throw new Error("Veo returned no video URI");
       }
+
       console.log(`[Veo] Video ready: ${videoUri}`);
       return videoUri;
     }
+
     console.log(`[Veo] Polling... attempt ${i + 1}/${maxAttempts}`);
   }
 
-  throw new Error("Veo generation timed out after 2 minutes");
+  throw new Error("Veo generation timed out after 4 minutes");
 }
 
 // ─── Runway ML ───
