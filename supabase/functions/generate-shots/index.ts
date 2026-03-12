@@ -113,11 +113,29 @@ serve(async (req) => {
       ? `IMPORTANT: Every image MUST show ONLY the model wearing/holding the product. Do NOT show the product alone without a model.${keepModelInstruction}`
       : "IMPORTANT: Every image MUST show ONLY the product. Do NOT include any human model in the image.";
 
+    // Product shoot masterpiece quality booster
+    const MASTERPIECE_BOOSTER = "MASTERPIECE PRODUCT PHOTOGRAPHY DIRECTIVE: Create an ultra-high-end advertising campaign image. The product must be the absolute hero and centerpiece, perfectly preserved in its EXACT original form — same color, shape, texture, every detail intact and unaltered. The scene around it should be surreal, fantastical, and jaw-dropping — the kind of visual that stops viewers mid-scroll. Think award-winning commercial photography meets digital art. Cinematic lighting with extraordinary attention to detail. The product should look like a precious artifact on display. 8K hyper-detailed, photorealistic rendering.";
+
+    const productShotTypeDesc: Record<string, string> = {
+      hero: "Hero product shot — the product is the undeniable star, perfectly centered and fully visible at its most flattering angle, dramatic lighting sculpting every surface and edge, the scene built entirely to frame and elevate the product as a masterpiece.",
+      detail: "Intimate detail shot — extreme close-up revealing the product's finest craftsmanship details (texture, stitching, material quality, surface finish, hardware), shallow depth of field with creamy bokeh, the scene elements still visible but softly blurred in the background, macro lens quality.",
+      lifestyle: "Aspirational lifestyle scene — the product placed in a breathtaking real-world context that communicates desire and aspiration, environmental storytelling with the product as the focal hero, cinematic depth and atmosphere, golden hour or dramatic natural lighting.",
+      alternate: "Dramatic alternate angle — the product shown from a completely different perspective (3/4 back, profile, low angle looking up, or overhead), revealing hidden details and dimensions not visible in the hero shot, the scene adapted to complement this new viewing angle.",
+      editorial: "Editorial masterpiece — the product in a high-art composition worthy of a museum exhibition or luxury magazine cover, unconventional camera angle (low Dutch tilt, extreme perspective), powerful directional lighting creating dramatic chiaroscuro, bold asymmetric composition with intentional negative space, completely different mood and energy from all other shots.",
+      flat_lay: "Artistic flat lay — breathtaking top-down bird's eye view, the product surrounded by carefully curated complementary elements (botanicals, textures, lifestyle objects) arranged with gallery-level precision on a beautiful surface, perfectly even overhead lighting, every element chosen to reinforce the premium brand story.",
+    };
+
     const shotPrompts = labels.map((label) => {
-      // Use scene template description as base style if provided, otherwise use stylePrompt or preset name
-      const baseStyle = sceneTemplate?.description
-        ? `Scene template: ${sceneTemplate.description}. ${stylePrompt || ''}`
-        : stylePrompt || `${preset} style photography`;
+      const isProductShoot = sceneTemplate?.description && shotType !== "model_shot";
+
+      if (isProductShoot) {
+        // Use rich masterpiece prompting for product shoots with scene templates
+        const shotDesc = productShotTypeDesc[label] || label;
+        return `${MASTERPIECE_BOOSTER} ${shotDesc} SCENE DIRECTION: ${sceneTemplate.description}. Product category: ${category}. Product-only shot, absolutely no human model in the image. ${consistencyInstruction}${additionalContext ? ` Additional creative direction: ${additionalContext}` : ""}. ${ratioInstruction} No text, no watermarks, no logos.`;
+      }
+
+      // Original flow for model shots and non-template shoots
+      const baseStyle = stylePrompt || `${preset} style photography`;
       const shotTypeDesc: Record<string, string> = {
         hero: "Hero shot — front-facing, full body or full product visible, hands relaxed at sides or product centered, straight-on camera at eye level, clean symmetrical framing, the definitive primary product image. The model/product should be still, poised, and directly engaging the camera.",
         detail: "Close-up detail shot — extreme macro-style focus on texture, stitching, material quality, fine craftsmanship details. Tight crop on a specific area (fabric weave, hardware, logo, seam). Shallow depth of field, f/2.8 macro lens feel.",
