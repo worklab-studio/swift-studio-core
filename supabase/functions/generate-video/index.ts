@@ -164,11 +164,8 @@ async function generateWithVeo(
 
   console.log(`[Veo] Operation: ${operationName}`);
 
-  // Fix polling URL: strip publisher/model path from operation name
-  // "projects/{p}/locations/{l}/publishers/.../operations/{id}" → "projects/{p}/locations/{l}/operations/{id}"
-  const parts = operationName.match(/^(projects\/[^/]+\/locations\/[^/]+)\/.*\/(operations\/[^/]+)$/);
-  const pollPath = parts ? `${parts[1]}/${parts[2]}` : operationName;
-  const pollUrl = `https://us-central1-aiplatform.googleapis.com/v1/${pollPath}`;
+  // Poll using the full operation name — do NOT strip the publisher/model path
+  const pollUrl = `https://us-central1-aiplatform.googleapis.com/v1/${operationName}`;
   console.log(`[Veo] Poll URL: ${pollUrl}`);
 
   const maxAttempts = 24; // ~2 minutes at 5s intervals (stay within edge function limits)
