@@ -1254,6 +1254,7 @@ const Studio = () => {
                     setPlainBgColor={setPlainBgColor}
                     shootType={shootType}
                     selectedTemplate={selectedTemplate}
+                    activeTemplates={dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES}
                   />
                 )}
                 {activeStep === 4 && (
