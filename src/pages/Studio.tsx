@@ -3472,6 +3472,7 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
 }) {
   const isCampaign = shots.length > 1 || isAddingMore;
   const videoCreditCost = calculateVideoCreditCost(videoConfig.duration, videoConfig.resolution);
+  const [viewingUrl, setViewingUrl] = useState<string | null>(null);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -3486,7 +3487,7 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
       {isCampaign ? (
         <div className="grid grid-cols-3 gap-4">
           {shots.map((shot, i) => (
-            <ShotCard key={shot.id} shot={shot} index={i} aspectRatio={aspectRatio} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />
+            <ShotCard key={shot.id} shot={shot} index={i} aspectRatio={aspectRatio} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} onView={setViewingUrl} />
           ))}
           {isAddingMore && Array.from({ length: 5 }).map((_, i) => (
             <div key={`skeleton-${i}`} className="rounded-xl overflow-hidden border bg-card animate-in fade-in duration-300" style={{ animationDelay: `${i * 80}ms` }}>
@@ -3500,7 +3501,7 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
         </div>
       ) : (
         <div className="max-w-lg">
-          {shots[0] && <ShotCard shot={shots[0]} index={0} aspectRatio={aspectRatio} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} />}
+          {shots[0] && <ShotCard shot={shots[0]} index={0} aspectRatio={aspectRatio} onEdit={onEditShot} onUndo={onUndoEdit} onCopyLink={onCopyLink} updateShot={updateShot} onView={setViewingUrl} />}
         </div>
       )}
 
@@ -3548,7 +3549,7 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
                       key={shot.id}
                       onClick={() => setVideoConfig(prev => ({ ...prev, baseImageId: shot.id }))}
                       className={`shrink-0 w-20 h-[100px] rounded-lg overflow-hidden border transition-all ${
-                        videoConfig.baseImageId === shot.id ? 'ring-2 ring-accent ring-offset-2' : 'hover:border-accent/50'
+                        videoConfig.baseImageId === shot.id ? 'ring-2 ring-primary ring-offset-2' : 'hover:border-primary/30'
                       }`}
                     >
                       <img src={shot.url} alt={shot.shotLabel} className="w-full h-full object-cover" />
@@ -3626,6 +3627,32 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
                     <p className="text-xs text-muted-foreground mt-2 italic">{prompt.reason}</p>
                   </button>
                 ))}
+                {/* Custom prompt option */}
+                <button
+                  onClick={() => setVideoConfig(prev => ({ ...prev, selectedPrompt: { style: 'Custom', text: prev.selectedPrompt?.style === 'Custom' ? prev.selectedPrompt.text : '', reason: 'User-defined prompt' } }))}
+                  className={`w-full text-left p-4 rounded-xl border transition-all ${
+                    videoConfig.selectedPrompt?.style === 'Custom'
+                      ? 'ring-2 ring-primary border-primary bg-primary/5'
+                      : 'hover:border-primary/30 bg-card'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="outline" className="text-[10px] px-2 py-0">Custom</Badge>
+                    {videoConfig.selectedPrompt?.style === 'Custom' && (
+                      <Check className="h-3.5 w-3.5 text-primary" />
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">Write your own animation prompt</p>
+                </button>
+                {videoConfig.selectedPrompt?.style === 'Custom' && (
+                  <Textarea
+                    rows={3}
+                    placeholder="Describe the video motion you want... e.g. 'Slow cinematic zoom into the product with soft lighting'"
+                    value={videoConfig.selectedPrompt?.text || ''}
+                    onChange={e => setVideoConfig(prev => ({ ...prev, selectedPrompt: { style: 'Custom', text: e.target.value, reason: 'User-defined prompt' } }))}
+                    className="mt-1"
+                  />
+                )}
               </div>
               <Button className="w-full" onClick={onGenerateVideo} disabled={!videoConfig.selectedPrompt}>
                 Generate video — {videoCreditCost} credits
@@ -3666,14 +3693,19 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
           )}
         </CardContent>
       </Card>
+      {/* Fullscreen view dialog */}
+      <Dialog open={!!viewingUrl} onOpenChange={() => setViewingUrl(null)}>
+        <DialogContent className="max-w-4xl p-2">
+          {viewingUrl && <img src={viewingUrl} alt="Shot preview" className="w-full h-auto rounded-lg" />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-
 /* ════════════════════════════════════════════════
    ShotCard Component
    ════════════════════════════════════════════════ */
-function ShotCard({ shot, index, aspectRatio = '1:1', onEdit, onUndo, onCopyLink, updateShot }: {
+function ShotCard({ shot, index, aspectRatio = '1:1', onEdit, onUndo, onCopyLink, updateShot, onView }: {
   shot: GeneratedShot;
   index: number;
   aspectRatio?: string;
@@ -3681,10 +3713,11 @@ function ShotCard({ shot, index, aspectRatio = '1:1', onEdit, onUndo, onCopyLink
   onUndo: (shot: GeneratedShot) => void;
   onCopyLink: (url: string) => void;
   updateShot: (id: string, updates: Partial<GeneratedShot>) => void;
+  onView?: (url: string) => void;
 }) {
   return (
     <div className="rounded-xl overflow-hidden border bg-card animate-in fade-in duration-300" style={{ animationDelay: `${index * 100}ms` }}>
-      <div className="relative overflow-hidden bg-muted" style={{ aspectRatio: ratioToCss(aspectRatio) }}>
+      <div className="relative overflow-hidden bg-muted cursor-pointer group" style={{ aspectRatio: ratioToCss(aspectRatio) }} onClick={() => onView?.(shot.url)}>
         <img
           src={shot.url}
           alt={SHOT_LABEL_DISPLAY[shot.shotLabel] || shot.shotLabel}
@@ -3693,6 +3726,11 @@ function ShotCard({ shot, index, aspectRatio = '1:1', onEdit, onUndo, onCopyLink
         {shot.isRegenerating && (
           <div className="absolute inset-0 flex items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
+        {!shot.isRegenerating && (
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+            <Eye className="h-6 w-6 text-white" />
           </div>
         )}
       </div>
