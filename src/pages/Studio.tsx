@@ -2361,13 +2361,13 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
                 </p>
                 <div className="space-y-1.5">
                   {[
-                    { label: 'Pose', value: styleSettings.pose, icon: '🎯' },
-                    { label: 'Angle', value: styleSettings.angle, icon: '📐' },
-                    { label: 'Lighting', value: styleSettings.lighting, icon: '💡' },
-                    { label: 'Composition', value: styleSettings.composition, icon: '🖼' },
+                    { label: 'Pose', value: styleSettings.pose },
+                    { label: 'Angle', value: styleSettings.angle },
+                    { label: 'Lighting', value: styleSettings.lighting },
+                    { label: 'Composition', value: styleSettings.composition },
                   ].map(item => (
                     <div key={item.label} className="rounded-md border bg-muted/50 p-2">
-                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{item.icon} {item.label}</p>
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{item.label}</p>
                       <p className="text-[11px] text-foreground mt-0.5 leading-snug">{item.value}</p>
                     </div>
                   ))}
