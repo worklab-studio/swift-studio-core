@@ -984,7 +984,12 @@ const Studio = () => {
     const stepLabel = isProductWithTemplate
       ? tpl?.name || 'Product Shoot'
       : STYLE_PRESETS.find(p => p.id === selectedPreset)?.name || selectedPreset || '';
-    completeStep(3, stepLabel, 4);
+    if (mode === 'campaign_add') {
+      // Stay on step 5, show loading skeletons inline
+      setIsAddingMore(true);
+    } else {
+      completeStep(3, stepLabel, 4);
+    }
     generationAbortRef.current = false;
     setGenerationProgress(0);
     setGenerationStage(GENERATION_STAGES[0].label);
