@@ -1710,6 +1710,12 @@ const Studio = () => {
               onSelectLabel={setSelectedProductLabel}
               onCopyLink={handleCopyLink}
               onLoadProduct={(label) => { loadProductAssets(label); setToolbarView('studio'); }}
+              onDelete={async (assetId) => {
+                await supabase.from('assets').delete().eq('id', assetId);
+                setProjectAssets(prev => prev.filter(a => a.id !== assetId));
+                toast({ title: 'Asset deleted' });
+              }}
+              projectId={id!}
             />
           </div>
         )}
