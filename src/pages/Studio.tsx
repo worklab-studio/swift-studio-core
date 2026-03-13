@@ -3967,11 +3967,82 @@ function ShotCard({ shot, index, aspectRatio = '1:1', onEdit, onUndo, onCopyLink
 /* ════════════════════════════════════════════════
    Assets Viewport
    ════════════════════════════════════════════════ */
-function AssetsViewport({ assets, onCopyLink }: {
+function AssetsViewport({ assets, onCopyLink, onDelete, projectId }: {
   assets: ProjectAsset[];
   onCopyLink: (url: string) => void;
+  onDelete: (assetId: string) => Promise<void>;
+  projectId: string;
 }) {
-  const [viewingUrl, setViewingUrl] = useState<string | null>(null);
+  const [viewingAsset, setViewingAsset] = useState<ProjectAsset | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ProjectAsset | null>(null);
+  const [videoAsset, setVideoAsset] = useState<ProjectAsset | null>(null);
+  const [videoEngine, setVideoEngine] = useState('veo');
+  const [videoRatio, setVideoRatio] = useState('16:9');
+  const [videoDuration, setVideoDuration] = useState(8);
+  const [videoResolution, setVideoResolution] = useState('720p');
+  const [videoPrompt, setVideoPrompt] = useState('');
+  const [aiPrompts, setAiPrompts] = useState<string[]>([]);
+  const [selectedPromptIdx, setSelectedPromptIdx] = useState<number | null>(null);
+  const [aiPromptsLoading, setAiPromptsLoading] = useState(false);
+  const [videoGenerating, setVideoGenerating] = useState(false);
+  const [videoStage, setVideoStage] = useState(0);
+
+  const isVideo = (url: string) => /\.(mp4|webm|mov)(\?|$)/i.test(url);
+
+  const handleGenerateAiPrompts = async () => {
+    if (!videoAsset) return;
+    setAiPromptsLoading(true);
+    setAiPrompts([]);
+    setSelectedPromptIdx(null);
+    try {
+      const { data } = await supabase.functions.invoke('generate-video-prompts', {
+        body: { productName: videoAsset.product_label || 'Product', productImageUrl: videoAsset.url },
+      });
+      if (data?.prompts) {
+        const prompts = data.prompts.map((p: any) => typeof p === 'string' ? p : p.text || JSON.stringify(p));
+        setAiPrompts(prompts);
+      }
+    } catch { /* ignore */ }
+    setAiPromptsLoading(false);
+  };
+
+  const selectAiPrompt = (idx: number) => {
+    setSelectedPromptIdx(idx);
+    setVideoPrompt(aiPrompts[idx]);
+  };
+
+  const handleGenerateVideo = async () => {
+    if (!videoAsset || !videoPrompt.trim()) return;
+    setVideoGenerating(true);
+    setVideoStage(0);
+    const interval = setInterval(() => setVideoStage(s => Math.min(s + 1, VIDEO_STAGES.length - 1)), 15000);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-video', {
+        body: {
+          projectId,
+          imageUrl: videoAsset.url,
+          prompt: videoPrompt,
+          duration: videoDuration,
+          aspectRatio: videoRatio,
+          engine: videoEngine,
+          resolution: videoResolution,
+          productLabel: videoAsset.product_label,
+        },
+      });
+      clearInterval(interval);
+      if (error || !data?.videoUrl) {
+        toast({ title: 'Video generation failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
+      } else {
+        toast({ title: 'Video generated!', description: 'Your video has been created successfully.' });
+        setVideoAsset(null);
+      }
+    } catch {
+      clearInterval(interval);
+      toast({ title: 'Video generation failed', variant: 'destructive' });
+    }
+    setVideoGenerating(false);
+  };
+
   if (assets.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4 text-center animate-in fade-in duration-300">
@@ -3990,20 +4061,31 @@ function AssetsViewport({ assets, onCopyLink }: {
     <div className="space-y-4 animate-in fade-in duration-300">
       <div>
         <h2 className="text-xl font-medium" style={{ fontFamily: "'Instrument Serif', serif" }}>All Assets</h2>
-        <p className="text-sm text-muted-foreground mt-1">{assets.length} image{assets.length !== 1 ? 's' : ''} in this project</p>
+        <p className="text-sm text-muted-foreground mt-1">{assets.length} asset{assets.length !== 1 ? 's' : ''} in this project</p>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 2xl:grid-cols-5 gap-4">
         {assets.map((a) => (
           <div key={a.id} className="group relative">
             <div className="aspect-square rounded-xl overflow-hidden bg-muted border">
-              <img src={a.url} alt={a.product_label || ''} className="h-full w-full object-cover" />
+              {isVideo(a.url) ? (
+                <video src={a.url} className="h-full w-full object-cover" muted loop onMouseEnter={e => (e.target as HTMLVideoElement).play()} onMouseLeave={e => { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0; }} />
+              ) : (
+                <img src={a.url} alt={a.product_label || ''} className="h-full w-full object-cover" />
+              )}
               <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
+                <button onClick={() => setViewingAsset(a)} className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Eye className="h-4 w-4" /></button>
                 <a href={a.url} download target="_blank" rel="noopener noreferrer">
                   <button className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Download className="h-4 w-4" /></button>
                 </a>
                 <button onClick={() => onCopyLink(a.url)} className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Link2 className="h-4 w-4" /></button>
-                <button onClick={() => setViewingUrl(a.url)} className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Eye className="h-4 w-4" /></button>
+                {!isVideo(a.url) && (
+                  <button onClick={() => { setVideoAsset(a); setVideoPrompt(''); setAiPrompts([]); setSelectedPromptIdx(null); }} className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Play className="h-4 w-4" /></button>
+                )}
+                <button onClick={() => setDeleteTarget(a)} className="rounded-full bg-background p-2 hover:bg-destructive/90 hover:text-destructive-foreground transition-colors"><Trash2 className="h-4 w-4" /></button>
               </div>
+              {isVideo(a.url) && (
+                <Badge className="absolute top-2 right-2 text-[9px]">Video</Badge>
+              )}
             </div>
             <div className="mt-1.5 flex items-center gap-1.5">
               <Badge variant="outline" className="text-[9px] px-1.5 py-0">{a.asset_type === 'original' ? 'Original' : a.asset_type === 'ai_generated' ? 'Generated' : a.asset_type}</Badge>
@@ -4012,10 +4094,125 @@ function AssetsViewport({ assets, onCopyLink }: {
           </div>
         ))}
       </div>
-      <Dialog open={!!viewingUrl} onOpenChange={() => setViewingUrl(null)}>
-        <DialogContent className="max-w-4xl p-2">
+
+      {/* Fullscreen Preview Dialog */}
+      <Dialog open={!!viewingAsset} onOpenChange={() => setViewingAsset(null)}>
+        <DialogContent className="max-w-4xl p-2 bg-black/95 border-none">
           <DialogTitle className="sr-only">View Asset</DialogTitle>
-          {viewingUrl && <img src={viewingUrl} alt="" className="w-full h-auto rounded-lg" />}
+          {viewingAsset && (isVideo(viewingAsset.url) ? (
+            <video src={viewingAsset.url} controls autoPlay className="w-full h-auto max-h-[80vh] rounded-lg object-contain" />
+          ) : (
+            <img src={viewingAsset.url} alt="" className="w-full h-auto max-h-[80vh] rounded-lg object-contain" />
+          ))}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete asset?</AlertDialogTitle>
+            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={async () => { if (deleteTarget) { await onDelete(deleteTarget.id); setDeleteTarget(null); } }}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Video Generation Dialog */}
+      <Dialog open={!!videoAsset} onOpenChange={() => { if (!videoGenerating) setVideoAsset(null); }}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogTitle>Generate Video</DialogTitle>
+          {videoAsset && (
+            <div className="space-y-4">
+              <div className="aspect-video rounded-lg overflow-hidden bg-muted">
+                <img src={videoAsset.url} alt="" className="w-full h-full object-contain" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground">AI Engine</label>
+                  <Select value={videoEngine} onValueChange={(v) => { setVideoEngine(v); if (v === 'veo') { setVideoDuration(8); setVideoRatio('16:9'); } else { setVideoDuration(5); } }}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="veo">Veo 3.1</SelectItem>
+                      <SelectItem value="runway">Runway Gen4</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Aspect Ratio</label>
+                  <Select value={videoRatio} onValueChange={setVideoRatio}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {(videoEngine === 'veo' ? ASPECT_RATIOS.filter(r => ['16:9', '9:16'].includes(r.value)) : ASPECT_RATIOS).map(r => (
+                        <SelectItem key={r.value} value={r.value}>{r.label} ({r.value})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Duration</label>
+                  <Select value={String(videoDuration)} onValueChange={v => setVideoDuration(Number(v))}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {videoEngine === 'veo' ? (
+                        <SelectItem value="8">8 seconds</SelectItem>
+                      ) : (
+                        <>
+                          <SelectItem value="5">5 seconds</SelectItem>
+                          <SelectItem value="10">10 seconds</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Resolution</label>
+                  <Select value={videoResolution} onValueChange={setVideoResolution}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="720p">720p</SelectItem>
+                      <SelectItem value="1080p">1080p</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Video Prompt</label>
+                <Button variant="outline" size="sm" className="w-full" onClick={handleGenerateAiPrompts} disabled={aiPromptsLoading}>
+                  {aiPromptsLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}
+                  Generate AI Prompts
+                </Button>
+                {aiPrompts.length > 0 && (
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                    {aiPrompts.map((p, i) => (
+                      <button key={i} onClick={() => selectAiPrompt(i)} className={`w-full text-left text-xs p-2.5 rounded-lg border transition-all ${selectedPromptIdx === i ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'border-border hover:border-primary/30'}`}>
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <Textarea placeholder="Describe the motion you want..." value={videoPrompt} onChange={e => { setVideoPrompt(e.target.value); setSelectedPromptIdx(null); }} className="min-h-[60px] text-sm" />
+              </div>
+
+              {videoGenerating ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {VIDEO_STAGES[videoStage]}
+                  </div>
+                  <Progress value={((videoStage + 1) / VIDEO_STAGES.length) * 100} className="h-1.5" />
+                </div>
+              ) : (
+                <Button className="w-full" onClick={handleGenerateVideo} disabled={!videoPrompt.trim()}>
+                  <Play className="h-4 w-4 mr-1" /> Generate Video
+                </Button>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
@@ -4025,15 +4222,236 @@ function AssetsViewport({ assets, onCopyLink }: {
 /* ════════════════════════════════════════════════
    Products Viewport
    ════════════════════════════════════════════════ */
-function ProductsViewport({ assets, productLabels, selectedLabel, onSelectLabel, onCopyLink, onLoadProduct }: {
+function ProductsViewport({ assets, productLabels, selectedLabel, onSelectLabel, onCopyLink, onLoadProduct, onDelete, projectId }: {
   assets: ProjectAsset[];
   productLabels: string[];
   selectedLabel: string | null;
   onSelectLabel: (label: string | null) => void;
   onCopyLink: (url: string) => void;
   onLoadProduct: (label: string) => void;
+  onDelete: (assetId: string) => Promise<void>;
+  projectId: string;
 }) {
-  const [viewingUrl, setViewingUrl] = useState<string | null>(null);
+  const [viewingAsset, setViewingAsset] = useState<ProjectAsset | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ProjectAsset | null>(null);
+  const [videoAsset, setVideoAsset] = useState<ProjectAsset | null>(null);
+  const [videoEngine, setVideoEngine] = useState('veo');
+  const [videoRatio, setVideoRatio] = useState('16:9');
+  const [videoDuration, setVideoDuration] = useState(8);
+  const [videoResolution, setVideoResolution] = useState('720p');
+  const [videoPrompt, setVideoPrompt] = useState('');
+  const [aiPrompts, setAiPrompts] = useState<string[]>([]);
+  const [selectedPromptIdx, setSelectedPromptIdx] = useState<number | null>(null);
+  const [aiPromptsLoading, setAiPromptsLoading] = useState(false);
+  const [videoGenerating, setVideoGenerating] = useState(false);
+  const [videoStage, setVideoStage] = useState(0);
+
+  const isVideo = (url: string) => /\.(mp4|webm|mov)(\?|$)/i.test(url);
+
+  const handleGenerateAiPrompts = async () => {
+    if (!videoAsset) return;
+    setAiPromptsLoading(true);
+    setAiPrompts([]);
+    setSelectedPromptIdx(null);
+    try {
+      const { data } = await supabase.functions.invoke('generate-video-prompts', {
+        body: { productName: videoAsset.product_label || 'Product', productImageUrl: videoAsset.url },
+      });
+      if (data?.prompts) {
+        const prompts = data.prompts.map((p: any) => typeof p === 'string' ? p : p.text || JSON.stringify(p));
+        setAiPrompts(prompts);
+      }
+    } catch { /* ignore */ }
+    setAiPromptsLoading(false);
+  };
+
+  const selectAiPrompt = (idx: number) => {
+    setSelectedPromptIdx(idx);
+    setVideoPrompt(aiPrompts[idx]);
+  };
+
+  const handleGenerateVideo = async () => {
+    if (!videoAsset || !videoPrompt.trim()) return;
+    setVideoGenerating(true);
+    setVideoStage(0);
+    const interval = setInterval(() => setVideoStage(s => Math.min(s + 1, VIDEO_STAGES.length - 1)), 15000);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-video', {
+        body: {
+          projectId,
+          imageUrl: videoAsset.url,
+          prompt: videoPrompt,
+          duration: videoDuration,
+          aspectRatio: videoRatio,
+          engine: videoEngine,
+          resolution: videoResolution,
+          productLabel: videoAsset.product_label,
+        },
+      });
+      clearInterval(interval);
+      if (error || !data?.videoUrl) {
+        toast({ title: 'Video generation failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
+      } else {
+        toast({ title: 'Video generated!', description: 'Your video has been created successfully.' });
+        setVideoAsset(null);
+      }
+    } catch {
+      clearInterval(interval);
+      toast({ title: 'Video generation failed', variant: 'destructive' });
+    }
+    setVideoGenerating(false);
+  };
+
+  const renderAssetCard = (a: ProjectAsset, showShotLabel = false) => (
+    <div key={a.id} className="group relative">
+      <div className="aspect-square rounded-xl overflow-hidden bg-muted border">
+        {isVideo(a.url) ? (
+          <video src={a.url} className="h-full w-full object-cover" muted loop onMouseEnter={e => (e.target as HTMLVideoElement).play()} onMouseLeave={e => { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0; }} />
+        ) : (
+          <img src={a.url} alt={a.shot_label || ''} className="h-full w-full object-cover" />
+        )}
+        <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
+          <button onClick={() => setViewingAsset(a)} className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Eye className="h-4 w-4" /></button>
+          <a href={a.url} download target="_blank" rel="noopener noreferrer">
+            <button className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Download className="h-4 w-4" /></button>
+          </a>
+          <button onClick={() => onCopyLink(a.url)} className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Link2 className="h-4 w-4" /></button>
+          {!isVideo(a.url) && (
+            <button onClick={() => { setVideoAsset(a); setVideoPrompt(''); setAiPrompts([]); setSelectedPromptIdx(null); }} className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Play className="h-4 w-4" /></button>
+          )}
+          <button onClick={() => setDeleteTarget(a)} className="rounded-full bg-background p-2 hover:bg-destructive/90 hover:text-destructive-foreground transition-colors"><Trash2 className="h-4 w-4" /></button>
+        </div>
+        {isVideo(a.url) && <Badge className="absolute top-2 right-2 text-[9px]">Video</Badge>}
+      </div>
+      {showShotLabel && a.shot_label && (
+        <p className="mt-1 text-xs text-muted-foreground">{SHOT_LABEL_DISPLAY[a.shot_label] || a.shot_label}</p>
+      )}
+    </div>
+  );
+
+  const renderDialogs = () => (
+    <>
+      {/* Fullscreen Preview */}
+      <Dialog open={!!viewingAsset} onOpenChange={() => setViewingAsset(null)}>
+        <DialogContent className="max-w-4xl p-2 bg-black/95 border-none">
+          <DialogTitle className="sr-only">View Asset</DialogTitle>
+          {viewingAsset && (isVideo(viewingAsset.url) ? (
+            <video src={viewingAsset.url} controls autoPlay className="w-full h-auto max-h-[80vh] rounded-lg object-contain" />
+          ) : (
+            <img src={viewingAsset.url} alt="" className="w-full h-auto max-h-[80vh] rounded-lg object-contain" />
+          ))}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete asset?</AlertDialogTitle>
+            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={async () => { if (deleteTarget) { await onDelete(deleteTarget.id); setDeleteTarget(null); } }}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Video Generation Dialog */}
+      <Dialog open={!!videoAsset} onOpenChange={() => { if (!videoGenerating) setVideoAsset(null); }}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogTitle>Generate Video</DialogTitle>
+          {videoAsset && (
+            <div className="space-y-4">
+              <div className="aspect-video rounded-lg overflow-hidden bg-muted">
+                <img src={videoAsset.url} alt="" className="w-full h-full object-contain" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground">AI Engine</label>
+                  <Select value={videoEngine} onValueChange={(v) => { setVideoEngine(v); if (v === 'veo') { setVideoDuration(8); setVideoRatio('16:9'); } else { setVideoDuration(5); } }}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="veo">Veo 3.1</SelectItem>
+                      <SelectItem value="runway">Runway Gen4</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Aspect Ratio</label>
+                  <Select value={videoRatio} onValueChange={setVideoRatio}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {(videoEngine === 'veo' ? ASPECT_RATIOS.filter(r => ['16:9', '9:16'].includes(r.value)) : ASPECT_RATIOS).map(r => (
+                        <SelectItem key={r.value} value={r.value}>{r.label} ({r.value})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Duration</label>
+                  <Select value={String(videoDuration)} onValueChange={v => setVideoDuration(Number(v))}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {videoEngine === 'veo' ? (
+                        <SelectItem value="8">8 seconds</SelectItem>
+                      ) : (
+                        <>
+                          <SelectItem value="5">5 seconds</SelectItem>
+                          <SelectItem value="10">10 seconds</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Resolution</label>
+                  <Select value={videoResolution} onValueChange={setVideoResolution}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="720p">720p</SelectItem>
+                      <SelectItem value="1080p">1080p</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Video Prompt</label>
+                <Button variant="outline" size="sm" className="w-full" onClick={handleGenerateAiPrompts} disabled={aiPromptsLoading}>
+                  {aiPromptsLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}
+                  Generate AI Prompts
+                </Button>
+                {aiPrompts.length > 0 && (
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                    {aiPrompts.map((p, i) => (
+                      <button key={i} onClick={() => selectAiPrompt(i)} className={`w-full text-left text-xs p-2.5 rounded-lg border transition-all ${selectedPromptIdx === i ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'border-border hover:border-primary/30'}`}>
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <Textarea placeholder="Describe the motion you want..." value={videoPrompt} onChange={e => { setVideoPrompt(e.target.value); setSelectedPromptIdx(null); }} className="min-h-[60px] text-sm" />
+              </div>
+              {videoGenerating ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {VIDEO_STAGES[videoStage]}
+                  </div>
+                  <Progress value={((videoStage + 1) / VIDEO_STAGES.length) * 100} className="h-1.5" />
+                </div>
+              ) : (
+                <Button className="w-full" onClick={handleGenerateVideo} disabled={!videoPrompt.trim()}>
+                  <Play className="h-4 w-4 mr-1" /> Generate Video
+                </Button>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+
   if (productLabels.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4 text-center animate-in fade-in duration-300">
@@ -4048,7 +4466,6 @@ function ProductsViewport({ assets, productLabels, selectedLabel, onSelectLabel,
     );
   }
 
-  // If a product is selected, show its images
   if (selectedLabel) {
     const productAssets = assets.filter(a => a.product_label === selectedLabel && a.asset_type === 'ai_generated');
     return (
@@ -4059,37 +4476,16 @@ function ProductsViewport({ assets, productLabels, selectedLabel, onSelectLabel,
           </Button>
           <div>
             <h2 className="text-xl font-medium" style={{ fontFamily: "'Instrument Serif', serif" }}>{selectedLabel}</h2>
-            <p className="text-sm text-muted-foreground">{productAssets.length} generated image{productAssets.length !== 1 ? 's' : ''}</p>
+            <p className="text-sm text-muted-foreground">{productAssets.length} generated asset{productAssets.length !== 1 ? 's' : ''}</p>
           </div>
           <Button variant="outline" size="sm" className="ml-auto" onClick={() => onLoadProduct(selectedLabel)}>
             Open in Studio
           </Button>
         </div>
         <div className="grid grid-cols-3 gap-4">
-          {productAssets.map((a) => (
-            <div key={a.id} className="group relative">
-              <div className="aspect-square rounded-xl overflow-hidden bg-muted border">
-                <img src={a.url} alt={a.shot_label || ''} className="h-full w-full object-cover" />
-                <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
-                  <a href={a.url} download target="_blank" rel="noopener noreferrer">
-                    <button className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Download className="h-4 w-4" /></button>
-                  </a>
-                  <button onClick={() => onCopyLink(a.url)} className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Link2 className="h-4 w-4" /></button>
-                  <button onClick={() => setViewingUrl(a.url)} className="rounded-full bg-background p-2 hover:bg-accent transition-colors"><Eye className="h-4 w-4" /></button>
-                </div>
-              </div>
-              {a.shot_label && (
-                <p className="mt-1 text-xs text-muted-foreground">{SHOT_LABEL_DISPLAY[a.shot_label] || a.shot_label}</p>
-              )}
-            </div>
-          ))}
+          {productAssets.map((a) => renderAssetCard(a, true))}
         </div>
-        <Dialog open={!!viewingUrl} onOpenChange={() => setViewingUrl(null)}>
-          <DialogContent className="max-w-4xl p-2">
-            <DialogTitle className="sr-only">View Asset</DialogTitle>
-            {viewingUrl && <img src={viewingUrl} alt="" className="w-full h-auto rounded-lg" />}
-          </DialogContent>
-        </Dialog>
+        {renderDialogs()}
       </div>
     );
   }
@@ -4123,12 +4519,13 @@ function ProductsViewport({ assets, productLabels, selectedLabel, onSelectLabel,
               </div>
               <div className="p-3">
                 <p className="text-sm font-medium truncate">{label}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{generatedCount} generated image{generatedCount !== 1 ? 's' : ''}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{generatedCount} generated asset{generatedCount !== 1 ? 's' : ''}</p>
               </div>
             </button>
           );
         })}
       </div>
+      {renderDialogs()}
     </div>
   );
 }
