@@ -425,7 +425,7 @@ const Studio = () => {
 
   // Video state
   const [videoExpanded, setVideoExpanded] = useState(false);
-  const [videoConfig, setVideoConfig] = useState<VideoConfig>({ baseImageId: '', duration: 4, resolution: '720p', engine: 'veo', aspectRatio: '9:16' });
+  const [videoConfig, setVideoConfig] = useState<VideoConfig>({ baseImageId: '', duration: 5, resolution: '720p', engine: 'veo', aspectRatio: '9:16' });
   const [videoGenerating, setVideoGenerating] = useState(false);
   const [videoStage, setVideoStage] = useState('');
   const [generatedVideo, setGeneratedVideo] = useState<GeneratedVideo | null>(null);
@@ -690,7 +690,7 @@ const Studio = () => {
     setExportFormat('png');
     setSelectedExportShots(new Set());
     setVideoExpanded(false);
-    setVideoConfig({ baseImageId: '', duration: 4, resolution: '720p', engine: 'veo', aspectRatio: '9:16' });
+    setVideoConfig({ baseImageId: '', duration: 5, resolution: '720p', engine: 'veo', aspectRatio: '9:16' });
     setVideoGenerating(false);
     setVideoStage('');
     setGeneratedVideo(null);
@@ -3697,39 +3697,62 @@ function Step5Viewport({ shots, shotCount, aspectRatio, onEditShot, onUndoEdit, 
                   ))}
                 </div>
               </div>
+              {/* AI Engine first — controls available options below */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">AI Engine</label>
+                <ToggleGroup type="single" value={videoConfig.engine} onValueChange={v => {
+                  if (!v) return;
+                  const isVeo = v === 'veo';
+                  const validRatios = isVeo ? ['16:9', '9:16'] : ['16:9', '9:16', '1:1', '4:3', '3:4'];
+                  const validDurations = isVeo ? [5, 6, 8] : [5, 10];
+                  const newRatio = validRatios.includes(videoConfig.aspectRatio) ? videoConfig.aspectRatio : validRatios[0];
+                  const newDuration = validDurations.includes(videoConfig.duration) ? videoConfig.duration : validDurations[0];
+                  const newResolution = isVeo ? videoConfig.resolution : '720p';
+                  setVideoConfig(prev => ({ ...prev, engine: v, aspectRatio: newRatio, duration: newDuration, resolution: newResolution }));
+                }} className="justify-start">
+                  <ToggleGroupItem value="veo" className="px-3">Veo 3.1</ToggleGroupItem>
+                  <ToggleGroupItem value="runway" className="px-3">Runway Gen4</ToggleGroupItem>
+                </ToggleGroup>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Duration</label>
-                  <ToggleGroup type="single" value={String(videoConfig.duration)} onValueChange={v => v && setVideoConfig(prev => ({ ...prev, duration: Number(v) }))} className="justify-start">
-                    <ToggleGroupItem value="4" className="px-3">4s</ToggleGroupItem>
-                    <ToggleGroupItem value="6" className="px-3">6s</ToggleGroupItem>
-                    <ToggleGroupItem value="8" className="px-3">8s</ToggleGroupItem>
+                  <ToggleGroup type="single" value={String(videoConfig.duration)} onValueChange={v => v && setVideoConfig(prev => ({ ...prev, duration: Number(v) }))} className="justify-start flex-wrap">
+                    {videoConfig.engine === 'veo' ? (
+                      <>
+                        <ToggleGroupItem value="5" className="px-3">5s</ToggleGroupItem>
+                        <ToggleGroupItem value="6" className="px-3">6s</ToggleGroupItem>
+                        <ToggleGroupItem value="8" className="px-3">8s</ToggleGroupItem>
+                      </>
+                    ) : (
+                      <>
+                        <ToggleGroupItem value="5" className="px-3">5s</ToggleGroupItem>
+                        <ToggleGroupItem value="10" className="px-3">10s</ToggleGroupItem>
+                      </>
+                    )}
                   </ToggleGroup>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Aspect Ratio</label>
-                  <ToggleGroup type="single" value={videoConfig.aspectRatio} onValueChange={v => v && setVideoConfig(prev => ({ ...prev, aspectRatio: v }))} className="justify-start">
+                  <ToggleGroup type="single" value={videoConfig.aspectRatio} onValueChange={v => v && setVideoConfig(prev => ({ ...prev, aspectRatio: v }))} className="justify-start flex-wrap">
                     <ToggleGroupItem value="9:16" className="px-3">9:16</ToggleGroupItem>
                     <ToggleGroupItem value="16:9" className="px-3">16:9</ToggleGroupItem>
-                    <ToggleGroupItem value="1:1" className="px-3">1:1</ToggleGroupItem>
+                    {videoConfig.engine === 'runway' && (
+                      <>
+                        <ToggleGroupItem value="1:1" className="px-3">1:1</ToggleGroupItem>
+                        <ToggleGroupItem value="4:3" className="px-3">4:3</ToggleGroupItem>
+                        <ToggleGroupItem value="3:4" className="px-3">3:4</ToggleGroupItem>
+                      </>
+                    )}
                   </ToggleGroup>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Resolution</label>
-                  <ToggleGroup type="single" value={videoConfig.resolution} onValueChange={v => v && setVideoConfig(prev => ({ ...prev, resolution: v }))} className="justify-start">
-                    <ToggleGroupItem value="720p" className="px-3">720p</ToggleGroupItem>
-                    <ToggleGroupItem value="1080p" className="px-3">1080p</ToggleGroupItem>
-                  </ToggleGroup>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">AI Engine</label>
-                  <ToggleGroup type="single" value={videoConfig.engine} onValueChange={v => v && setVideoConfig(prev => ({ ...prev, engine: v }))} className="justify-start">
-                    <ToggleGroupItem value="veo" className="px-3">Veo 3.1</ToggleGroupItem>
-                    <ToggleGroupItem value="runway" className="px-3">Runway 4.5</ToggleGroupItem>
-                  </ToggleGroup>
-                </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Resolution</label>
+                <ToggleGroup type="single" value={videoConfig.resolution} onValueChange={v => v && setVideoConfig(prev => ({ ...prev, resolution: v }))} className="justify-start">
+                  <ToggleGroupItem value="720p" className="px-3">720p</ToggleGroupItem>
+                  {videoConfig.engine === 'veo' && <ToggleGroupItem value="1080p" className="px-3">1080p</ToggleGroupItem>}
+                </ToggleGroup>
               </div>
               <Button className="w-full" onClick={onGenerateVideoPrompts} disabled={!videoConfig.baseImageId || videoPromptsLoading}>
                 {videoPromptsLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Generating prompts...</> : 'Generate video prompts'}
