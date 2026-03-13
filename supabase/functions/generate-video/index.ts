@@ -274,7 +274,8 @@ async function generateWithRunway(
     "3:4": "832:1104",
   };
   const ratio = ratioMap[aspectRatio] || "720:1280";
-  const runwayDuration = Math.max(2, Math.min(duration, 10));
+  // Runway Gen4 Turbo supports 5s or 10s durations
+  const runwayDuration = duration >= 8 ? 10 : 5;
 
   const body = {
     model: "gen4_turbo",

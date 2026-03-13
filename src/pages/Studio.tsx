@@ -690,7 +690,7 @@ const Studio = () => {
     setExportFormat('png');
     setSelectedExportShots(new Set());
     setVideoExpanded(false);
-    setVideoConfig({ baseImageId: '', duration: 4, resolution: '720p', engine: 'veo', aspectRatio: '9:16' });
+    setVideoConfig({ baseImageId: '', duration: 5, resolution: '720p', engine: 'veo', aspectRatio: '9:16' });
     setVideoGenerating(false);
     setVideoStage('');
     setGeneratedVideo(null);
