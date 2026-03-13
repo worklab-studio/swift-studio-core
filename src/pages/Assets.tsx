@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from '@/hooks/use-toast';
 import {
-  Download, Link2, Images, Trash2, Play, Loader2, CheckSquare, X, Video,
+  Download, Link2, Images, Trash2, Play, Loader2, CheckSquare, X, Video, Eye, Sparkles,
 } from 'lucide-react';
 
 const assetTypes = ['All', 'Original', 'Generated', 'Video'];
@@ -65,6 +65,9 @@ const Assets = () => {
   const [deleteTarget, setDeleteTarget] = useState<string | string[] | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // View/Preview
+  const [viewAsset, setViewAsset] = useState<Asset | null>(null);
+
   // Video generation
   const [videoAsset, setVideoAsset] = useState<Asset | null>(null);
   const [videoEngine, setVideoEngine] = useState<'veo' | 'runway'>('veo');
@@ -76,6 +79,11 @@ const Assets = () => {
   const [videoStage, setVideoStage] = useState(VIDEO_STAGES[0]);
   const [videoProgress, setVideoProgress] = useState(0);
   const videoAbortRef = useRef(false);
+
+  // AI prompt suggestions
+  const [aiPrompts, setAiPrompts] = useState<string[]>([]);
+  const [aiPromptsLoading, setAiPromptsLoading] = useState(false);
+  const [selectedPromptIdx, setSelectedPromptIdx] = useState<number | null>(null);
 
   const fetchAssets = async () => {
     if (!user) return;
@@ -126,7 +134,6 @@ const Assets = () => {
   const handleDelete = async (ids: string[]) => {
     setDeleting(true);
     try {
-      // Try to delete from storage for originals
       const toDelete = assets.filter(a => ids.includes(a.id) && a.asset_type === 'original');
       for (const asset of toDelete) {
         try {
@@ -160,6 +167,8 @@ const Assets = () => {
     setVideoDuration(5);
     setVideoResolution('720p');
     setVideoPrompt('');
+    setAiPrompts([]);
+    setSelectedPromptIdx(null);
     videoAbortRef.current = false;
   };
 
@@ -169,6 +178,36 @@ const Assets = () => {
     if (!cfg.ratios.includes(videoRatio)) setVideoRatio(cfg.ratios[0]);
     if (!cfg.durations.includes(videoDuration)) setVideoDuration(cfg.durations[0]);
     if (!cfg.resolutions.includes(videoResolution)) setVideoResolution(cfg.resolutions[0]);
+  };
+
+  const handleGenerateAiPrompts = async () => {
+    if (!videoAsset) return;
+    setAiPromptsLoading(true);
+    setAiPrompts([]);
+    setSelectedPromptIdx(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-video-prompts', {
+        body: {
+          productName: videoAsset.product_label || 'product',
+          productImageUrl: videoAsset.url,
+          category: '',
+        },
+      });
+      if (error || !data?.prompts) {
+        toast({ title: 'Failed to generate prompts', variant: 'destructive' });
+      } else {
+        setAiPrompts(data.prompts);
+      }
+    } catch {
+      toast({ title: 'Failed to generate prompts', variant: 'destructive' });
+    } finally {
+      setAiPromptsLoading(false);
+    }
+  };
+
+  const selectAiPrompt = (idx: number) => {
+    setSelectedPromptIdx(idx);
+    setVideoPrompt(aiPrompts[idx]);
   };
 
   const handleGenerateVideo = async () => {
@@ -243,7 +282,6 @@ const Assets = () => {
   };
 
   const cfg = ENGINE_CONFIG[videoEngine];
-  const imageAssetSelected = videoAsset && videoAsset.asset_type !== 'video';
 
   return (
     <div className="space-y-6">
@@ -297,7 +335,6 @@ const Assets = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 2xl:grid-cols-5 gap-4">
           {assets.map((a) => (
             <div key={a.id} className="group relative">
-              {/* Selection checkbox */}
               {selectMode && (
                 <div className="absolute top-2 left-2 z-10">
                   <Checkbox
@@ -317,7 +354,6 @@ const Assets = () => {
                   <img src={a.url} alt={a.shot_label || ''} className="h-full w-full object-cover" loading="lazy" />
                 )}
 
-                {/* Video play indicator */}
                 {a.asset_type === 'video' && (
                   <div className="absolute bottom-2 left-2 pointer-events-none">
                     <div className="bg-background/80 rounded-full p-1">
@@ -329,6 +365,9 @@ const Assets = () => {
                 {/* Hover overlay */}
                 {!selectMode && (
                   <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
+                    <button onClick={() => setViewAsset(a)} className="rounded-full bg-background p-2 hover:bg-accent transition-colors" title="View">
+                      <Eye className="h-4 w-4 text-foreground" />
+                    </button>
                     <button onClick={() => handleDownload(a)} className="rounded-full bg-background p-2 hover:bg-accent transition-colors" title="Download">
                       <Download className="h-4 w-4 text-foreground" />
                     </button>
@@ -357,6 +396,25 @@ const Assets = () => {
         </div>
       )}
 
+      {/* ── View/Preview Dialog ── */}
+      <Dialog open={!!viewAsset} onOpenChange={(o) => !o && setViewAsset(null)}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] p-2 bg-black/95 border-border">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Asset Preview</DialogTitle>
+            <DialogDescription>Preview of the selected asset</DialogDescription>
+          </DialogHeader>
+          {viewAsset && (
+            <div className="flex items-center justify-center w-full" style={{ maxHeight: 'calc(90vh - 2rem)' }}>
+              {viewAsset.asset_type === 'video' ? (
+                <video src={viewAsset.url} className="max-w-full max-h-[85vh] object-contain rounded" controls autoPlay muted />
+              ) : (
+                <img src={viewAsset.url} alt={viewAsset.shot_label || ''} className="max-w-full max-h-[85vh] object-contain rounded" />
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* ── Delete Confirmation ── */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
         <AlertDialogContent>
@@ -380,7 +438,7 @@ const Assets = () => {
 
       {/* ── Video Generation Dialog ── */}
       <Dialog open={!!videoAsset} onOpenChange={(o) => { if (!o && !videoGenerating) setVideoAsset(null); }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Generate Video</DialogTitle>
             <DialogDescription>Create a video from this image using AI.</DialogDescription>
@@ -399,7 +457,6 @@ const Assets = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Preview */}
               {videoAsset && (
                 <div className="aspect-video rounded-lg overflow-hidden bg-muted">
                   <img src={videoAsset.url} alt="" className="h-full w-full object-cover" />
@@ -451,12 +508,57 @@ const Assets = () => {
                 </Select>
               </div>
 
-              {/* Prompt */}
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">Custom Prompt <span className="text-muted-foreground font-normal">(optional)</span></label>
+              {/* Prompt section */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Video Prompt</label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleGenerateAiPrompts}
+                    disabled={aiPromptsLoading}
+                    className="text-xs h-7"
+                  >
+                    {aiPromptsLoading ? (
+                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                    ) : (
+                      <Sparkles className="h-3 w-3 mr-1" />
+                    )}
+                    Generate AI Prompts
+                  </Button>
+                </div>
+
+                {/* AI prompt suggestions */}
+                {aiPrompts.length > 0 && (
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                    {aiPrompts.map((prompt, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => selectAiPrompt(idx)}
+                        className={`w-full text-left text-xs p-2.5 rounded-md border transition-colors ${
+                          selectedPromptIdx === idx
+                            ? 'border-primary bg-primary/10 ring-1 ring-primary'
+                            : 'border-border bg-muted/50 hover:bg-muted'
+                        }`}
+                      >
+                        <span className="text-muted-foreground font-medium mr-1">#{idx + 1}</span>
+                        {prompt}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {aiPrompts.length > 0 && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex-1 h-px bg-border" />
+                    or write custom
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
+                )}
+
                 <Textarea
                   value={videoPrompt}
-                  onChange={e => setVideoPrompt(e.target.value)}
+                  onChange={e => { setVideoPrompt(e.target.value); setSelectedPromptIdx(null); }}
                   placeholder="Describe the motion or animation you want…"
                   rows={3}
                 />
