@@ -111,9 +111,10 @@ async function generateWithVeo(
   const contentType = imgRes.headers.get("content-type") || "image/jpeg";
   const mimeType = contentType.includes("png") ? "image/png" : "image/jpeg";
 
-  // Map aspect ratio from UI format (e.g. "9:16") to Veo format
-  const veoAspectRatio = aspectRatio || "9:16";
-  const veoDuration = 8; // Veo 3.1 only supports 8s for reference_to_video
+  // Veo 3.1 only supports 16:9 and 9:16 — fallback to 16:9 if invalid
+  const validVeoRatios = ["16:9", "9:16"];
+  const veoAspectRatio = validVeoRatios.includes(aspectRatio) ? aspectRatio : "16:9";
+  const veoDuration = 8; // Veo 3.1 bills all durations as 8s for reference_to_video
   const veoResolution = resolution === "1080p" ? "1080p" : "720p";
   const modelId = "veo-3.1-generate-001";
 
