@@ -1688,7 +1688,16 @@ const Studio = () => {
 
         {toolbarView === 'assets' && (
           <div className="p-8 min-h-full overflow-y-auto h-full pt-24">
-            <AssetsViewport assets={projectAssets} onCopyLink={handleCopyLink} />
+            <AssetsViewport
+              assets={projectAssets}
+              onCopyLink={handleCopyLink}
+              onDelete={async (assetId) => {
+                await supabase.from('assets').delete().eq('id', assetId);
+                setProjectAssets(prev => prev.filter(a => a.id !== assetId));
+                toast({ title: 'Asset deleted' });
+              }}
+              projectId={id!}
+            />
           </div>
         )}
 
