@@ -196,7 +196,8 @@ const Assets = () => {
       if (error || !data?.prompts) {
         toast({ title: 'Failed to generate prompts', variant: 'destructive' });
       } else {
-        setAiPrompts(data.prompts);
+        const prompts = data.prompts.map((p: any) => typeof p === 'string' ? p : p.text || JSON.stringify(p));
+        setAiPrompts(prompts);
       }
     } catch {
       toast({ title: 'Failed to generate prompts', variant: 'destructive' });
