@@ -829,7 +829,14 @@ const Studio = () => {
       toast({ title: 'Choose an option', description: 'Please select "Remove Background" or "Keep Model" before continuing.', variant: 'destructive' });
       return;
     }
-    completeStep(1, `${productImages.length} image${productImages.length > 1 ? 's' : ''}${modelChoice === 'keep' ? ' · Keep Model' : ''}`, 2);
+    if (modelChoice === 'keep') {
+      // Skip Step 2 entirely — model already present in the image
+      completeStep(1, `${productImages.length} image${productImages.length > 1 ? 's' : ''} · Keep Model`, 3);
+      setCompletedSteps(prev => new Set([...prev, 2]));
+      setStepSummaries(prev => ({ ...prev, 2: 'Model from photo' }));
+    } else {
+      completeStep(1, `${productImages.length} image${productImages.length > 1 ? 's' : ''}`, 2);
+    }
   };
 
   /* ── Remove background handler (per-image) ── */
