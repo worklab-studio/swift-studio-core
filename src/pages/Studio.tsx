@@ -465,7 +465,8 @@ const Studio = () => {
   // Category-specific settings (Beauty & FMCG)
   const [beautyApplication, setBeautyApplication] = useState<string>('');
   const [productSize, setProductSize] = useState<string>('');
-  const [selectedOutfit, setSelectedOutfit] = useState<string>('');
+   const [selectedOutfit, setSelectedOutfit] = useState<string>('');
+   const [showCustomOutfit, setShowCustomOutfit] = useState(false);
 
   // Dynamic AI-generated templates
   const [dynamicTemplates, setDynamicTemplates] = useState<ProductTemplate[]>([]);
@@ -704,7 +705,8 @@ const Studio = () => {
     setGeneratedVideo(null);
     setBeautyApplication('');
     setProductSize('');
-    setSelectedOutfit('');
+     setSelectedOutfit('');
+    setShowCustomOutfit(false);
     toast({ title: 'Workspace reset', description: 'Ready for a new product shoot.' });
   }, []);
 
@@ -1440,6 +1442,8 @@ const Studio = () => {
                     setProductSize={setProductSize}
                     selectedOutfit={selectedOutfit}
                     setSelectedOutfit={setSelectedOutfit}
+                    showCustomOutfit={showCustomOutfit}
+                    setShowCustomOutfit={setShowCustomOutfit}
                   />
                 )}
                 {activeStep === 3 && (
@@ -2045,7 +2049,7 @@ const FMCG_SHOWCASE_BACKGROUNDS: Record<string, string[]> = {
 /* ── (Skincare outfit options removed — now AI-generated via productInfo.suggestedOutfits) ── */
 
 
-function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload, selectedTemplate, setSelectedTemplate, templateCategory, setTemplateCategory, selectedModelData, modelImages, productInfo, activeTemplates, loadingTemplates, beautyApplication, setBeautyApplication, productSize, setProductSize, selectedOutfit, setSelectedOutfit }: {
+function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload, selectedTemplate, setSelectedTemplate, templateCategory, setTemplateCategory, selectedModelData, modelImages, productInfo, activeTemplates, loadingTemplates, beautyApplication, setBeautyApplication, productSize, setProductSize, selectedOutfit, setSelectedOutfit, showCustomOutfit, setShowCustomOutfit }: {
   shootType: 'product' | 'model' | null;
   setShootType: React.Dispatch<React.SetStateAction<'product' | 'model' | null>>;
   modelConfig: ModelConfig;
@@ -2067,6 +2071,8 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
   setProductSize: (v: string) => void;
   selectedOutfit: string;
   setSelectedOutfit: (v: string) => void;
+  showCustomOutfit: boolean;
+  setShowCustomOutfit: (v: boolean) => void;
 }) {
   const filteredTemplates = templateCategory === 'All'
     ? activeTemplates
@@ -2337,10 +2343,12 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                   Outfit
                   {productInfo.suggestedOutfits && <Sparkles className="h-2.5 w-2.5 text-primary" />}
                 </label>
-                <Select value={selectedOutfit} onValueChange={(v) => {
+                <Select value={showCustomOutfit ? '__custom__' : selectedOutfit} onValueChange={(v) => {
                   if (v === '__custom__') {
+                    setShowCustomOutfit(true);
                     setSelectedOutfit('');
                   } else {
+                    setShowCustomOutfit(false);
                     setSelectedOutfit(v);
                   }
                 }}>
@@ -2352,7 +2360,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                     <SelectItem value="__custom__">✏️ Custom outfit</SelectItem>
                   </SelectContent>
                 </Select>
-                {selectedOutfit === '' && (
+                {showCustomOutfit && (
                   <Textarea
                     className="mt-1.5 text-xs min-h-[50px]"
                     placeholder="Describe the outfit (e.g., 'White silk robe with gold trim, hair up in a bun')"
