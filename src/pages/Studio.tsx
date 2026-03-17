@@ -2440,12 +2440,12 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                     </div>
                   )}
 
-                  {/* Category-specific */}
-                  {productInfo && ['Skincare', 'Beauty'].includes(productInfo.category) && beautyApplication && MODEL_SHOOT_BEAUTY_BACKGROUNDS[beautyApplication] && (
+                  {/* Category-specific — now uses AI-generated backgrounds */}
+                  {productInfo && ['Skincare', 'Beauty', 'Personal Care'].includes(productInfo.category) && productInfo.suggestedModelShootBackgrounds?.length > 0 && (
                     <div className="p-1.5 border-t border-border">
-                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1">{beautyApplication.charAt(0).toUpperCase() + beautyApplication.slice(1)} Settings</p>
-                      {MODEL_SHOOT_BEAUTY_BACKGROUNDS[beautyApplication].map((bg, i) => {
-                        const val = `beauty-bg-${beautyApplication}-${i}`;
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1 flex items-center gap-1"><Sparkles className="h-2.5 w-2.5" /> Product-Tailored</p>
+                      {productInfo.suggestedModelShootBackgrounds.map((bg, i) => {
+                        const val = `ai-model-bg-${i}`;
                         return (
                           <button key={val} onClick={() => setModelConfig(prev => ({ ...prev, background: val }))} className={`w-full text-left px-2 py-1.5 text-xs rounded-md flex items-center gap-2 transition-colors ${modelConfig.background === val ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}>
                             {modelConfig.background === val && <Check className="h-3 w-3 shrink-0" />}
