@@ -49,6 +49,7 @@ Special instructions for Apparel & Fashion products:
 Special instructions for Skincare / Beauty products:
 - Detect the application area: face, hair, lips, eyes, body, nails, or fragrance. Set beautyApplication accordingly. Null for non-beauty.
 - Detect product size: mini (lip balm, sample vial, travel size), standard (serum bottle, lipstick tube, cream jar), large (pump bottle, family-size lotion), extra-large (salon-size, bulk). Set beautySize accordingly. Null for non-beauty.
+- Generate 4-5 outfit/clothing suggestions for model shoots with this beauty product. Tailor suggestions to the product's color palette, vibe, application area, and brand aesthetic. For face products suggest outfits that don't obstruct the face (off-shoulder tops, simple tanks). For body products suggest outfits showing the application area. For fragrance suggest elegant evening/sophisticated wear. For hair products suggest outfits that let hair be the focus. Each suggestion should be a complete outfit description (e.g., "White silk slip dress with delicate gold jewelry, hair down"). Set suggestedOutfits accordingly. Null for non-beauty.
 
 Special instructions for FMCG products (packaged food, beverages, cleaning, personal care):
 - Detect size: small (sachet, single-serve packet, candy bar), medium (standard bottle, cereal box, pouch up to 1kg), large (family-size bottle, 2L+ container), extra-large (bulk pack, 5kg+). Set fmcgSize accordingly. Null for non-FMCG.
@@ -138,6 +139,11 @@ Model & Background detection (for ALL products):
                     type: ["string", "null"],
                     description: "Product size for beauty: mini, standard, large, extra-large. Null for non-beauty.",
                   },
+                  suggestedOutfits: {
+                    type: ["array", "null"],
+                    items: { type: "string" },
+                    description: "4-5 outfit/clothing suggestions for beauty/skincare model shoots, tailored to the product's color, vibe, and application area. Null for non-beauty.",
+                  },
                   fmcgSize: {
                     type: ["string", "null"],
                     description: "Product size for FMCG: small, medium, large, extra-large. Null for non-FMCG.",
@@ -173,7 +179,7 @@ Model & Background detection (for ALL products):
                     description: "Note about model detection status and available actions",
                   },
                 },
-                required: ["category", "colors", "material", "suggestedShots", "description", "productName", "garmentType", "outfitSuggestion", "beautyApplication", "beautySize", "fmcgSize", "fmcgPackaging", "fmcgSubType", "suggestedModelShootBackgrounds", "suggestedShowcaseBackgrounds", "hasModel", "hasWhiteBackground", "modelNote"],
+                required: ["category", "colors", "material", "suggestedShots", "description", "productName", "garmentType", "outfitSuggestion", "beautyApplication", "beautySize", "suggestedOutfits", "fmcgSize", "fmcgPackaging", "fmcgSubType", "suggestedModelShootBackgrounds", "suggestedShowcaseBackgrounds", "hasModel", "hasWhiteBackground", "modelNote"],
                 additionalProperties: false,
               },
             },
