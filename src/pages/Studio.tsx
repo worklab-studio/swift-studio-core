@@ -543,10 +543,27 @@ const Studio = () => {
     }
   }, [shootType, productInfo, templatesCached]);
 
-  // Auto-populate beauty/FMCG fields from productInfo
+  // Auto-populate beauty/FMCG fields from productInfo — re-derive on product name change
   useEffect(() => {
     if (!productInfo) return;
-    if (productInfo.beautyApplication && !beautyApplication) {
+    const isBSC = ['Skincare', 'Beauty', 'Personal Care'].includes(productInfo.category);
+    if (isBSC) {
+      // Re-derive beautyApplication from product name keywords
+      const name = (productInfo.productName || '').toLowerCase();
+      const desc = (productInfo.description || '').toLowerCase();
+      const combined = `${name} ${desc}`;
+      let derived = productInfo.beautyApplication || 'face';
+      if (/perfume|fragrance|cologne|eau de|scent/.test(combined)) derived = 'fragrance';
+      else if (/lip\s|lipstick|lip balm|lip gloss|lip tint/.test(combined)) derived = 'lips';
+      else if (/hair|shampoo|conditioner/.test(combined)) derived = 'hair';
+      else if (/eye|mascara|eyeliner|eyeshadow/.test(combined)) derived = 'eyes';
+      else if (/body|lotion|body wash|shower/.test(combined)) derived = 'body';
+      else if (/nail|manicure|polish/.test(combined)) derived = 'nails';
+      setBeautyApplication(derived);
+      // Reset stale outfit selection when product changes
+      setSelectedOutfit('');
+      setShowCustomOutfit(false);
+    } else if (productInfo.beautyApplication && !beautyApplication) {
       setBeautyApplication(productInfo.beautyApplication);
     }
     if (productInfo.beautySize && !productSize) {
@@ -555,7 +572,7 @@ const Studio = () => {
     if (productInfo.fmcgSize && !productSize) {
       setProductSize(productInfo.fmcgSize);
     }
-  }, [productInfo]);
+  }, [productInfo, productInfo?.productName, productInfo?.description]);
 
   /* ── Generate all model portraits (skip existing) ── */
   const handleGeneratePortraits = useCallback(async () => {
