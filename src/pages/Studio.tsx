@@ -519,6 +519,9 @@ const Studio = () => {
       }
     };
     loadPresetImages();
+  }, []);
+
+  /* ── Fetch dynamic scene templates from AI ── */
   const fetchDynamicTemplates = useCallback(async () => {
     if (!productImages.length || !productInfo) return;
     setLoadingTemplates(true);
