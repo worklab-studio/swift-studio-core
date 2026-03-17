@@ -465,7 +465,8 @@ const Studio = () => {
   // Category-specific settings (Beauty & FMCG)
   const [beautyApplication, setBeautyApplication] = useState<string>('');
   const [productSize, setProductSize] = useState<string>('');
-  const [selectedOutfit, setSelectedOutfit] = useState<string>('');
+   const [selectedOutfit, setSelectedOutfit] = useState<string>('');
+   const [showCustomOutfit, setShowCustomOutfit] = useState(false);
 
   // Dynamic AI-generated templates
   const [dynamicTemplates, setDynamicTemplates] = useState<ProductTemplate[]>([]);
