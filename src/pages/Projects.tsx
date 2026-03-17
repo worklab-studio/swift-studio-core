@@ -9,7 +9,15 @@ import { FolderOpen, ImageIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useNewProjectDialog } from '@/contexts/NewProjectContext';
 
-const categories = ['All', 'Jewellery', 'Apparel', 'Beauty', 'FMCG', 'Footwear', 'Bags'];
+const CATEGORY_FILTERS = [
+  { label: 'All', id: 'All' },
+  { label: 'Apparel & Fashion', id: 'apparel_fashion' },
+  { label: 'Jewellery', id: 'jewellery' },
+  { label: 'Bags & Luggage', id: 'bags_luggage' },
+  { label: 'Beauty & Personal Care', id: 'beauty_personal_care' },
+  { label: 'FMCG', id: 'fmcg' },
+  { label: 'Footwear', id: 'footwear' },
+];
 
 const SHOT_LABELS: Record<string, string> = { model_shot: 'Model Shot', product_showcase: 'Product Showcase' };
 
