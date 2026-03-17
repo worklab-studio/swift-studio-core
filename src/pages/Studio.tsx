@@ -2457,7 +2457,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                   )}
 
                   {/* Category-specific — now uses AI-generated backgrounds */}
-                  {productInfo && ['Skincare', 'Beauty', 'Personal Care'].includes(productInfo.category) && productInfo.suggestedModelShootBackgrounds?.length > 0 && (
+                  {productInfo && ['Skincare', 'Beauty', 'Personal Care', 'beauty_personal_care'].includes(productInfo.category) && productInfo.suggestedModelShootBackgrounds?.length > 0 && (
                     <div className="p-1.5 border-t border-border">
                       <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1 flex items-center gap-1"><Sparkles className="h-2.5 w-2.5" /> Product-Tailored</p>
                       {productInfo.suggestedModelShootBackgrounds.map((bg, i) => {
