@@ -2042,27 +2042,7 @@ const FMCG_SHOWCASE_BACKGROUNDS: Record<string, string[]> = {
   'Premium / Editorial': ['Black slate with dramatic side lighting and condensation droplets', 'Dark wood surface with single spotlight from above', 'Brushed copper tray with moody chiaroscuro lighting', 'Textured concrete with bold color accent lighting'],
 };
 
-/* ── Skincare: Outfit options by gender + application area ── */
-const SKINCARE_OUTFIT_OPTIONS: Record<string, Record<string, string[]>> = {
-  Female: {
-    hair: ['White towel wrap with hair exposed flowing down', 'Silk bathrobe, hair down in natural waves', 'Off-shoulder cotton top showing neck and shoulders', 'Spa headband with strapless tube top'],
-    face: ['White spa robe, dewy clean skin', 'Simple cotton tank top, minimal makeup', 'Off-shoulder knit sweater, natural glow', 'Strapless towel wrap, fresh-faced'],
-    lips: ['Elegant evening gown, bold lip', 'Silk slip dress with delicate jewelry', 'Classic black turtleneck, statement lip color', 'Sheer blouse with subtle glam styling'],
-    eyes: ['Soft cashmere sweater, natural eye look', 'White button-down shirt, editorial styling', 'Cozy knit cardigan, morning skincare routine look', 'Minimalist silk top, clean beauty aesthetic'],
-    body: ['White fluffy bathrobe, spa setting', 'Linen wrap dress, beachy relaxed vibe', 'Athletic crop top and leggings, post-workout', 'Simple cotton sundress, natural lifestyle'],
-    fragrance: ['Elegant evening gown, sophisticated styling', 'Silk slip dress with lace details', 'Tailored blazer with nothing underneath, editorial', 'Sheer flowing maxi dress, ethereal mood'],
-    nails: ['Casual chic outfit with hands prominently visible', 'Elegant bracelet-stacked wrists, manicured hands', 'White cotton top, hands resting artfully', 'Minimalist outfit, focus on hand positioning'],
-  },
-  Male: {
-    hair: ['White crew-neck t-shirt, damp styled hair', 'Open terry cloth robe, grooming routine', 'Fitted henley shirt, natural hair texture', 'Athletic tank top, post-shower look'],
-    face: ['White crew-neck t-shirt, clean-shaven or groomed beard', 'Open collar linen shirt, natural skin', 'Classic navy polo, fresh-faced', 'Henley with rolled sleeves, morning routine'],
-    lips: ['Smart casual button-down shirt', 'Minimal black t-shirt, editorial mood', 'Crisp white shirt, groomed appearance', 'Casual sweater, natural look'],
-    eyes: ['Classic crewneck sweater, editorial', 'White t-shirt, focused eye area', 'Casual oxford shirt, clean look', 'Minimalist athletic top, fresh morning'],
-    body: ['Athletic shorts, shirtless, post-workout', 'Open bathrobe, spa aesthetic', 'Swim trunks, beach/pool context', 'Comfortable lounge pants, relaxed home setting'],
-    fragrance: ['Tailored dark suit, sophisticated', 'Open white linen shirt, Mediterranean vibe', 'Leather jacket, evening editorial', 'Classic tuxedo, black-tie elegance'],
-    nails: ['Smart casual with visible hands, groomed nails', 'Relaxed shirt with hands resting on surface', 'Business casual with attention to groomed hands', 'Casual outfit with natural hand positioning'],
-  },
-};
+/* ── (Skincare outfit options removed — now AI-generated via productInfo.suggestedOutfits) ── */
 
 
 function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload, selectedTemplate, setSelectedTemplate, templateCategory, setTemplateCategory, selectedModelData, modelImages, productInfo, activeTemplates, loadingTemplates, beautyApplication, setBeautyApplication, productSize, setProductSize, selectedOutfit, setSelectedOutfit }: {
