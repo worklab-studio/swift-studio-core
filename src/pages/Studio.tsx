@@ -111,6 +111,7 @@ interface ProductInfo {
   modelNote: string | null;
   beautyApplication: string | null;
   beautySize: string | null;
+  suggestedOutfits: string[] | null;
   fmcgSize: string | null;
   fmcgPackaging: string | null;
   fmcgSubType: string | null;
