@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.detect-views]
 verify_jwt = false
+
+[functions.generate-preset-images]
+verify_jwt = false
