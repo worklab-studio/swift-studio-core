@@ -49,7 +49,7 @@ const Projects = () => {
     if (!user) return;
     const fetchProjects = async () => {
       let query = supabase.from('projects').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
-      if (filter !== 'All') query = query.eq('category', filter.toLowerCase());
+      if (filter !== 'All') query = query.eq('category', filter);
       const { data } = await query;
       setProjects(data ?? []);
     };
