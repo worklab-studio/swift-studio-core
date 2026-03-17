@@ -179,7 +179,7 @@ Model & Background detection (for ALL products):
                     description: "Note about model detection status and available actions",
                   },
                 },
-                required: ["category", "colors", "material", "suggestedShots", "description", "productName", "garmentType", "outfitSuggestion", "beautyApplication", "beautySize", "fmcgSize", "fmcgPackaging", "fmcgSubType", "suggestedModelShootBackgrounds", "suggestedShowcaseBackgrounds", "hasModel", "hasWhiteBackground", "modelNote"],
+                required: ["category", "colors", "material", "suggestedShots", "description", "productName", "garmentType", "outfitSuggestion", "beautyApplication", "beautySize", "suggestedOutfits", "fmcgSize", "fmcgPackaging", "fmcgSubType", "suggestedModelShootBackgrounds", "suggestedShowcaseBackgrounds", "hasModel", "hasWhiteBackground", "modelNote"],
                 additionalProperties: false,
               },
             },
