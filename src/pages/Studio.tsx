@@ -3539,7 +3539,7 @@ function AnimatedConnector() {
 }
 
 /* ── Step 3 Viewport ── */
-function Step3Viewport({ selectedPreset, selectedPresetData, referenceImage, productImages, shootType, modelConfig, selectedModelData, modelImages, selectedTemplate, activeTemplates }: {
+function Step3Viewport({ selectedPreset, selectedPresetData, referenceImage, productImages, shootType, modelConfig, selectedModelData, modelImages, selectedTemplate, activeTemplates, projectCategory, categoryPresetImages }: {
   selectedPreset: string | null;
   selectedPresetData: typeof STYLE_PRESETS[0] | undefined;
   referenceImage: string | null;
@@ -3550,9 +3550,15 @@ function Step3Viewport({ selectedPreset, selectedPresetData, referenceImage, pro
   modelImages: Record<string, string>;
   selectedTemplate: string | null;
   activeTemplates: ProductTemplate[];
+  projectCategory: string;
+  categoryPresetImages: Record<string, Record<string, string>>;
 }) {
   const tpl = selectedTemplate ? activeTemplates.find(t => t.id === selectedTemplate) : null;
-  const presetImg = selectedPresetData ? APPAREL_PRESET_IMAGES[selectedPresetData.id] : null;
+  const presetImg = selectedPresetData ? (() => {
+    const cat = (projectCategory || '').toLowerCase().trim();
+    if (['apparel', 'fashion', 'apparel_fashion'].includes(cat)) return APPAREL_PRESET_IMAGES[selectedPresetData.id] || null;
+    return categoryPresetImages[cat]?.[selectedPresetData.id] || null;
+  })() : null;
 
   const hasShootInfo = !!shootType;
   const hasModelOrTemplate = (shootType === 'model' && (selectedModelData || modelConfig.uploadedModelUrl)) || (shootType === 'product' && tpl);
