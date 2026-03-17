@@ -580,7 +580,14 @@ serve(async (req) => {
     const isCampaign = shotCount === "campaign";
     const isCampaignAdd = shotCount === "campaign_add";
     const creditCost = isCampaign ? 6 : isCampaignAdd ? 5 : 1;
-    const labels = isCampaign ? SHOT_LABELS_CAMPAIGN : isCampaignAdd ? SHOT_LABELS_CAMPAIGN_ADD : SHOT_LABELS_SINGLE;
+
+    // Use beauty-specific labels for Skincare/Beauty model shoots
+    const isBeautyModel = ["Skincare", "Beauty"].includes(category) && shotType === "model_shot";
+    const labels = isCampaign
+      ? (isBeautyModel ? SHOT_LABELS_BEAUTY_CAMPAIGN : SHOT_LABELS_CAMPAIGN)
+      : isCampaignAdd
+        ? (isBeautyModel ? SHOT_LABELS_BEAUTY_CAMPAIGN_ADD : SHOT_LABELS_CAMPAIGN_ADD)
+        : SHOT_LABELS_SINGLE;
 
     // Check credits
     const { data: profileData, error: profileErr } = await supabase
