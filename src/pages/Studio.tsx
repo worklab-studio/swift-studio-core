@@ -2895,6 +2895,10 @@ function Step1Viewport({ productImages, productInfo, setProductInfo, analyzingPr
   const [editGarmentVal, setEditGarmentVal] = useState('');
   const [editingOutfit, setEditingOutfit] = useState(false);
   const [editOutfitVal, setEditOutfitVal] = useState('');
+  const [editingMaterial, setEditingMaterial] = useState(false);
+  const [editMaterialVal, setEditMaterialVal] = useState('');
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [editDescriptionVal, setEditDescriptionVal] = useState('');
 
   useEffect(() => {
     if (analysisPhase !== 'analyzing') return;
