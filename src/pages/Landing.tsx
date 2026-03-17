@@ -5,8 +5,8 @@ import { Separator } from '@/components/ui/separator';
 import { PricingGrid } from '@/components/PricingGrid';
 import {
   Camera, Film, Sparkles, Upload, ScanSearch, Image, Grid3X3,
-  Scissors, Users, Video, Shirt, FootprintsIcon, Gem, Watch,
-  ShoppingBag, Droplets, Palette, Glasses, ArrowRight, CheckCircle,
+  Scissors, Users, Video, Shirt, FootprintsIcon, Gem, Package, Palette,
+  ShoppingBag, Droplets, ArrowRight, CheckCircle,
 } from 'lucide-react';
 import logo from '@/assets/Logo.png';
 
@@ -72,14 +72,12 @@ const HERO_CARDS = [
 ];
 
 const CATEGORIES = [
-  { icon: Shirt, name: 'Apparel' },
+  { icon: Shirt, name: 'Apparel & Fashion' },
+  { icon: Gem, name: 'Jewellery' },
+  { icon: ShoppingBag, name: 'Bags & Luggage' },
+  { icon: Droplets, name: 'Beauty & Personal Care' },
+  { icon: Package, name: 'FMCG' },
   { icon: FootprintsIcon, name: 'Footwear' },
-  { icon: Gem, name: 'Jewelry' },
-  { icon: Watch, name: 'Watches' },
-  { icon: ShoppingBag, name: 'Handbags' },
-  { icon: Droplets, name: 'Skincare' },
-  { icon: Palette, name: 'Beauty' },
-  { icon: Glasses, name: 'Accessories' },
 ];
 
 const WORKFLOW_STEPS = [

@@ -546,7 +546,7 @@ const Studio = () => {
   // Auto-populate beauty/FMCG fields from productInfo — re-derive on product name change
   useEffect(() => {
     if (!productInfo) return;
-    const isBSC = ['Skincare', 'Beauty', 'Personal Care'].includes(productInfo.category);
+    const isBSC = ['Skincare', 'Beauty', 'Personal Care', 'beauty_personal_care'].includes(productInfo.category);
     if (isBSC) {
       // Re-derive beautyApplication from product name keywords
       const name = (productInfo.productName || '').toLowerCase();
@@ -998,7 +998,7 @@ const Studio = () => {
       : '';
 
     // For apparel model shoots, exclude background/composition from preset — background comes from Step 2
-    const isApparelModel = isModel && info?.category && ['apparel', 'fashion'].includes(info.category.toLowerCase().trim());
+    const isApparelModel = isModel && info?.category && ['apparel', 'fashion', 'apparel_fashion'].includes(info.category.toLowerCase().trim());
     if (isApparelModel) {
       return `${preset.name} style photography for a ${productDesc}${garmentInfo}. ` +
         `Lighting: ${settings.lighting}.${outfitInfo}${plainBgInstruction}`;
@@ -2337,7 +2337,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
             )}
 
             {/* ── Product Size (Beauty or FMCG) ── */}
-            {productInfo && ['Skincare', 'Beauty'].includes(productInfo.category) && (
+            {productInfo && ['Skincare', 'Beauty', 'beauty_personal_care'].includes(productInfo.category) && (
               <div className="space-y-1">
                 <label className="text-xs font-medium">Product Size</label>
                 <Select value={productSize} onValueChange={setProductSize}>
@@ -2351,7 +2351,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                 </Select>
               </div>
             )}
-            {productInfo?.category === 'FMCG' && (
+            {productInfo && ['FMCG', 'fmcg'].includes(productInfo.category) && (
               <div className="space-y-1">
                 <label className="text-xs font-medium">Product Size</label>
                 <Select value={productSize} onValueChange={setProductSize}>
@@ -2457,7 +2457,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                   )}
 
                   {/* Category-specific — now uses AI-generated backgrounds */}
-                  {productInfo && ['Skincare', 'Beauty', 'Personal Care'].includes(productInfo.category) && productInfo.suggestedModelShootBackgrounds?.length > 0 && (
+                  {productInfo && ['Skincare', 'Beauty', 'Personal Care', 'beauty_personal_care'].includes(productInfo.category) && productInfo.suggestedModelShootBackgrounds?.length > 0 && (
                     <div className="p-1.5 border-t border-border">
                       <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1 flex items-center gap-1"><Sparkles className="h-2.5 w-2.5" /> Product-Tailored</p>
                       {productInfo.suggestedModelShootBackgrounds.map((bg, i) => {
@@ -2471,7 +2471,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                       })}
                     </div>
                   )}
-                  {productInfo?.category === 'FMCG' && Object.entries(FMCG_MODEL_SHOOT_BACKGROUNDS).map(([group, bgs]) => (
+                  {productInfo && ['FMCG', 'fmcg'].includes(productInfo.category) && Object.entries(FMCG_MODEL_SHOOT_BACKGROUNDS).map(([group, bgs]) => (
                     <div key={group} className="p-1.5 border-t border-border">
                       <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1">{group}</p>
                       {bgs.map((bg, i) => {
@@ -2655,7 +2655,7 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
                 } ${p.id === 'plain-bg' ? 'col-span-2' : ''}`}
               >
                 <div className={`${p.id === 'plain-bg' ? 'aspect-[4/3]' : 'aspect-square'} overflow-hidden bg-muted`}>
-                  <img src={['apparel', 'fashion'].includes((projectCategory || '').toLowerCase().trim()) ? (APPAREL_PRESET_IMAGES[p.id] || p.img) : p.img} alt={p.name} className="w-full h-full object-cover" loading="lazy" onError={(e) => { e.currentTarget.src = p.img; }} />
+                  <img src={['apparel', 'fashion', 'apparel_fashion'].includes((projectCategory || '').toLowerCase().trim()) ? (APPAREL_PRESET_IMAGES[p.id] || p.img) : p.img} alt={p.name} className="w-full h-full object-cover" loading="lazy" onError={(e) => { e.currentTarget.src = p.img; }} />
                 </div>
                 <div className="p-1.5">
                   <p className="text-[11px] font-semibold">{p.name}</p>
