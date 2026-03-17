@@ -2063,7 +2063,20 @@ const FMCG_SHOWCASE_BACKGROUNDS: Record<string, string[]> = {
   'Premium / Editorial': ['Black slate with dramatic side lighting and condensation droplets', 'Dark wood surface with single spotlight from above', 'Brushed copper tray with moody chiaroscuro lighting', 'Textured concrete with bold color accent lighting'],
 };
 
-/* ── (Skincare outfit options removed — now AI-generated via productInfo.suggestedOutfits) ── */
+/* ── Default outfit fallbacks by beauty application area ── */
+function getDefaultOutfits(application: string): string[] {
+  const defaults: Record<string, string[]> = {
+    face: ['White off-shoulder top with minimal gold jewelry', 'Silk camisole in neutral tone with hair pulled back', 'Simple black tank top with dewy natural makeup', 'Cream turtleneck with clean elegant styling'],
+    lips: ['Black velvet slip dress with statement earrings', 'White blazer with bold red accessories', 'Silk blouse with smoky eye and sleek hair', 'Sheer mesh top with minimalist jewelry'],
+    hair: ['Simple white t-shirt to keep focus on hair', 'Off-shoulder knit sweater in soft pastel', 'Denim jacket with natural flowing hair styling', 'Silk robe in champagne tone with tousled waves'],
+    eyes: ['Neutral beige top with clean neckline', 'Black turtleneck for dramatic eye focus', 'White linen shirt with soft natural styling', 'Silk cami in dusty rose with minimal accessories'],
+    body: ['White cotton towel wrap in spa setting', 'Simple bikini or swimwear showing skin', 'Linen robe loosely draped to show application area', 'Athletic wear in neutral tones'],
+    fragrance: ['Black silk evening gown with statement jewelry', 'Tailored blazer with nothing underneath for editorial vibe', 'White flowing maxi dress with gold accessories', 'Velvet cocktail dress in deep burgundy'],
+    nails: ['Simple white top to keep focus on hands', 'Black outfit with hands as focal point', 'Pastel blouse with complementary nail display', 'Elegant dress with jewelry to frame nails'],
+  };
+  return defaults[application] || defaults.face || [];
+}
+
 
 
 function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload, selectedTemplate, setSelectedTemplate, templateCategory, setTemplateCategory, selectedModelData, modelImages, productInfo, activeTemplates, loadingTemplates, beautyApplication, setBeautyApplication, productSize, setProductSize, selectedOutfit, setSelectedOutfit, showCustomOutfit, setShowCustomOutfit }: {
