@@ -2593,7 +2593,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
 }
 
 /* ── Step 3 Config (Left) ── */
-function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, aspectRatio, setAspectRatio, additionalContext, setAdditionalContext, styleSettings, analyzingStyle, plainBgColor, setPlainBgColor, shootType, selectedTemplate, activeTemplates, projectCategory }: {
+function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, aspectRatio, setAspectRatio, additionalContext, setAdditionalContext, styleSettings, analyzingStyle, plainBgColor, setPlainBgColor, shootType, selectedTemplate, activeTemplates, projectCategory, categoryPresetImages }: {
   selectedPreset: string | null;
   setSelectedPreset: (v: string | null) => void;
   referenceImage: string | null;
