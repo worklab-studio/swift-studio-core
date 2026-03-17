@@ -2351,7 +2351,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                 </Select>
               </div>
             )}
-            {productInfo?.category === 'FMCG' && (
+            {productInfo && ['FMCG', 'fmcg'].includes(productInfo.category) && (
               <div className="space-y-1">
                 <label className="text-xs font-medium">Product Size</label>
                 <Select value={productSize} onValueChange={setProductSize}>
