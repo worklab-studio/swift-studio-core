@@ -2331,17 +2331,39 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
             )}
 
             {/* ── Outfit (Beauty/Skincare model shoot) ── */}
-            {productInfo && ['Skincare', 'Beauty'].includes(productInfo.category) && modelConfig.gender && beautyApplication && (
+            {productInfo && ['Skincare', 'Beauty'].includes(productInfo.category) && (
               <div className="space-y-1">
-                <label className="text-xs font-medium">Outfit</label>
-                <Select value={selectedOutfit} onValueChange={setSelectedOutfit}>
+                <label className="text-xs font-medium flex items-center gap-1">
+                  Outfit
+                  {productInfo.suggestedOutfits && <Sparkles className="h-2.5 w-2.5 text-primary" />}
+                </label>
+                <Select value={selectedOutfit} onValueChange={(v) => {
+                  if (v === '__custom__') {
+                    setSelectedOutfit('');
+                  } else {
+                    setSelectedOutfit(v);
+                  }
+                }}>
                   <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select outfit" /></SelectTrigger>
                   <SelectContent>
-                    {(SKINCARE_OUTFIT_OPTIONS[modelConfig.gender]?.[beautyApplication] || []).map((outfit, i) => (
+                    {(productInfo.suggestedOutfits || []).map((outfit, i) => (
                       <SelectItem key={i} value={outfit}>{outfit}</SelectItem>
                     ))}
+                    <SelectItem value="__custom__">✏️ Custom outfit</SelectItem>
                   </SelectContent>
                 </Select>
+                {selectedOutfit === '' && (
+                  <Textarea
+                    className="mt-1.5 text-xs min-h-[50px]"
+                    placeholder="Describe the outfit (e.g., 'White silk robe with gold trim, hair up in a bun')"
+                    onChange={(e) => setSelectedOutfit(e.target.value)}
+                  />
+                )}
+                {productInfo.suggestedOutfits && (
+                  <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    <Sparkles className="h-2.5 w-2.5" /> AI-suggested based on product
+                  </p>
+                )}
               </div>
             )}
 
