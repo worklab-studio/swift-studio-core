@@ -370,6 +370,9 @@ const Dashboard = () => {
           )}
         </div>
       </div>
+
+      {/* Temporary: Preset Image Generator */}
+      <PresetImageGenerator />
     </div>
   );
 };
