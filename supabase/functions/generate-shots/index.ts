@@ -671,7 +671,7 @@ serve(async (req) => {
 
     const categoryModifier = CATEGORY_MODIFIERS[category] || "Showcase the product's most distinctive material qualities, textures, and design details.";
 
-    const isApparel = ["Apparel", "Fashion"].includes(category);
+    const isApparel = ["Apparel", "Fashion", "apparel_fashion"].includes(category);
 
     // Apparel-specific shot shape directives
     const apparelShotShapes: Record<string, string> = {
