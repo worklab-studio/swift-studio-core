@@ -729,7 +729,7 @@ serve(async (req) => {
       };
 
       // ── Apparel model shoot: use pose matrix + background control ──
-      const isApparelModel = ["Apparel", "Fashion"].includes(category) && shotType === "model_shot";
+      const isApparelModel = ["Apparel", "Fashion", "apparel_fashion"].includes(category) && shotType === "model_shot";
       const effectivePresetId = presetId || preset || "classic";
 
       if (isApparelModel && modelConfig) {
