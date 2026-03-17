@@ -2471,7 +2471,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                       })}
                     </div>
                   )}
-                  {productInfo?.category === 'FMCG' && Object.entries(FMCG_MODEL_SHOOT_BACKGROUNDS).map(([group, bgs]) => (
+                  {productInfo && ['FMCG', 'fmcg'].includes(productInfo.category) && Object.entries(FMCG_MODEL_SHOOT_BACKGROUNDS).map(([group, bgs]) => (
                     <div key={group} className="p-1.5 border-t border-border">
                       <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1">{group}</p>
                       {bgs.map((bg, i) => {
