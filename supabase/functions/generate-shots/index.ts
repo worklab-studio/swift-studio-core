@@ -235,9 +235,9 @@ function buildSafePrompt(productDescription: string, background: string): string
 
 /* ── Showcase category detection ── */
 function isShowcaseCategory(category: string): "beauty" | "jewellery" | "fmcg" | null {
-  if (["Skincare", "Beauty"].includes(category)) return "beauty";
-  if (["Jewelry", "Jewellery", "Watch"].includes(category)) return "jewellery";
-  if (category === "FMCG") return "fmcg";
+  if (["Skincare", "Beauty", "beauty_personal_care"].includes(category)) return "beauty";
+  if (["Jewelry", "Jewellery", "Watch", "jewellery"].includes(category)) return "jewellery";
+  if (["FMCG", "fmcg"].includes(category)) return "fmcg";
   return null;
 }
 
