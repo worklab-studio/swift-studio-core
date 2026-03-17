@@ -2339,10 +2339,12 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                   Outfit
                   {productInfo.suggestedOutfits && <Sparkles className="h-2.5 w-2.5 text-primary" />}
                 </label>
-                <Select value={selectedOutfit} onValueChange={(v) => {
+                <Select value={showCustomOutfit ? '__custom__' : selectedOutfit} onValueChange={(v) => {
                   if (v === '__custom__') {
+                    setShowCustomOutfit(true);
                     setSelectedOutfit('');
                   } else {
+                    setShowCustomOutfit(false);
                     setSelectedOutfit(v);
                   }
                 }}>
@@ -2354,7 +2356,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                     <SelectItem value="__custom__">✏️ Custom outfit</SelectItem>
                   </SelectContent>
                 </Select>
-                {selectedOutfit === '' && (
+                {showCustomOutfit && (
                   <Textarea
                     className="mt-1.5 text-xs min-h-[50px]"
                     placeholder="Describe the outfit (e.g., 'White silk robe with gold trim, hair up in a bun')"
