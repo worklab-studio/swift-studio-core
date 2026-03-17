@@ -582,7 +582,7 @@ serve(async (req) => {
     const creditCost = isCampaign ? 6 : isCampaignAdd ? 5 : 1;
 
     // Use beauty-specific labels for Skincare/Beauty model shoots
-    const isBeautyModel = ["Skincare", "Beauty"].includes(category) && shotType === "model_shot";
+    const isBeautyModel = ["Skincare", "Beauty", "beauty_personal_care"].includes(category) && shotType === "model_shot";
     const labels = isCampaign
       ? (isBeautyModel ? SHOT_LABELS_BEAUTY_CAMPAIGN : SHOT_LABELS_CAMPAIGN)
       : isCampaignAdd
