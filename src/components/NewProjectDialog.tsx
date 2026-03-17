@@ -14,14 +14,12 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const CATEGORIES = [
-  { id: 'apparel', name: 'Apparel' },
+  { id: 'apparel_fashion', name: 'Apparel & Fashion' },
   { id: 'jewellery', name: 'Jewellery' },
-  { id: 'bags', name: 'Bags' },
-  { id: 'beauty', name: 'Beauty' },
-  { id: 'skincare', name: 'Skincare' },
+  { id: 'bags_luggage', name: 'Bags & Luggage' },
+  { id: 'beauty_personal_care', name: 'Beauty & Personal Care' },
   { id: 'fmcg', name: 'FMCG' },
   { id: 'footwear', name: 'Footwear' },
-  { id: 'other', name: 'Other' },
 ] as const;
 
 const NewProjectDialog = () => {
