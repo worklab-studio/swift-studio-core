@@ -2371,7 +2371,10 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                 }}>
                   <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select outfit" /></SelectTrigger>
                   <SelectContent>
-                    {(productInfo.suggestedOutfits || []).map((outfit, i) => (
+                    {(productInfo.suggestedOutfits && productInfo.suggestedOutfits.length > 0
+                      ? productInfo.suggestedOutfits
+                      : getDefaultOutfits(beautyApplication)
+                    ).map((outfit, i) => (
                       <SelectItem key={i} value={outfit}>{outfit}</SelectItem>
                     ))}
                     <SelectItem value="__custom__">✏️ Custom outfit</SelectItem>
