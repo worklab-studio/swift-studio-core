@@ -5,7 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { PricingGrid } from '@/components/PricingGrid';
 import {
   Camera, Film, Sparkles, Upload, ScanSearch, Image, Grid3X3,
-  Scissors, Users, Video, Shirt, FootprintsIcon, Gem, Package,
+  Scissors, Users, Video, Shirt, FootprintsIcon, Gem, Package, Palette,
   ShoppingBag, Droplets, ArrowRight, CheckCircle,
 } from 'lucide-react';
 import logo from '@/assets/Logo.png';
