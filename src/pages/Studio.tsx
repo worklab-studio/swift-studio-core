@@ -2614,6 +2614,7 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
   selectedTemplate: string | null;
   activeTemplates: ProductTemplate[];
   projectCategory: string;
+  categoryPresetImages: Record<string, Record<string, string>>;
 }) {
   const isProductWithTemplate = shootType === 'product' && !!selectedTemplate;
   const isPlainBgTemplate = selectedTemplate === 'pt-plain-bg';
