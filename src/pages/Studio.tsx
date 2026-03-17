@@ -998,7 +998,7 @@ const Studio = () => {
       : '';
 
     // For apparel model shoots, exclude background/composition from preset — background comes from Step 2
-    const isApparelModel = isModel && info?.category && ['apparel', 'fashion'].includes(info.category.toLowerCase().trim());
+    const isApparelModel = isModel && info?.category && ['apparel', 'fashion', 'apparel_fashion'].includes(info.category.toLowerCase().trim());
     if (isApparelModel) {
       return `${preset.name} style photography for a ${productDesc}${garmentInfo}. ` +
         `Lighting: ${settings.lighting}.${outfitInfo}${plainBgInstruction}`;
