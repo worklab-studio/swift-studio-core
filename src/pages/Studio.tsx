@@ -2069,6 +2069,8 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
   setProductSize: (v: string) => void;
   selectedOutfit: string;
   setSelectedOutfit: (v: string) => void;
+  showCustomOutfit: boolean;
+  setShowCustomOutfit: (v: boolean) => void;
 }) {
   const filteredTemplates = templateCategory === 'All'
     ? activeTemplates
