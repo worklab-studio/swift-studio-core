@@ -360,6 +360,91 @@ function getBeautyPosingDirective(application: string | undefined): string {
   return directives[application] || "";
 }
 
+/* ── Beauty-specific shot type descriptions ── */
+const BEAUTY_SHOT_TYPE_DESC: Record<string, string> = {
+  hero: "Hero beauty campaign shot. The product is the absolute hero — beautifully lit on a styled surface, no model present. Luxury skincare advertisement feel with editorial lighting sculpting every surface of the packaging. Product centered, dramatic depth of field, the packaging gleaming with freshness.",
+  model_with_product: "Model elegantly holding or presenting the product near her face/body. Product clearly visible with branding facing camera. Model looking at camera with confident, radiant expression. Professional beauty campaign photography. The product and model share equal visual weight.",
+  detail_closeup: "Extreme macro close-up of the PRODUCT ONLY — texture of the product surface, cap detail, label typography, liquid/cream texture visible if applicable. NO model in this shot. Shallow depth of field, luxury product photography with dramatic studio lighting.",
+  model_applying: "Model in the act of applying the product to the relevant area. Natural, graceful hand movement. Product packaging visible nearby or in other hand. Authentic skincare routine moment captured with editorial quality. Movement should feel real and purposeful.",
+  alternate_angle: "Product shot from a completely different perspective — overhead looking down, 3/4 back angle, or low angle looking up. Dramatic lighting revealing different product details and surfaces. NO model in this shot. Product-only alternate view showing design details not visible in hero.",
+  model_closeup: "Tight beauty close-up portrait of the model with the product held near or visible in frame. Dewy, luminous skin is the focus. The product is a supporting element near the face/body. High-end beauty editorial portrait with shallow depth of field on the model's skin texture.",
+};
+
+/* ── Beauty preset-specific modifiers ── */
+const BEAUTY_PRESET_MODIFIERS: Record<string, string> = {
+  classic: "BEAUTY STYLE: Soft beauty dish key light from above, clean studio environment, dewy luminous skin, Vogue Beauty editorial quality. Warm neutral tones, flawless skin texture, refined elegance. Classic beauty photography with soft shadows.",
+  minimalist: "BEAUTY STYLE: Ultra-clean white/neutral environment, barely-there natural makeup look, clinical precision meets elegance. Crisp even lighting, maximum negative space, the product and skin as the only focal points. Scandinavian beauty aesthetic.",
+  luxury: "BEAUTY STYLE: Rich dark tones, gold and amber accent lighting, Rembrandt lighting on skin creating dramatic depth. Opulent textures in the background — velvet, marble, silk. The product gleams like a precious object. Dark luxury beauty editorial.",
+  'loud-luxury': "BEAUTY STYLE: Bold dramatic colors, high-contrast editorial lighting, maximalist beauty. Striking visual impact with saturated tones, metallic accents, bold makeup on model. The product presented as a statement piece. Versace beauty campaign energy.",
+  magazine: "BEAUTY STYLE: Hard flash with sharp defined shadows, editorial crop, print-ready quality. Sharp contrast on skin texture revealing every dewy detail. Bold framing, graphic composition. High-fashion beauty magazine spread.",
+  'avant-garde': "BEAUTY STYLE: Surreal abstract beauty photography, unconventional camera angles, colored gel lighting casting dramatic hues on skin. Experimental composition, the product in an unexpected context. Art-gallery beauty editorial.",
+  influencer: "BEAUTY STYLE: Golden hour warm glow, candid application moment, warm natural tones. Aspirational lifestyle beauty content. Natural light, genuine expression, the product as part of a real routine. Instagram-ready quality with authentic feel.",
+  lifestyle: "BEAUTY STYLE: Real bathroom or vanity setting, natural window light streaming in, authentic skincare routine moment. The product in its natural habitat. Soft, warm, inviting — lifestyle beauty photography with editorial polish.",
+  'plain-bg': "BEAUTY STYLE: Solid color backdrop, even flat beauty lighting from all directions, clean beauty campaign. No distractions — pure focus on the model's skin and the product. Clinical beauty precision.",
+};
+
+/* ── Build beauty model shoot prompt ── */
+function buildBeautyModelPrompt(
+  label: string,
+  baseStyle: string,
+  category: string,
+  modelConfig: any,
+  productInfo: any,
+  additionalContext: string,
+  ratioInstruction: string,
+  presetId: string,
+): string {
+  const shotDesc = BEAUTY_SHOT_TYPE_DESC[label] || BEAUTY_SHOT_TYPE_DESC.hero;
+  const isModelShot = ["model_with_product", "model_applying", "model_closeup"].includes(label);
+  const isProductOnly = ["hero", "detail_closeup", "alternate_angle"].includes(label);
+
+  const presetMod = BEAUTY_PRESET_MODIFIERS[presetId] || BEAUTY_PRESET_MODIFIERS.classic;
+  const beautyPosing = isModelShot ? getBeautyPosingDirective(productInfo?.beautyApplication) : "";
+  const scaleRule = getScaleRule(productInfo);
+  const outfitDirective = isModelShot && productInfo?.selectedOutfit ? `OUTFIT: The model is wearing: ${productInfo.selectedOutfit}.` : "";
+
+  const modelDesc = isModelShot && modelConfig
+    ? `Model: ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""}, ${modelConfig.bodyType || "average"} build.`
+    : "";
+
+  const backgroundDirective = modelConfig?.backgroundPrompt || modelConfig?.background || "luxury beauty studio";
+
+  // Plain-bg override
+  const isPlainBg = presetId === "plain-bg";
+  let bgInstruction: string;
+  if (isPlainBg) {
+    const colorMatch = (baseStyle || "").match(/solid\\s+([\\w\\s]+?)\\s+color/i);
+    const bgColor = colorMatch?.[1] || "white";
+    bgInstruction = `BACKGROUND: Pure solid ${bgColor} background. No texture, no gradient, no environment — completely clean flat ${bgColor} backdrop.`;
+  } else {
+    bgInstruction = `BACKGROUND: ${backgroundDirective}.`;
+  }
+
+  const noModelWarning = isProductOnly
+    ? "CRITICAL: This is a PRODUCT-ONLY shot. ABSOLUTELY NO human model, NO hands, NO skin, NO face, NO body parts anywhere in this image. Any human element is a FAILURE."
+    : "";
+
+  const modelWarning = isModelShot
+    ? "CRITICAL: The model MUST be present in this shot, clearly visible and interacting with the product."
+    : "";
+
+  return `PROFESSIONAL BEAUTY/SKINCARE CAMPAIGN — ${label.toUpperCase()} SHOT.
+${presetMod}
+SHOT DIRECTION: ${shotDesc}
+${noModelWarning}${modelWarning}
+${modelDesc}
+${beautyPosing}
+${outfitDirective}
+${scaleRule}
+${bgInstruction}
+SKINCARE PHOTOGRAPHY STYLE: Dewy, luminous skin with soft beauty lighting. Editorial skincare campaign quality. Skin texture should appear flawless yet natural — not plastic. Soft catch-lights in eyes if model is present. Product packaging should gleam with freshness.
+THIS SHOT MUST BE DISTINCTLY DIFFERENT FROM ALL OTHER SHOTS — unique angle, framing, composition, and mood.
+Style: ${baseStyle}. Category: ${category}.
+${additionalContext ? `Additional direction: ${additionalContext}` : ""}
+${ratioInstruction} Professional beauty campaign photography, high resolution, no text, no watermarks.
+${FIDELITY_BLOCK}`;
+}
+
 /* ── FMCG Showcase Prompt Builder ── */
 function buildFmcgShowcasePrompt(
   label: string,
