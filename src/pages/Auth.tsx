@@ -68,7 +68,7 @@ const Auth = () => {
 
   const proofPoints = [
     'AI model photos, no photoshoot needed',
-    'Lifestyle scenes across 8 categories',
+    'Lifestyle scenes across 6 categories',
     'Cinematic product videos',
   ];
 

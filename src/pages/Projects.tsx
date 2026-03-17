@@ -65,8 +65,8 @@ const Projects = () => {
 
       <Tabs value={filter} onValueChange={setFilter}>
         <TabsList>
-          {categories.map((c) => (
-            <TabsTrigger key={c} value={c}>{c}</TabsTrigger>
+          {CATEGORY_FILTERS.map((c) => (
+            <TabsTrigger key={c.id} value={c.id}>{c.label}</TabsTrigger>
           ))}
         </TabsList>
       </Tabs>

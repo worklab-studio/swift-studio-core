@@ -99,7 +99,8 @@ Model & Background detection (for ALL products):
                 properties: {
                   category: {
                     type: "string",
-                    description: "Product category (e.g., Footwear, Handbag, Watch, Skincare, Beauty, Jewelry, Apparel, FMCG, Electronics)",
+                    enum: ["apparel_fashion", "jewellery", "bags_luggage", "beauty_personal_care", "fmcg", "footwear"],
+                    description: "Product category. Must be one of: apparel_fashion, jewellery, bags_luggage, beauty_personal_care, fmcg, footwear",
                   },
                   colors: {
                     type: "array",

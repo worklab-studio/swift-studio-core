@@ -72,14 +72,12 @@ const HERO_CARDS = [
 ];
 
 const CATEGORIES = [
-  { icon: Shirt, name: 'Apparel' },
+  { icon: Shirt, name: 'Apparel & Fashion' },
+  { icon: Gem, name: 'Jewellery' },
+  { icon: ShoppingBag, name: 'Bags & Luggage' },
+  { icon: Droplets, name: 'Beauty & Personal Care' },
+  { icon: Package, name: 'FMCG' },
   { icon: FootprintsIcon, name: 'Footwear' },
-  { icon: Gem, name: 'Jewelry' },
-  { icon: Watch, name: 'Watches' },
-  { icon: ShoppingBag, name: 'Handbags' },
-  { icon: Droplets, name: 'Skincare' },
-  { icon: Palette, name: 'Beauty' },
-  { icon: Glasses, name: 'Accessories' },
 ];
 
 const WORKFLOW_STEPS = [
