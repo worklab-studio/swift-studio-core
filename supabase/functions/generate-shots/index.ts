@@ -235,9 +235,9 @@ function buildSafePrompt(productDescription: string, background: string): string
 
 /* ── Showcase category detection ── */
 function isShowcaseCategory(category: string): "beauty" | "jewellery" | "fmcg" | null {
-  if (["Skincare", "Beauty"].includes(category)) return "beauty";
-  if (["Jewelry", "Jewellery", "Watch"].includes(category)) return "jewellery";
-  if (category === "FMCG") return "fmcg";
+  if (["Skincare", "Beauty", "beauty_personal_care"].includes(category)) return "beauty";
+  if (["Jewelry", "Jewellery", "Watch", "jewellery"].includes(category)) return "jewellery";
+  if (["FMCG", "fmcg"].includes(category)) return "fmcg";
   return null;
 }
 
@@ -349,38 +349,38 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
 function getBeautyPosingDirective(application: string | undefined): string {
   if (!application) return "";
   const directives: Record<string, string> = {
-    hair: "POSING: Shoulders-up framing showing full hair. Model running fingers through hair or tossing hair naturally. Focus on hair texture and movement.",
-    face: "POSING: Close-up beauty shot from chest up. Model gently touching face or applying product to cheek/forehead. Dewy, luminous skin focus.",
-    lips: "POSING: Tight crop from nose to chin. Model applying product to lips or lips slightly parted showing color. Extreme detail on lip texture.",
-    eyes: "POSING: Close-up framing around eye area. Model gently dabbing around eye area or looking upward. Focus on eye definition and skin around eyes.",
-    body: "POSING: Waist-up or full body shot. Model applying product to arm, shoulder, or décolletage area. Smooth, glowing skin emphasis.",
-    fragrance: "POSING: Elegant pose spraying at wrist or neck area. Mist visible in dramatic backlight. Sophisticated, sensual mood.",
-    nails: "POSING: Hands prominently featured — one hand resting elegantly while the other applies product. Macro-close focus on nail detail and manicure.",
+    hair: "POSING: Shoulders-up framing showing full, voluminous hair as the hero. Model running fingers through hair mid-toss, wind-blown strands catching backlight. One hand lifting hair at the crown, the other relaxed at collarbone. Hair texture, shine, and movement are the absolute focus — every strand should catch light like silk threads.",
+    face: "POSING: Close-up beauty portrait from chest up. Model with eyes closed in a serene skincare ritual moment, fingertips gently pressing product into cheekbone. Alternatively: chin slightly tilted up, one hand cupping jaw, dewy luminous skin catching soft beauty-dish light. Skin should look like lit-from-within porcelain.",
+    lips: "POSING: Ultra-tight crop from nose to chin. Model mid-application — product touching the center of lower lip, mouth slightly parted. Catch-light glistening on the lip surface. Alternatively: lips pressed together post-application showing perfect color payoff, with a tiny product smear at the corner adding authenticity.",
+    eyes: "POSING: Close framing on the eye zone — brow bone to upper cheeks. Model looking upward with lids half-closed during application, applicator tip near the lash line. Alternatively: eyes wide open post-application, dramatic catch-lights in both irises, perfectly defined lash line. Dewy skin around the orbital bone.",
+    body: "POSING: Three-quarter body shot. Model smoothing product along forearm or across décolletage in a long, luxurious stroke — hand leaving a glistening trail of product. Alternatively: applying to shoulder with head tilted away, exposing neck, backlit to create a luminous body glow. Skin should look like polished satin.",
+    fragrance: "POSING: Elegant wrist-spray moment — bottle held at arm's length, fine mist visible as a golden cloud in dramatic backlight. Alternatively: spraying at the neck, chin tilted up, eyes closed in a moment of sensory pleasure. The mist should be ethereal and luminous, light refracting through each droplet.",
+    nails: "POSING: Hands as the absolute hero — one hand with fingers elegantly fanned displaying the manicure, the other holding the product bottle at an angle showing the brush. Fingers should be gracefully curved like a pianist's. Alternatively: mid-application with brush touching the nail, extreme macro showing lacquer flowing onto the nail surface.",
   };
   return directives[application] || "";
 }
 
 /* ── Beauty-specific shot type descriptions ── */
 const BEAUTY_SHOT_TYPE_DESC: Record<string, string> = {
-  hero: "Hero beauty campaign shot. The product is the absolute hero — beautifully lit on a styled surface, no model present. Luxury skincare advertisement feel with editorial lighting sculpting every surface of the packaging. Product centered, dramatic depth of field, the packaging gleaming with freshness.",
-  model_with_product: "Model elegantly holding or presenting the product near her face/body. Product clearly visible with branding facing camera. Model looking at camera with confident, radiant expression. Professional beauty campaign photography. The product and model share equal visual weight.",
-  detail_closeup: "Extreme macro close-up of the PRODUCT ONLY — texture of the product surface, cap detail, label typography, liquid/cream texture visible if applicable. NO model in this shot. Shallow depth of field, luxury product photography with dramatic studio lighting.",
-  model_applying: "Model in the act of applying the product to the relevant area. Natural, graceful hand movement. Product packaging visible nearby or in other hand. Authentic skincare routine moment captured with editorial quality. Movement should feel real and purposeful.",
-  alternate_angle: "Product shot from a completely different perspective — overhead looking down, 3/4 back angle, or low angle looking up. Dramatic lighting revealing different product details and surfaces. NO model in this shot. Product-only alternate view showing design details not visible in hero.",
-  model_closeup: "Tight beauty close-up portrait of the model with the product held near or visible in frame. Dewy, luminous skin is the focus. The product is a supporting element near the face/body. High-end beauty editorial portrait with shallow depth of field on the model's skin texture.",
+  hero: "Hero beauty campaign shot. The product is the ABSOLUTE STAR — centered on a styled surface with NO model present. Surround the product with its sensory world: fresh water droplets scattered on the surface, ingredient elements nearby (botanical leaves, citrus slices, honey drizzle, flower petals — whichever matches the product's key ingredients). Dramatic beauty-dish lighting sculpting every curve of the packaging. The product should gleam with dewy freshness — micro water droplets on its surface catching prismatic light. Shallow depth of field with creamy bokeh, the background melting into soft color.",
+  model_with_product: "Model and product sharing the frame as EQUAL HEROES. The model holds the product at cheekbone height (for face products), at shoulder level (for body), or cradled in both hands near the chest. The product's branding MUST face camera. Model's expression: serene confidence with a slight knowing smile, eyes connecting directly with the viewer. The emotional story is 'this product is my secret.' Soft beauty lighting wrapping around both model and product, creating a warm intimate connection between the two.",
+  detail_closeup: "EXTREME MACRO close-up of the PRODUCT ONLY — NO model. This is a texture worship shot. Show the product's soul: if it's a cream, capture a fresh swirl of product squeezed onto a surface nearby showing its rich, velvety consistency. If liquid, show it mid-pour with viscous ribbons catching light. If powder, a soft cloud of product dust in dramatic side-light. The packaging itself in razor-sharp focus — every embossed letter, every metallic accent, every surface texture rendered in obsessive detail. Shallow f/1.4 depth of field.",
+  model_applying: "The sacred ritual moment — model mid-application with genuine, purposeful movement. For face products: fingertips pressing product into skin with visible pressure creating slight skin movement, eyes peacefully closed. For body: a long sweeping stroke leaving a glistening trail. For hair: working product through strands with both hands, head tilted. The product packaging sits nearby in soft focus, label visible. Capture the exact millisecond of contact between product and skin. Morning golden light or soft bathroom vanity glow. This should feel like an intimate, real skincare ritual — not a posed advertisement.",
+  alternate_angle: "Product from a COMPLETELY UNEXPECTED perspective — NO model. Options: (1) Dramatic overhead flat-lay with the product surrounded by artfully arranged ingredients, tools, and complementary items on a textured surface. (2) Ultra-low angle looking UP at the product like a monolith, with soft bokeh lights behind it. (3) 3/4 rear view showing the back label, cap detail, and product silhouette against a gradient backdrop. Include environmental props — a linen cloth, scattered botanicals, water ripples — to create depth and story. This shot must feel completely different from the hero in angle, mood, and energy.",
+  model_closeup: "The RESULT shot — tight beauty portrait proving the product's promise. Ultra-close framing on the model's skin showing the 'after': luminous, glass-like skin with visible dewiness and inner glow. The product is held at the edge of frame or resting against the cheek as a subtle brand reminder. Catch-lights dancing in the model's eyes. Every pore looks refined, every highlight looks natural. Shallow depth of field melting the background into pure color. This is the aspirational payoff shot — 'use this product and THIS is what you become.' High-end beauty editorial, Vogue Beauty or Glossier campaign energy.",
 };
 
 /* ── Beauty preset-specific modifiers ── */
 const BEAUTY_PRESET_MODIFIERS: Record<string, string> = {
-  classic: "BEAUTY STYLE: Soft beauty dish key light from above, clean studio environment, dewy luminous skin, Vogue Beauty editorial quality. Warm neutral tones, flawless skin texture, refined elegance. Classic beauty photography with soft shadows.",
-  minimalist: "BEAUTY STYLE: Ultra-clean white/neutral environment, barely-there natural makeup look, clinical precision meets elegance. Crisp even lighting, maximum negative space, the product and skin as the only focal points. Scandinavian beauty aesthetic.",
-  luxury: "BEAUTY STYLE: Rich dark tones, gold and amber accent lighting, Rembrandt lighting on skin creating dramatic depth. Opulent textures in the background — velvet, marble, silk. The product gleams like a precious object. Dark luxury beauty editorial.",
-  'loud-luxury': "BEAUTY STYLE: Bold dramatic colors, high-contrast editorial lighting, maximalist beauty. Striking visual impact with saturated tones, metallic accents, bold makeup on model. The product presented as a statement piece. Versace beauty campaign energy.",
-  magazine: "BEAUTY STYLE: Hard flash with sharp defined shadows, editorial crop, print-ready quality. Sharp contrast on skin texture revealing every dewy detail. Bold framing, graphic composition. High-fashion beauty magazine spread.",
-  'avant-garde': "BEAUTY STYLE: Surreal abstract beauty photography, unconventional camera angles, colored gel lighting casting dramatic hues on skin. Experimental composition, the product in an unexpected context. Art-gallery beauty editorial.",
-  influencer: "BEAUTY STYLE: Golden hour warm glow, candid application moment, warm natural tones. Aspirational lifestyle beauty content. Natural light, genuine expression, the product as part of a real routine. Instagram-ready quality with authentic feel.",
-  lifestyle: "BEAUTY STYLE: Real bathroom or vanity setting, natural window light streaming in, authentic skincare routine moment. The product in its natural habitat. Soft, warm, inviting — lifestyle beauty photography with editorial polish.",
-  'plain-bg': "BEAUTY STYLE: Solid color backdrop, even flat beauty lighting from all directions, clean beauty campaign. No distractions — pure focus on the model's skin and the product. Clinical beauty precision.",
+  classic: "BEAUTY STYLE: Two-light setup — soft beauty dish as key from 45° above-right creating gentle nose shadow, large silk reflector as fill from left. Warm neutral palette (ivory, champagne, soft taupe). Skin should look like candlelit porcelain — luminous but not shiny. Vogue Beauty / Estée Lauder campaign quality. Catch-lights should be soft and round in the eyes.",
+  minimalist: "BEAUTY STYLE: Single large softbox from directly above, no fill — creating gentle under-chin shadow. Ultra-clean white or pale grey environment with maximum negative space. Barely-there makeup, skin-first approach. The Ordinary / Glossier / Aesop aesthetic — clinical precision meets Scandinavian warmth. Every element stripped to its essence.",
+  luxury: "BEAUTY STYLE: Rembrandt lighting with warm amber key from 60° side, creating a dramatic triangle of light on the far cheek. Rich dark tones — deep burgundy, black velvet, gold leaf accents. Background textures: crushed velvet, dark marble, silk draping. The product should gleam like a jewel in a treasury. Tom Ford / La Mer energy — opulent, mysterious, indulgent.",
+  'loud-luxury': "BEAUTY STYLE: High-contrast butterfly lighting with hard key from above and strong kicker lights from both sides creating metallic rim highlights on skin. Saturated jewel tones — emerald, sapphire, ruby reflecting onto skin. Bold graphic makeup if model is present. The product as a power statement. Versace / Pat McGrath / Charlotte Tilbury maximalist energy — unapologetic luxury.",
+  magazine: "BEAUTY STYLE: Ring light + hard side fill creating fashion-editorial contrast. Sharp defined shadows, graphic composition with bold crops. Print-resolution skin detail — every dewy highlight rendered in extreme clarity. Strong geometric framing, asymmetric layouts. Allure / Harper's Bazaar beauty editorial — the kind of image that makes you rip the page out.",
+  'avant-garde': "BEAUTY STYLE: Colored gel lighting — split complementary color scheme casting dramatic hues across skin (cyan + magenta, amber + violet). Unconventional camera angles: extreme overhead, through-the-mirror, reflected in water. Experimental composition breaking every beauty photography rule intentionally. iD Magazine / Dazed Beauty energy — art-gallery meets beauty counter.",
+  influencer: "BEAUTY STYLE: Natural golden-hour window light from one side, warm and honeyed. Candid mid-routine moment — real but aspirational. Warm skin tones, natural makeup, genuine expression (mid-laugh, eyes-closed bliss). The product as part of a real, relatable ritual. Shot on the best camera but styled to feel effortless. Summer Fridays / Drunk Elephant Instagram energy.",
+  lifestyle: "BEAUTY STYLE: Soft directional window light streaming from the left, creating gentle shadows that add dimension. Real environment — marble bathroom counter, wooden vanity tray, morning light through sheer curtains. The product in its natural habitat among other beautiful daily objects. Warm, inviting, hygge-meets-beauty. Architectural Digest bathroom meets skincare editorial.",
+  'plain-bg': "BEAUTY STYLE: Flat, even clamshell lighting — beauty dish above + large reflector below eliminating all shadows. Solid color backdrop, zero texture. Pure focus on the product and skin with clinical precision. E-commerce-meets-editorial — clean enough for a product page, beautiful enough for a campaign. Sephora / Ulta hero banner quality.",
 };
 
 /* ── Build beauty model shoot prompt ── */
@@ -407,7 +407,7 @@ function buildBeautyModelPrompt(
     ? `Model: ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""}, ${modelConfig.bodyType || "average"} build.`
     : "";
 
-  const backgroundDirective = modelConfig?.backgroundPrompt || modelConfig?.background || "luxury beauty studio";
+  const backgroundDirective = modelConfig?.backgroundPrompt || modelConfig?.background || "luxury beauty studio with soft diffused lighting, clean elegant surfaces, and a warm aspirational atmosphere";
 
   // Plain-bg override
   const isPlainBg = presetId === "plain-bg";
@@ -582,7 +582,7 @@ serve(async (req) => {
     const creditCost = isCampaign ? 6 : isCampaignAdd ? 5 : 1;
 
     // Use beauty-specific labels for Skincare/Beauty model shoots
-    const isBeautyModel = ["Skincare", "Beauty"].includes(category) && shotType === "model_shot";
+    const isBeautyModel = ["Skincare", "Beauty", "beauty_personal_care"].includes(category) && shotType === "model_shot";
     const labels = isCampaign
       ? (isBeautyModel ? SHOT_LABELS_BEAUTY_CAMPAIGN : SHOT_LABELS_CAMPAIGN)
       : isCampaignAdd
@@ -651,21 +651,27 @@ serve(async (req) => {
     const CATEGORY_MODIFIERS: Record<string, string> = {
       "Apparel": "The garment should appear alive and dynamic — fabric billowing, sleeves flowing, material catching wind as if frozen mid-movement, natural drape and folds showing the garment's silhouette and construction. The clothing should float, twist, or cascade dramatically as if worn by an invisible figure in motion. Show the fabric's weight, texture, and movement quality.",
       "Fashion": "The garment should appear alive and dynamic — fabric billowing, sleeves flowing, material catching wind as if frozen mid-movement, natural drape and folds showing the garment's silhouette and construction. The clothing should float, twist, or cascade dramatically as if worn by an invisible figure in motion. Show the fabric's weight, texture, and movement quality.",
+      "apparel_fashion": "The garment should appear alive and dynamic — fabric billowing, sleeves flowing, material catching wind as if frozen mid-movement, natural drape and folds showing the garment's silhouette and construction. The clothing should float, twist, or cascade dramatically as if worn by an invisible figure in motion. Show the fabric's weight, texture, and movement quality.",
       "Footwear": "The shoe should be the sculptural hero — show sole architecture, material texture, lace detail. Angle to reveal both profile and 3/4 view. Treat it like a piece of industrial design art.",
+      "footwear": "The shoe should be the sculptural hero — show sole architecture, material texture, lace detail. Angle to reveal both profile and 3/4 view. Treat it like a piece of industrial design art.",
       "Skincare": "Show the product with its texture — cream swirls, liquid droplets, ingredient splashes (botanicals, honey, citrus). The packaging should gleam with dewy freshness.",
       "Beauty": "Show the product with its texture — cream swirls, liquid droplets, ingredient splashes (botanicals, honey, citrus). The packaging should gleam with dewy freshness and luminosity.",
+      "beauty_personal_care": "Show the product with its sensory world — cream swirls, liquid droplets, ingredient splashes (botanicals, honey, citrus, flower petals). The packaging should gleam with dewy freshness, micro water droplets catching prismatic light on every surface.",
       "Jewelry": "Capture light refractions, gemstone fire, metal luster. Dramatic macro-close energy even in wide shots. Every facet should sparkle with brilliance.",
       "Jewellery": "Capture light refractions, gemstone fire, metal luster. Dramatic macro-close energy even in wide shots. Every facet should sparkle with brilliance.",
+      "jewellery": "Capture light refractions, gemstone fire, metal luster. Dramatic macro-close energy even in wide shots. Every facet should sparkle with brilliance.",
       "Watch": "Capture light refractions, metal luster, dial details, crystal clarity. Dramatic macro-close energy even in wide shots. Precision engineering visible.",
       "Electronics": "Sleek tech product launch feel — screen glow, interface reflections, precision engineering visible. Futuristic and minimal aesthetic.",
       "Food": "Appetite appeal — condensation, steam, fresh ingredients, pour shots, splashes frozen in time. Sensory and visceral.",
       "Beverage": "Appetite appeal — condensation droplets, liquid splashes frozen in time, ice crystals, effervescence. Sensory and refreshing.",
       "FMCG": "Show the product packaging with tactile appeal — texture of materials, label details, complementary lifestyle elements that reinforce the brand story.",
+      "fmcg": "Show the product packaging with tactile appeal — texture of materials, label details, complementary lifestyle elements that reinforce the brand story.",
+      "bags_luggage": "The bag should be the sculptural hero — show leather grain, hardware gleam, stitching precision, structural silhouette. Treat it like a luxury artifact on display.",
     };
 
     const categoryModifier = CATEGORY_MODIFIERS[category] || "Showcase the product's most distinctive material qualities, textures, and design details.";
 
-    const isApparel = ["Apparel", "Fashion"].includes(category);
+    const isApparel = ["Apparel", "Fashion", "apparel_fashion"].includes(category);
 
     // Apparel-specific shot shape directives
     const apparelShotShapes: Record<string, string> = {
@@ -723,7 +729,7 @@ serve(async (req) => {
       };
 
       // ── Apparel model shoot: use pose matrix + background control ──
-      const isApparelModel = ["Apparel", "Fashion"].includes(category) && shotType === "model_shot";
+      const isApparelModel = ["Apparel", "Fashion", "apparel_fashion"].includes(category) && shotType === "model_shot";
       const effectivePresetId = presetId || preset || "classic";
 
       if (isApparelModel && modelConfig) {
