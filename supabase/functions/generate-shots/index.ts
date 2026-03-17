@@ -760,12 +760,18 @@ ${ratioInstruction} Professional commercial ecommerce photography, high resoluti
 IMPORTANT: Each of the 6 shots MUST have a distinctly different pose and body position. Never repeat the same pose across shots.`;
       }
 
-      // ── Non-apparel model shots (beauty, etc.) ──
+      // ── Beauty/Skincare model shots — use dedicated beauty prompt builder ──
+      if (isBeautyModel && modelConfig) {
+        const effectivePresetId2 = presetId || preset || "classic";
+        return buildBeautyModelPrompt(label, baseStyle, category, modelConfig, productInfo, additionalContext, ratioInstruction, effectivePresetId2);
+      }
+
+      // ── Non-apparel, non-beauty model shots ──
       const modelDesc = shotType === "model_shot" && modelConfig
         ? `The product is worn/held by a ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""} model with ${modelConfig.bodyType || "average"} build. Background: ${modelConfig.backgroundPrompt || modelConfig.background || "studio"}.`
         : "Product-only shot, no human model.";
 
-      // Beauty-specific posing and outfit for model shoots
+      // Generic posing and outfit for model shoots
       const beautyPosing = shotType === "model_shot" && productInfo?.beautyApplication
         ? ` ${getBeautyPosingDirective(productInfo.beautyApplication)}`
         : "";
