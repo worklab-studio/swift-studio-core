@@ -349,13 +349,13 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
 function getBeautyPosingDirective(application: string | undefined): string {
   if (!application) return "";
   const directives: Record<string, string> = {
-    hair: "POSING: Shoulders-up framing showing full hair. Model running fingers through hair or tossing hair naturally. Focus on hair texture and movement.",
-    face: "POSING: Close-up beauty shot from chest up. Model gently touching face or applying product to cheek/forehead. Dewy, luminous skin focus.",
-    lips: "POSING: Tight crop from nose to chin. Model applying product to lips or lips slightly parted showing color. Extreme detail on lip texture.",
-    eyes: "POSING: Close-up framing around eye area. Model gently dabbing around eye area or looking upward. Focus on eye definition and skin around eyes.",
-    body: "POSING: Waist-up or full body shot. Model applying product to arm, shoulder, or décolletage area. Smooth, glowing skin emphasis.",
-    fragrance: "POSING: Elegant pose spraying at wrist or neck area. Mist visible in dramatic backlight. Sophisticated, sensual mood.",
-    nails: "POSING: Hands prominently featured — one hand resting elegantly while the other applies product. Macro-close focus on nail detail and manicure.",
+    hair: "POSING: Shoulders-up framing showing full, voluminous hair as the hero. Model running fingers through hair mid-toss, wind-blown strands catching backlight. One hand lifting hair at the crown, the other relaxed at collarbone. Hair texture, shine, and movement are the absolute focus — every strand should catch light like silk threads.",
+    face: "POSING: Close-up beauty portrait from chest up. Model with eyes closed in a serene skincare ritual moment, fingertips gently pressing product into cheekbone. Alternatively: chin slightly tilted up, one hand cupping jaw, dewy luminous skin catching soft beauty-dish light. Skin should look like lit-from-within porcelain.",
+    lips: "POSING: Ultra-tight crop from nose to chin. Model mid-application — product touching the center of lower lip, mouth slightly parted. Catch-light glistening on the lip surface. Alternatively: lips pressed together post-application showing perfect color payoff, with a tiny product smear at the corner adding authenticity.",
+    eyes: "POSING: Close framing on the eye zone — brow bone to upper cheeks. Model looking upward with lids half-closed during application, applicator tip near the lash line. Alternatively: eyes wide open post-application, dramatic catch-lights in both irises, perfectly defined lash line. Dewy skin around the orbital bone.",
+    body: "POSING: Three-quarter body shot. Model smoothing product along forearm or across décolletage in a long, luxurious stroke — hand leaving a glistening trail of product. Alternatively: applying to shoulder with head tilted away, exposing neck, backlit to create a luminous body glow. Skin should look like polished satin.",
+    fragrance: "POSING: Elegant wrist-spray moment — bottle held at arm's length, fine mist visible as a golden cloud in dramatic backlight. Alternatively: spraying at the neck, chin tilted up, eyes closed in a moment of sensory pleasure. The mist should be ethereal and luminous, light refracting through each droplet.",
+    nails: "POSING: Hands as the absolute hero — one hand with fingers elegantly fanned displaying the manicure, the other holding the product bottle at an angle showing the brush. Fingers should be gracefully curved like a pianist's. Alternatively: mid-application with brush touching the nail, extreme macro showing lacquer flowing onto the nail surface.",
   };
   return directives[application] || "";
 }
