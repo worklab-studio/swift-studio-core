@@ -543,10 +543,27 @@ const Studio = () => {
     }
   }, [shootType, productInfo, templatesCached]);
 
-  // Auto-populate beauty/FMCG fields from productInfo
+  // Auto-populate beauty/FMCG fields from productInfo — re-derive on product name change
   useEffect(() => {
     if (!productInfo) return;
-    if (productInfo.beautyApplication && !beautyApplication) {
+    const isBSC = ['Skincare', 'Beauty', 'Personal Care'].includes(productInfo.category);
+    if (isBSC) {
+      // Re-derive beautyApplication from product name keywords
+      const name = (productInfo.productName || '').toLowerCase();
+      const desc = (productInfo.description || '').toLowerCase();
+      const combined = `${name} ${desc}`;
+      let derived = productInfo.beautyApplication || 'face';
+      if (/perfume|fragrance|cologne|eau de|scent/.test(combined)) derived = 'fragrance';
+      else if (/lip\s|lipstick|lip balm|lip gloss|lip tint/.test(combined)) derived = 'lips';
+      else if (/hair|shampoo|conditioner/.test(combined)) derived = 'hair';
+      else if (/eye|mascara|eyeliner|eyeshadow/.test(combined)) derived = 'eyes';
+      else if (/body|lotion|body wash|shower/.test(combined)) derived = 'body';
+      else if (/nail|manicure|polish/.test(combined)) derived = 'nails';
+      setBeautyApplication(derived);
+      // Reset stale outfit selection when product changes
+      setSelectedOutfit('');
+      setShowCustomOutfit(false);
+    } else if (productInfo.beautyApplication && !beautyApplication) {
       setBeautyApplication(productInfo.beautyApplication);
     }
     if (productInfo.beautySize && !productSize) {
@@ -555,7 +572,7 @@ const Studio = () => {
     if (productInfo.fmcgSize && !productSize) {
       setProductSize(productInfo.fmcgSize);
     }
-  }, [productInfo]);
+  }, [productInfo, productInfo?.productName, productInfo?.description]);
 
   /* ── Generate all model portraits (skip existing) ── */
   const handleGeneratePortraits = useCallback(async () => {
@@ -2046,7 +2063,20 @@ const FMCG_SHOWCASE_BACKGROUNDS: Record<string, string[]> = {
   'Premium / Editorial': ['Black slate with dramatic side lighting and condensation droplets', 'Dark wood surface with single spotlight from above', 'Brushed copper tray with moody chiaroscuro lighting', 'Textured concrete with bold color accent lighting'],
 };
 
-/* ── (Skincare outfit options removed — now AI-generated via productInfo.suggestedOutfits) ── */
+/* ── Default outfit fallbacks by beauty application area ── */
+function getDefaultOutfits(application: string): string[] {
+  const defaults: Record<string, string[]> = {
+    face: ['White off-shoulder top with minimal gold jewelry', 'Silk camisole in neutral tone with hair pulled back', 'Simple black tank top with dewy natural makeup', 'Cream turtleneck with clean elegant styling'],
+    lips: ['Black velvet slip dress with statement earrings', 'White blazer with bold red accessories', 'Silk blouse with smoky eye and sleek hair', 'Sheer mesh top with minimalist jewelry'],
+    hair: ['Simple white t-shirt to keep focus on hair', 'Off-shoulder knit sweater in soft pastel', 'Denim jacket with natural flowing hair styling', 'Silk robe in champagne tone with tousled waves'],
+    eyes: ['Neutral beige top with clean neckline', 'Black turtleneck for dramatic eye focus', 'White linen shirt with soft natural styling', 'Silk cami in dusty rose with minimal accessories'],
+    body: ['White cotton towel wrap in spa setting', 'Simple bikini or swimwear showing skin', 'Linen robe loosely draped to show application area', 'Athletic wear in neutral tones'],
+    fragrance: ['Black silk evening gown with statement jewelry', 'Tailored blazer with nothing underneath for editorial vibe', 'White flowing maxi dress with gold accessories', 'Velvet cocktail dress in deep burgundy'],
+    nails: ['Simple white top to keep focus on hands', 'Black outfit with hands as focal point', 'Pastel blouse with complementary nail display', 'Elegant dress with jewelry to frame nails'],
+  };
+  return defaults[application] || defaults.face || [];
+}
+
 
 
 function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, modelUploadRef, onModelUpload, selectedTemplate, setSelectedTemplate, templateCategory, setTemplateCategory, selectedModelData, modelImages, productInfo, activeTemplates, loadingTemplates, beautyApplication, setBeautyApplication, productSize, setProductSize, selectedOutfit, setSelectedOutfit, showCustomOutfit, setShowCustomOutfit }: {
@@ -2354,7 +2384,10 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                 }}>
                   <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select outfit" /></SelectTrigger>
                   <SelectContent>
-                    {(productInfo.suggestedOutfits || []).map((outfit, i) => (
+                    {(productInfo.suggestedOutfits && productInfo.suggestedOutfits.length > 0
+                      ? productInfo.suggestedOutfits
+                      : getDefaultOutfits(beautyApplication)
+                    ).map((outfit, i) => (
                       <SelectItem key={i} value={outfit}>{outfit}</SelectItem>
                     ))}
                     <SelectItem value="__custom__">✏️ Custom outfit</SelectItem>
@@ -2423,12 +2456,12 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                     </div>
                   )}
 
-                  {/* Category-specific */}
-                  {productInfo && ['Skincare', 'Beauty'].includes(productInfo.category) && beautyApplication && MODEL_SHOOT_BEAUTY_BACKGROUNDS[beautyApplication] && (
+                  {/* Category-specific — now uses AI-generated backgrounds */}
+                  {productInfo && ['Skincare', 'Beauty', 'Personal Care'].includes(productInfo.category) && productInfo.suggestedModelShootBackgrounds?.length > 0 && (
                     <div className="p-1.5 border-t border-border">
-                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1">{beautyApplication.charAt(0).toUpperCase() + beautyApplication.slice(1)} Settings</p>
-                      {MODEL_SHOOT_BEAUTY_BACKGROUNDS[beautyApplication].map((bg, i) => {
-                        const val = `beauty-bg-${beautyApplication}-${i}`;
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1 flex items-center gap-1"><Sparkles className="h-2.5 w-2.5" /> Product-Tailored</p>
+                      {productInfo.suggestedModelShootBackgrounds.map((bg, i) => {
+                        const val = `ai-model-bg-${i}`;
                         return (
                           <button key={val} onClick={() => setModelConfig(prev => ({ ...prev, background: val }))} className={`w-full text-left px-2 py-1.5 text-xs rounded-md flex items-center gap-2 transition-colors ${modelConfig.background === val ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}>
                             {modelConfig.background === val && <Check className="h-3 w-3 shrink-0" />}

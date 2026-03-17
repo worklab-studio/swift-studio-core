@@ -140,9 +140,9 @@ Model & Background detection (for ALL products):
                     description: "Product size for beauty: mini, standard, large, extra-large. Null for non-beauty.",
                   },
                   suggestedOutfits: {
-                    type: ["array", "null"],
+                    type: "array",
                     items: { type: "string" },
-                    description: "4-5 outfit/clothing suggestions for beauty/skincare model shoots, tailored to the product's color, vibe, and application area. Null for non-beauty.",
+                    description: "REQUIRED for Skincare/Beauty/Personal Care: 4-5 complete outfit descriptions for model shoots tailored to the product's color palette, vibe, and application area. Each should be a full outfit description like 'White silk slip dress with delicate gold jewelry, hair down'. For non-beauty/non-skincare products, return an empty array [].",
                   },
                   fmcgSize: {
                     type: ["string", "null"],
@@ -223,6 +223,18 @@ Model & Background detection (for ALL products):
     }
 
     const productInfo = JSON.parse(toolCall.function.arguments);
+
+    // Ensure suggestedOutfits is always an array for beauty/skincare
+    if (['Skincare', 'Beauty', 'Personal Care'].includes(productInfo.category)) {
+      if (!productInfo.suggestedOutfits || !Array.isArray(productInfo.suggestedOutfits) || productInfo.suggestedOutfits.length === 0) {
+        productInfo.suggestedOutfits = [
+          'White off-shoulder top with minimal gold jewelry, hair styled naturally',
+          'Silk camisole in neutral tone with delicate chain necklace',
+          'Simple black tank top with dewy skin and clean makeup',
+          'Cream knit sweater with soft natural styling',
+        ];
+      }
+    }
 
     return new Response(JSON.stringify(productInfo), {
       status: 200,
