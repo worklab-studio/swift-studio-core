@@ -3108,8 +3108,25 @@ function Step1Viewport({ productImages, productInfo, setProductInfo, analyzingPr
                 )}
               </div>
               <div className="rounded-xl border border-border bg-card px-3 py-2 flex flex-col justify-center min-h-[52px]">
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Material</p>
-                <p className="text-xs font-semibold text-foreground">{productInfo.material}</p>
+                <div className="flex items-center gap-1">
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Material</p>
+                  {!editingMaterial && (
+                    <button onClick={() => { setEditMaterialVal(productInfo.material); setEditingMaterial(true); }} className="text-muted-foreground hover:text-primary transition-colors">
+                      <Pencil className="h-2.5 w-2.5" />
+                    </button>
+                  )}
+                </div>
+                {editingMaterial ? (
+                  <div className="space-y-1 mt-1">
+                    <input value={editMaterialVal} onChange={e => setEditMaterialVal(e.target.value)} className="w-full text-xs font-semibold bg-background border border-input rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-ring" />
+                    <div className="flex gap-1">
+                      <button onClick={() => { setProductInfo(prev => prev ? { ...prev, material: editMaterialVal } : prev); setEditingMaterial(false); }} className="text-[10px] text-primary hover:underline">Save</button>
+                      <button onClick={() => setEditingMaterial(false)} className="text-[10px] text-muted-foreground hover:underline">Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs font-semibold text-foreground">{productInfo.material}</p>
+                )}
               </div>
               <div className="rounded-xl border border-border bg-card px-3 py-2 flex flex-col justify-center min-h-[52px]">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Colors</p>
