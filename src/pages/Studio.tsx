@@ -152,6 +152,12 @@ const SHOT_LABEL_DISPLAY: Record<string, string> = {
   alternate: 'Alternate Angle',
   editorial: 'Editorial',
   flat_lay: 'Flat Lay',
+  // Beauty-specific labels
+  model_with_product: 'Model with Product',
+  detail_closeup: 'Detail Close-up',
+  model_applying: 'Model Applying',
+  alternate_angle: 'Alternate Angle',
+  model_closeup: 'Model Close-up',
 };
 
 const ASPECT_RATIOS = [
