@@ -2677,7 +2677,13 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
                 } ${p.id === 'plain-bg' ? 'col-span-2' : ''}`}
               >
                 <div className={`${p.id === 'plain-bg' ? 'aspect-[4/3]' : 'aspect-square'} overflow-hidden bg-muted`}>
-                  <img src={['apparel', 'fashion', 'apparel_fashion'].includes((projectCategory || '').toLowerCase().trim()) ? (APPAREL_PRESET_IMAGES[p.id] || p.img) : p.img} alt={p.name} className="w-full h-full object-cover" loading="lazy" onError={(e) => { e.currentTarget.src = p.img; }} />
+                  <img src={(() => {
+                    const cat = (projectCategory || '').toLowerCase().trim();
+                    if (['apparel', 'fashion', 'apparel_fashion'].includes(cat)) return APPAREL_PRESET_IMAGES[p.id] || p.img;
+                    const dbImg = categoryPresetImages[cat]?.[p.id];
+                    if (dbImg) return dbImg;
+                    return p.img;
+                  })()} alt={p.name} className="w-full h-full object-cover" loading="lazy" onError={(e) => { e.currentTarget.src = p.img; }} />
                 </div>
                 <div className="p-1.5">
                   <p className="text-[11px] font-semibold">{p.name}</p>
