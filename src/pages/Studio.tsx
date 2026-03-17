@@ -501,7 +501,24 @@ const Studio = () => {
     loadPortraits();
   }, []);
 
-  /* ── Fetch dynamic scene templates from AI ── */
+  /* ── Load category-specific preset images from DB ── */
+  const [categoryPresetImages, setCategoryPresetImages] = useState<Record<string, Record<string, string>>>({});
+  useEffect(() => {
+    const loadPresetImages = async () => {
+      const { data, error } = await supabase
+        .from('preset_images')
+        .select('category, preset_id, image_url');
+      if (error) { console.error('Failed to load preset images:', error); return; }
+      if (data && data.length > 0) {
+        const map: Record<string, Record<string, string>> = {};
+        data.forEach(row => {
+          if (!map[row.category]) map[row.category] = {};
+          map[row.category][row.preset_id] = row.image_url;
+        });
+        setCategoryPresetImages(map);
+      }
+    };
+    loadPresetImages();
   const fetchDynamicTemplates = useCallback(async () => {
     if (!productImages.length || !productInfo) return;
     setLoadingTemplates(true);
