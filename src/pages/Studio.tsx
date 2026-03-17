@@ -1505,6 +1505,7 @@ const Studio = () => {
                     selectedTemplate={selectedTemplate}
                     activeTemplates={dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES}
                     projectCategory={project?.category || ''}
+                    categoryPresetImages={categoryPresetImages}
                   />
                 )}
                 {activeStep === 4 && (
