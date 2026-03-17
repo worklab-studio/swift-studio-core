@@ -1442,6 +1442,8 @@ const Studio = () => {
                     setProductSize={setProductSize}
                     selectedOutfit={selectedOutfit}
                     setSelectedOutfit={setSelectedOutfit}
+                    showCustomOutfit={showCustomOutfit}
+                    setShowCustomOutfit={setShowCustomOutfit}
                   />
                 )}
                 {activeStep === 3 && (
