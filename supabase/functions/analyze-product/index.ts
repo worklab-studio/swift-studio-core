@@ -60,10 +60,17 @@ Background suggestions (for ALL products):
 - suggestedShowcaseBackgrounds: Generate 5-7 specific product-only showcase surface/setting descriptions for luxury product photography. Tailor to the product's aesthetic. Examples: "Polished black obsidian slab with scattered gold leaf flakes", "Lush moss-covered forest floor with dappled sunlight".
 
 Model & Background detection (for ALL products):
-- Detect whether a human model is visible in the image (wearing or holding the product).
-- If no model is detected, set modelNote to "No model detected, add in upcoming steps."
-- If a model IS detected on an apparel item, set modelNote to "Model detected — ghost mannequin extraction available."
-- For non-apparel with a model, set modelNote to "Model detected in image."
+- Detect whether a REAL, PHYSICAL human model is present in the photograph — meaning an actual person physically wearing, holding, or posing with the product in the scene.
+- Do NOT count as a model:
+  • Printed/illustrated faces or figures on product packaging, labels, or boxes
+  • Brand ambassador photos printed on the product itself
+  • Artistic illustrations, cartoons, or drawings of people on the product
+  • Mannequins, busts, or display forms
+  • Small thumbnail images of people on ingredient lists, instructions, or marketing text on packaging
+- Only set hasModel to true if a real 3D human body is physically present in the photograph as a separate entity from the product.
+- If no real model is detected, set modelNote to "No model detected, add in upcoming steps."
+- If a real model IS detected on an apparel item, set modelNote to "Model detected — ghost mannequin extraction available."
+- For non-apparel with a real model, set modelNote to "Model detected in image."
 - Detect whether the product is on a clean white/studio background. If not, set hasWhiteBackground to false.`,
           },
           {
