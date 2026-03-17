@@ -407,7 +407,7 @@ function buildBeautyModelPrompt(
     ? `Model: ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""}, ${modelConfig.bodyType || "average"} build.`
     : "";
 
-  const backgroundDirective = modelConfig?.backgroundPrompt || modelConfig?.background || "luxury beauty studio";
+  const backgroundDirective = modelConfig?.backgroundPrompt || modelConfig?.background || "luxury beauty studio with soft diffused lighting, clean elegant surfaces, and a warm aspirational atmosphere";
 
   // Plain-bg override
   const isPlainBg = presetId === "plain-bg";
