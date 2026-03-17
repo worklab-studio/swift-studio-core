@@ -224,6 +224,18 @@ Model & Background detection (for ALL products):
 
     const productInfo = JSON.parse(toolCall.function.arguments);
 
+    // Ensure suggestedOutfits is always an array for beauty/skincare
+    if (['Skincare', 'Beauty', 'Personal Care'].includes(productInfo.category)) {
+      if (!productInfo.suggestedOutfits || !Array.isArray(productInfo.suggestedOutfits) || productInfo.suggestedOutfits.length === 0) {
+        productInfo.suggestedOutfits = [
+          'White off-shoulder top with minimal gold jewelry, hair styled naturally',
+          'Silk camisole in neutral tone with delicate chain necklace',
+          'Simple black tank top with dewy skin and clean makeup',
+          'Cream knit sweater with soft natural styling',
+        ];
+      }
+    }
+
     return new Response(JSON.stringify(productInfo), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
