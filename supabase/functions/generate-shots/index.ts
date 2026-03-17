@@ -791,6 +791,12 @@ IMPORTANT: Each of the 6 shots MUST have a distinctly different pose and body po
       lifestyle: ["3/4-front", "front"],
       editorial: ["left-side", "right-side", "3/4-front"],
       flat_lay: ["flat-lay", "top", "front"],
+      // Beauty-specific
+      model_with_product: ["front", "3/4-front"],
+      detail_closeup: ["detail-closeup", "front"],
+      model_applying: ["front", "3/4-front"],
+      alternate_angle: ["back", "3/4-back", "left-side"],
+      model_closeup: ["front", "3/4-front"],
     };
 
     function selectReferenceImage(label: string): string | null {
