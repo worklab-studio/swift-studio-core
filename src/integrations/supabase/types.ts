@@ -106,6 +106,30 @@ export type Database = {
         }
         Relationships: []
       }
+      preset_images: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          image_url: string
+          preset_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          image_url: string
+          preset_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          preset_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

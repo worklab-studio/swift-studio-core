@@ -501,6 +501,26 @@ const Studio = () => {
     loadPortraits();
   }, []);
 
+  /* ── Load category-specific preset images from DB ── */
+  const [categoryPresetImages, setCategoryPresetImages] = useState<Record<string, Record<string, string>>>({});
+  useEffect(() => {
+    const loadPresetImages = async () => {
+      const { data, error } = await supabase
+        .from('preset_images')
+        .select('category, preset_id, image_url');
+      if (error) { console.error('Failed to load preset images:', error); return; }
+      if (data && data.length > 0) {
+        const map: Record<string, Record<string, string>> = {};
+        data.forEach(row => {
+          if (!map[row.category]) map[row.category] = {};
+          map[row.category][row.preset_id] = row.image_url;
+        });
+        setCategoryPresetImages(map);
+      }
+    };
+    loadPresetImages();
+  }, []);
+
   /* ── Fetch dynamic scene templates from AI ── */
   const fetchDynamicTemplates = useCallback(async () => {
     if (!productImages.length || !productInfo) return;
@@ -1485,6 +1505,7 @@ const Studio = () => {
                     selectedTemplate={selectedTemplate}
                     activeTemplates={dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES}
                     projectCategory={project?.category || ''}
+                    categoryPresetImages={categoryPresetImages}
                   />
                 )}
                 {activeStep === 4 && (
@@ -1669,6 +1690,8 @@ const Studio = () => {
                     modelImages={modelImages}
                     selectedTemplate={selectedTemplate}
                     activeTemplates={dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES}
+                    projectCategory={project?.category || ''}
+                    categoryPresetImages={categoryPresetImages}
                   />
                 )}
                 {activeStep === 4 && (
@@ -2572,7 +2595,7 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
 }
 
 /* ── Step 3 Config (Left) ── */
-function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, aspectRatio, setAspectRatio, additionalContext, setAdditionalContext, styleSettings, analyzingStyle, plainBgColor, setPlainBgColor, shootType, selectedTemplate, activeTemplates, projectCategory }: {
+function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setReferenceImage, referenceInputRef, onReferenceUpload, shotCount, setShotCount, aspectRatio, setAspectRatio, additionalContext, setAdditionalContext, styleSettings, analyzingStyle, plainBgColor, setPlainBgColor, shootType, selectedTemplate, activeTemplates, projectCategory, categoryPresetImages }: {
   selectedPreset: string | null;
   setSelectedPreset: (v: string | null) => void;
   referenceImage: string | null;
@@ -2593,6 +2616,7 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
   selectedTemplate: string | null;
   activeTemplates: ProductTemplate[];
   projectCategory: string;
+  categoryPresetImages: Record<string, Record<string, string>>;
 }) {
   const isProductWithTemplate = shootType === 'product' && !!selectedTemplate;
   const isPlainBgTemplate = selectedTemplate === 'pt-plain-bg';
@@ -2655,7 +2679,13 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
                 } ${p.id === 'plain-bg' ? 'col-span-2' : ''}`}
               >
                 <div className={`${p.id === 'plain-bg' ? 'aspect-[4/3]' : 'aspect-square'} overflow-hidden bg-muted`}>
-                  <img src={['apparel', 'fashion', 'apparel_fashion'].includes((projectCategory || '').toLowerCase().trim()) ? (APPAREL_PRESET_IMAGES[p.id] || p.img) : p.img} alt={p.name} className="w-full h-full object-cover" loading="lazy" onError={(e) => { e.currentTarget.src = p.img; }} />
+                  <img src={(() => {
+                    const cat = (projectCategory || '').toLowerCase().trim();
+                    if (['apparel', 'fashion', 'apparel_fashion'].includes(cat)) return APPAREL_PRESET_IMAGES[p.id] || p.img;
+                    const dbImg = categoryPresetImages[cat]?.[p.id];
+                    if (dbImg) return dbImg;
+                    return p.img;
+                  })()} alt={p.name} className="w-full h-full object-cover" loading="lazy" onError={(e) => { e.currentTarget.src = p.img; }} />
                 </div>
                 <div className="p-1.5">
                   <p className="text-[11px] font-semibold">{p.name}</p>
@@ -3509,7 +3539,7 @@ function AnimatedConnector() {
 }
 
 /* ── Step 3 Viewport ── */
-function Step3Viewport({ selectedPreset, selectedPresetData, referenceImage, productImages, shootType, modelConfig, selectedModelData, modelImages, selectedTemplate, activeTemplates }: {
+function Step3Viewport({ selectedPreset, selectedPresetData, referenceImage, productImages, shootType, modelConfig, selectedModelData, modelImages, selectedTemplate, activeTemplates, projectCategory, categoryPresetImages }: {
   selectedPreset: string | null;
   selectedPresetData: typeof STYLE_PRESETS[0] | undefined;
   referenceImage: string | null;
@@ -3520,9 +3550,15 @@ function Step3Viewport({ selectedPreset, selectedPresetData, referenceImage, pro
   modelImages: Record<string, string>;
   selectedTemplate: string | null;
   activeTemplates: ProductTemplate[];
+  projectCategory: string;
+  categoryPresetImages: Record<string, Record<string, string>>;
 }) {
   const tpl = selectedTemplate ? activeTemplates.find(t => t.id === selectedTemplate) : null;
-  const presetImg = selectedPresetData ? APPAREL_PRESET_IMAGES[selectedPresetData.id] : null;
+  const presetImg = selectedPresetData ? (() => {
+    const cat = (projectCategory || '').toLowerCase().trim();
+    if (['apparel', 'fashion', 'apparel_fashion'].includes(cat)) return APPAREL_PRESET_IMAGES[selectedPresetData.id] || null;
+    return categoryPresetImages[cat]?.[selectedPresetData.id] || null;
+  })() : null;
 
   const hasShootInfo = !!shootType;
   const hasModelOrTemplate = (shootType === 'model' && (selectedModelData || modelConfig.uploadedModelUrl)) || (shootType === 'product' && tpl);
