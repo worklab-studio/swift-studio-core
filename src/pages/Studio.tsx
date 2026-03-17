@@ -546,7 +546,7 @@ const Studio = () => {
   // Auto-populate beauty/FMCG fields from productInfo — re-derive on product name change
   useEffect(() => {
     if (!productInfo) return;
-    const isBSC = ['Skincare', 'Beauty', 'Personal Care'].includes(productInfo.category);
+    const isBSC = ['Skincare', 'Beauty', 'Personal Care', 'beauty_personal_care'].includes(productInfo.category);
     if (isBSC) {
       // Re-derive beautyApplication from product name keywords
       const name = (productInfo.productName || '').toLowerCase();
