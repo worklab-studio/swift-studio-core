@@ -705,7 +705,8 @@ const Studio = () => {
     setGeneratedVideo(null);
     setBeautyApplication('');
     setProductSize('');
-    setSelectedOutfit('');
+     setSelectedOutfit('');
+    setShowCustomOutfit(false);
     toast({ title: 'Workspace reset', description: 'Ready for a new product shoot.' });
   }, []);
 
