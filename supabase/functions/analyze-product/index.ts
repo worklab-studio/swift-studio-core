@@ -139,6 +139,11 @@ Model & Background detection (for ALL products):
                     type: ["string", "null"],
                     description: "Product size for beauty: mini, standard, large, extra-large. Null for non-beauty.",
                   },
+                  suggestedOutfits: {
+                    type: ["array", "null"],
+                    items: { type: "string" },
+                    description: "4-5 outfit/clothing suggestions for beauty/skincare model shoots, tailored to the product's color, vibe, and application area. Null for non-beauty.",
+                  },
                   fmcgSize: {
                     type: ["string", "null"],
                     description: "Product size for FMCG: small, medium, large, extra-large. Null for non-FMCG.",
