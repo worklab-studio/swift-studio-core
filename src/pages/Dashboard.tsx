@@ -14,7 +14,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useNewProjectDialog } from '@/contexts/NewProjectContext';
 import { CreditHeatmap } from '@/components/dashboard/CreditHeatmap';
-import { PresetImageGenerator } from '@/components/dashboard/PresetImageGenerator';
+
 
 interface Project {
   id: string;
@@ -371,8 +371,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Temporary: Preset Image Generator */}
-      <PresetImageGenerator />
     </div>
   );
 };
