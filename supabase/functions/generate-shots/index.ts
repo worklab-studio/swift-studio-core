@@ -438,7 +438,7 @@ ${outfitDirective}
 ${scaleRule}
 ${bgInstruction}
 SKINCARE PHOTOGRAPHY STYLE: Dewy, luminous skin with soft beauty lighting. Editorial skincare campaign quality. Skin texture should appear flawless yet natural — not plastic. Soft catch-lights in eyes if model is present. Product packaging should gleam with freshness.
-THIS SHOT MUST BE DISTINCTLY DIFFERENT FROM ALL OTHER SHOTS — unique angle, framing, composition, and mood.
+OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, mosaic, contact sheet, or multiple images combined. ONE image, ONE model, ONE pose, ONE composition.
 Style: ${baseStyle}. Category: ${category}.
 ${additionalContext ? `Additional direction: ${additionalContext}` : ""}
 ${ratioInstruction} Professional beauty campaign photography, high resolution, no text, no watermarks.
@@ -714,7 +714,7 @@ serve(async (req) => {
         // ── Default product shoot (non-showcase categories) ──
         const apparelDirective = isApparel ? ` GARMENT SHAPE: ${apparelShotShapes[label] || apparelShotShapes.hero}` : "";
         const productViewDirective = isApparel ? ` ${getViewDirective(label, selectReferenceImage(label))}` : "";
-        return `${MASTERPIECE_BOOSTER} PRODUCT STYLE: ${categoryModifier}${apparelDirective}${productViewDirective} ${shotDesc} SCENE DIRECTION: ${sceneTemplate.description}. Product category: ${category}. Product-only shot, absolutely no human model in the image. ${consistencyInstruction}${additionalContext ? ` Additional creative direction: ${additionalContext}` : ""}. ${ratioInstruction} No text, no watermarks, no logos.`;
+        return `${MASTERPIECE_BOOSTER} PRODUCT STYLE: ${categoryModifier}${apparelDirective}${productViewDirective} ${shotDesc} SCENE DIRECTION: ${sceneTemplate.description}. Product category: ${category}. Product-only shot, absolutely no human model in the image. ${consistencyInstruction}${additionalContext ? ` Additional creative direction: ${additionalContext}` : ""}. ${ratioInstruction} No text, no watermarks, no logos. OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, mosaic, contact sheet, or multiple images combined. ONE image, ONE composition.`;
       }
 
       // Original flow for model shots and non-template shoots
@@ -763,7 +763,7 @@ ${modelDesc}${garmentInfo}${outfitDirective}
 Style: ${baseStyle}. Category: ${category}.
 ${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}
 ${ratioInstruction} Professional commercial ecommerce photography, high resolution, no text, no watermarks.
-IMPORTANT: Each of the 6 shots MUST have a distinctly different pose and body position. Never repeat the same pose across shots.`;
+OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, mosaic, contact sheet, or multiple images combined. ONE image, ONE model, ONE pose, ONE composition.`;
       }
 
       // ── Beauty/Skincare model shots — use dedicated beauty prompt builder ──
@@ -786,7 +786,7 @@ IMPORTANT: Each of the 6 shots MUST have a distinctly different pose and body po
         : "";
       const scaleDirective = shotType === "model_shot" ? ` ${getScaleRule(productInfo)}` : "";
 
-      return `${shotTypeDesc[label] || label}. ${baseStyle}. Category: ${category}. ${modelDesc}${beautyPosing}${outfitDirective}${scaleDirective} ${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}. ${ratioInstruction} Professional commercial photography, high resolution, no text, no watermarks.`;
+      return `${shotTypeDesc[label] || label}. ${baseStyle}. Category: ${category}. ${modelDesc}${beautyPosing}${outfitDirective}${scaleDirective} ${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}. ${ratioInstruction} Professional commercial photography, high resolution, no text, no watermarks. OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, mosaic, contact sheet, or multiple images combined. ONE image, ONE pose, ONE composition.`;
     });
 
     // ── View-to-shot mapping for multi-reference selection ──
