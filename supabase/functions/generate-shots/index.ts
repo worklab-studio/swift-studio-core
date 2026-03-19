@@ -714,7 +714,7 @@ serve(async (req) => {
         // ── Default product shoot (non-showcase categories) ──
         const apparelDirective = isApparel ? ` GARMENT SHAPE: ${apparelShotShapes[label] || apparelShotShapes.hero}` : "";
         const productViewDirective = isApparel ? ` ${getViewDirective(label, selectReferenceImage(label))}` : "";
-        return `${MASTERPIECE_BOOSTER} PRODUCT STYLE: ${categoryModifier}${apparelDirective}${productViewDirective} ${shotDesc} SCENE DIRECTION: ${sceneTemplate.description}. Product category: ${category}. Product-only shot, absolutely no human model in the image. ${consistencyInstruction}${additionalContext ? ` Additional creative direction: ${additionalContext}` : ""}. ${ratioInstruction} No text, no watermarks, no logos.`;
+        return `${MASTERPIECE_BOOSTER} PRODUCT STYLE: ${categoryModifier}${apparelDirective}${productViewDirective} ${shotDesc} SCENE DIRECTION: ${sceneTemplate.description}. Product category: ${category}. Product-only shot, absolutely no human model in the image. ${consistencyInstruction}${additionalContext ? ` Additional creative direction: ${additionalContext}` : ""}. ${ratioInstruction} No text, no watermarks, no logos. OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, mosaic, contact sheet, or multiple images combined. ONE image, ONE composition.`;
       }
 
       // Original flow for model shots and non-template shoots
