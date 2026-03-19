@@ -438,7 +438,7 @@ ${outfitDirective}
 ${scaleRule}
 ${bgInstruction}
 SKINCARE PHOTOGRAPHY STYLE: Dewy, luminous skin with soft beauty lighting. Editorial skincare campaign quality. Skin texture should appear flawless yet natural — not plastic. Soft catch-lights in eyes if model is present. Product packaging should gleam with freshness.
-THIS SHOT MUST BE DISTINCTLY DIFFERENT FROM ALL OTHER SHOTS — unique angle, framing, composition, and mood.
+OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, mosaic, contact sheet, or multiple images combined. ONE image, ONE model, ONE pose, ONE composition.
 Style: ${baseStyle}. Category: ${category}.
 ${additionalContext ? `Additional direction: ${additionalContext}` : ""}
 ${ratioInstruction} Professional beauty campaign photography, high resolution, no text, no watermarks.
