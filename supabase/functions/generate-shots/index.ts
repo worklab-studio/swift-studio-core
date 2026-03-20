@@ -336,11 +336,11 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
     flat_lay: "Garment arranged naturally on bed or couch from above — 'just tossed' look with personal items (book, mug, plant).",
   },
   'plain-bg': {
-    hero: "Relaxed natural stance facing camera directly, hands at sides, confident but approachable expression. Full body visible, clean and centered.",
+    hero: "Relaxed natural stance facing camera directly, hands at sides, confident but approachable expression. Full body visible, clean and centered. BODY ORIENTATION: FRONT-FACING.",
     detail: "Close-up of fabric texture — weave, print detail, or material finish. Tight macro crop on the most interesting textile area.",
-    lifestyle: "Quarter turn with subtle weight shift to one hip, one hand touching garment naturally. Casual but intentional body language.",
-    alternate: "Full back view, head turned to look over shoulder. Arms relaxed or one hand adjusting collar. Complete rear silhouette visible.",
-    editorial: "Arms crossed confidently, weight on one leg, subtle lean. Direct gaze, strong but relaxed stance. Still on solid backdrop.",
+    lifestyle: "Quarter turn with subtle weight shift to one hip, one hand touching garment naturally. Casual but intentional body language. BODY ORIENTATION: 3/4-FRONT.",
+    alternate: "FULL BACK VIEW — model's back COMPLETELY facing the camera, showing the entire rear of the garment. Head may turn very slightly but the torso and body must face AWAY from camera. Arms relaxed at sides. Complete rear silhouette visible. BODY ORIENTATION: BACK (180° from hero).",
+    editorial: "Side profile view, arms crossed confidently, weight on one leg, subtle lean. Body turned 90° from camera showing garment's side drape and silhouette. BODY ORIENTATION: SIDE PROFILE.",
     flat_lay: "Garment laid flat on solid surface from above, neatly arranged showing full shape, minimal or no accessories.",
   },
 };
@@ -822,8 +822,12 @@ serve(async (req) => {
 
         return `APPAREL MODEL SHOOT — ${label.toUpperCase()} SHOT.
 ${apparelViewDirective ? `${apparelViewDirective}\n` : ""}POSE: ${poseDirective}
+THIS SPECIFIC POSE MUST BE EXACTLY AS DESCRIBED ABOVE. Do not default to a generic front-facing stance. Each of the 6 shots must show a fundamentally different body orientation.
 ${backgroundDirective}
 ${modelDesc}${garmentInfo}${outfitDirective}
+${FIDELITY_BLOCK}
+GARMENT FIDELITY: The model must wear ONLY the exact garment from the reference image. Do NOT add, invent, or layer any additional clothing items (no jackets, coats, scarves, vests, accessories, hats) that are not in the reference photo. The product garment must be clearly visible and completely unobstructed.
+CONSISTENCY: Use the EXACT SAME model across all shots — same face, same hair, same skin tone, same body type. Only the pose and camera angle change between shots.
 Style: ${baseStyle}. Category: ${category}.
 ${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}
 ${ratioInstruction} Professional commercial ecommerce photography, high resolution, no text, no watermarks.
