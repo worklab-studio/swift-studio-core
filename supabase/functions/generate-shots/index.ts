@@ -301,7 +301,7 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
     lifestyle: "Stepping out of a luxury setting, mid-motion with purpose. Arms swinging, garment moving, captured in dynamic frozen frame.",
     alternate: "Over-the-shoulder view with dramatic head turn, fabric draping over shoulder. Theatrical body positioning showing garment's structure.",
     editorial: "Arms spread wide or hands on hips, wide stance, bold maximalist energy. Dutch angle camera, shadows and highlights exaggerated.",
-    flat_lay: "Garment displayed on marble surface from above with bold luxury props (gold accessories, crystals, ornate items), maximalist arrangement.",
+    flat_lay: "PRODUCT-ONLY FLAT LAY: Top-down view of the garment on marble surface — NO model, NO body. Bold luxury props (gold accessories, crystals, ornate items) arranged around it. Maximalist but garment fully visible. No person.",
   },
   magazine: {
     hero: "Strong jawline forward, direct intense gaze, body at 3/4 angle. One shoulder slightly forward creating depth. Print-cover-ready composition.",
