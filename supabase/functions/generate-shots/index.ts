@@ -892,8 +892,9 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
       if (primaryRef) {
         messageContent.push({ type: "image_url", image_url: { url: primaryRef } });
       }
-      // Add secondary reference for cross-checking fidelity
-      if (allProductImages && allProductImages.length > 1 && primaryRef) {
+      // Add secondary reference for cross-checking fidelity — skip for apparel flat lays to avoid composite output
+      const isApparelFlatLay = isApparel && label === "flat_lay";
+      if (allProductImages && allProductImages.length > 1 && primaryRef && !isApparelFlatLay) {
         const secondary = allProductImages.find((url: string) => url !== primaryRef);
         if (secondary) {
           messageContent.push({ type: "image_url", image_url: { url: secondary } });
