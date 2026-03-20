@@ -277,7 +277,7 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
     lifestyle: "Walking mid-stride, one foot forward, arms swinging naturally. Captured from 3/4 angle, slight motion blur in limbs, relaxed authentic expression.",
     alternate: "Full back view, head turned slightly over left shoulder looking back at camera. Hands in pockets or relaxed at sides, showing garment's rear construction.",
     editorial: "Leaning against a wall with arms crossed, weight on one hip, strong jawline visible. Low camera angle, confident body language.",
-    flat_lay: "Garment laid flat from directly above, neatly arranged with natural shape, paired with minimal accessories (watch, sunglasses, shoes nearby).",
+    flat_lay: "PRODUCT-ONLY FLAT LAY: Top-down bird's eye view of the garment laid flat — NO model, NO human body, NO torso, NO mannequin. The garment is neatly arranged showing its full shape on a clean surface. Styled with tasteful aesthetic props around it (a small potted plant, a watch, sunglasses, a leather belt) — props must NOT cover the garment. Top-down camera, even overhead lighting.",
   },
   minimalist: {
     hero: "Still centered pose, arms down at sides, serene neutral expression, body perfectly straight. Ultra-clean framing with maximum negative space.",
