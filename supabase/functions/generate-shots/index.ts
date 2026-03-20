@@ -317,7 +317,7 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
     lifestyle: "Frozen mid-leap or mid-spin, garment flying outward. Captured at peak movement, fabric as kinetic sculpture.",
     alternate: "Upside-down or extreme overhead perspective, body creating abstract shapes. Garment seen from completely unexpected angle.",
     editorial: "Body folded or twisted into angular geometric pose, limbs creating triangles and lines. Stark, bold, gallery-installation energy.",
-    flat_lay: "Garment arranged in abstract art composition from above — folded into sculptural shape, combined with unconventional objects.",
+    flat_lay: "PRODUCT-ONLY FLAT LAY: Top-down abstract art composition — NO model, NO body. Garment folded into sculptural shape, combined with unconventional objects. Artistic arrangement. No person visible.",
   },
   influencer: {
     hero: "Casual hair toss, looking slightly off-camera with genuine smile. One hand adjusting garment naturally. Warm, approachable, aspirational.",
