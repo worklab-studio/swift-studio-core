@@ -285,7 +285,7 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
     lifestyle: "Turning slowly, captured mid-rotation at 3/4 angle. Subtle movement, fabric gently shifting, calm composed expression looking slightly off-camera.",
     alternate: "Clean side profile, arms relaxed, perfect posture. Silhouette-like framing showing garment's drape and line from the side.",
     editorial: "Geometric angular pose — one arm bent at 90°, body creating clean lines. Architectural stance, minimal expression, art-gallery stillness.",
-    flat_lay: "Garment arranged in a precise minimal grid layout from above, folded cleanly with one accessory, lots of white space.",
+    flat_lay: "PRODUCT-ONLY FLAT LAY: Top-down view of the garment folded cleanly on a white surface — NO model, NO body. Precise minimal arrangement with one small accessory. Maximum white space. No person visible.",
   },
   luxury: {
     hero: "One hand in pocket, slight lean, chin elevated with confident expression. Weight shifted to back foot, elegant casual stance. Shot from slightly below.",
