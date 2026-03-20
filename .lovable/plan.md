@@ -1,32 +1,72 @@
 
+Goal: make apparel generation produce one clean shot per file, and make flat lay behave as a true product-only flat lay across all style presets.
 
-# Fix: Product Fidelity & Pose Enforcement for Apparel Shots
+What’s causing the current result
+- The current apparel model-shot prompt still says:
+  - “Every image MUST show ONLY the model...”
+  - while the `flat_lay` pose descriptions say the garment is laid flat from above.
+- That conflict makes the model invent composite/styled layouts instead of a single clear shot.
+- The function also always adds a secondary reference image when multiple product images exist. For apparel, that extra image can encourage Gemini to merge viewpoints into one composition.
 
-## Problems
-1. **AI adds extra clothing** (e.g., jacket over a white t-shirt) — the apparel model prompt lacks the `FIDELITY_BLOCK` and has no directive preventing the AI from adding/modifying garments.
-2. **Poses not distinct enough** — need stronger enforcement that each of the 6 shots uses a completely different pose, with at least one back view.
-3. **Model consistency** — need explicit directive for same model appearance across all 6 shots.
+Implementation plan
 
-## Changes — `supabase/functions/generate-shots/index.ts`
+1. Split apparel shot handling into two branches
+- Keep `hero`, `detail`, `lifestyle`, `alternate`, `editorial` as true model shots.
+- Treat `flat_lay` as a dedicated product-only apparel shot, even when the overall flow is “model_shot”.
+- This removes the model-vs-flat-lay contradiction.
 
-### 1. Add product fidelity + anti-modification block to apparel model prompt (~line 823-830)
-Add three critical directives to the apparel model prompt template:
-- `FIDELITY_BLOCK` (already defined, just not used here)
-- A new **garment-only directive**: "The model must wear ONLY the exact garment from the reference image. Do NOT add, invent, or layer any additional clothing items (no jackets, coats, scarves, accessories) that are not in the reference photo. The product garment must be clearly visible and unobstructed."
-- **Model consistency directive**: "CONSISTENCY: Use the EXACT SAME model across all shots — same face, same hair, same skin tone, same body type. Only the pose and camera angle change between shots."
+2. Add a strict anti-composite directive for apparel
+- Strengthen the apparel prompt with:
+  - one subject only
+  - no split-screen
+  - no inset/zoom panel
+  - no picture-in-picture
+  - no diptych/triptych
+  - no duplicate garment/model in the same frame
+- Keep the existing anti-collage directive, but make it more explicit for the issue shown in the screenshot.
 
-### 2. Strengthen pose matrix descriptions for ecommerce presets
-Update the `plain-bg` preset in `APPAREL_POSE_MATRIX` to make each pose more distinctly different:
-- `alternate`: Emphasize "FULL BACK VIEW — model's back completely facing the camera" to ensure a true back shot
-- Add a note that each pose MUST show a fundamentally different body orientation (front, back, side, 3/4, etc.)
+3. Make flat lay product-only in every style preset
+- Update all `APPAREL_POSE_MATRIX[*].flat_lay` entries so they describe:
+  - garment only
+  - top-down flat lay
+  - no human body, no torso, no person wearing it
+  - tasteful aesthetic props allowed
+- For the user’s request, keep “aesthetic flat lay” styling such as plant, magazine, watch, sunglasses, fabric, etc., but always around the garment, never on-model.
 
-### 3. Add a per-shot pose uniqueness reminder
-In the apparel model prompt template, add: "THIS SPECIFIC POSE MUST BE EXACTLY AS DESCRIBED ABOVE. Do not default to a generic front-facing stance."
+4. Override flat-lay prompt rules
+- For apparel `flat_lay`, use a dedicated prompt block:
+  - product-only
+  - no model / no body parts
+  - top-down composition
+  - preserve exact garment shape, color, texture, branding
+  - aesthetic props allowed only if they do not cover the garment
+- For non-flat-lay apparel shots, keep the consistent-model and distinct-pose rules.
 
-## Summary
-- Add `FIDELITY_BLOCK` to apparel prompts (already used in beauty/product paths, just missing here)
-- Add anti-layering directive to prevent AI from adding clothing not in the reference
-- Add model consistency directive
-- Strengthen back-view pose descriptions across all presets
-- One file modified: `supabase/functions/generate-shots/index.ts`
+5. Stop sending extra reference images for apparel flat lays
+- Change reference selection behavior so flat lay uses the most relevant single reference first.
+- Avoid blindly attaching a secondary garment image for apparel shots where multiple refs can cause merged/composite output.
+- If multi-reference is still needed for fidelity, use it selectively only for labels that benefit from it, not universally.
 
+6. Keep pose variety and back view enforcement
+- Preserve the current pose matrix improvements:
+  - distinct body orientation per shot
+  - mandatory back-facing alternate shot for ecommerce/plain background
+  - same model across non-flat-lay apparel shots
+- Refine wording so the “distinct poses” requirement clearly applies across the set, not as a cue to merge multiple views into one image.
+
+Files to update
+- `supabase/functions/generate-shots/index.ts`
+
+Expected outcome
+- Each generated file is a single clean image.
+- Apparel flat lay becomes a proper product-only top-down styled shot.
+- Other 5 apparel campaign shots remain single-model images with a consistent person and clearly different poses, including a back view.
+- The product stays accurate and unobstructed, without added jackets or layered clothing.
+
+Technical notes
+- Main code areas involved:
+  - `APPAREL_POSE_MATRIX`
+  - apparel model-shot prompt block
+  - `generateSingleShot()` reference-image assembly
+- No database changes needed.
+- No frontend changes needed.
