@@ -325,7 +325,7 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
     lifestyle: "Walking with coffee in hand, candid laughing moment. Full body in lifestyle environment, golden hour warmth, Instagram-ready.",
     alternate: "Back to camera looking over shoulder with playful expression. Showing back of garment with casual body language.",
     editorial: "Sitting casually — cross-legged on floor or perched on ledge. Relaxed but styled, natural hand placement, warm lighting.",
-    flat_lay: "OOTD-style flat lay from above — garment with shoes, bag, sunglasses, phone arranged as 'outfit of the day' grid.",
+    flat_lay: "PRODUCT-ONLY FLAT LAY: Top-down OOTD-style arrangement — NO model, NO body. Garment with shoes, bag, sunglasses, phone arranged as 'outfit of the day' grid on clean surface. No person visible.",
   },
   lifestyle: {
     hero: "Natural standing pose in real-world setting, relaxed smile, arms at ease. Environmental portrait feel, approachable and relatable.",
