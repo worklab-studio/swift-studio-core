@@ -799,12 +799,12 @@ serve(async (req) => {
       if (isApparelModel && modelConfig) {
         const poseMatrix = APPAREL_POSE_MATRIX[effectivePresetId] || APPAREL_POSE_MATRIX["classic"];
         const poseDirective = poseMatrix[label] || poseMatrix["hero"];
+        const isFlatLay = label === "flat_lay";
 
         // Background control: plain-bg/ecommerce = solid color ONLY; others = Step 2 background only
         const isPlainBg = effectivePresetId === "plain-bg";
         let backgroundDirective: string;
         if (isPlainBg) {
-          // Extract color from stylePrompt or modelConfig
           const colorMatch = (stylePrompt || "").match(/solid\s+([\w\s]+?)\s+color/i);
           const bgColor = colorMatch?.[1] || "white";
           backgroundDirective = `BACKGROUND: Pure solid ${bgColor} background. No texture, no gradient, no environment, no props, no floor, no shadows on backdrop — completely clean flat ${bgColor} color filling the entire background.`;
@@ -813,21 +813,34 @@ serve(async (req) => {
           backgroundDirective = `BACKGROUND: ${stepTwoBg}. Show this environment from a different angle/perspective for each shot but do NOT change the setting itself.`;
         }
 
+        const garmentInfo = productInfo?.garmentType ? ` The garment is a ${productInfo.garmentType}.` : "";
+        const apparelViewDirective = getViewDirective(label, selectReferenceImage(label));
+
+        // ── FLAT LAY: product-only branch (no model) ──
+        if (isFlatLay) {
+          return `APPAREL FLAT LAY SHOT — PRODUCT ONLY, NO MODEL.
+${apparelViewDirective ? `${apparelViewDirective}\n` : ""}COMPOSITION: ${poseDirective}
+${FIDELITY_BLOCK}
+GARMENT FIDELITY: Preserve the EXACT garment from the reference image — same color, shape, texture, branding, print, stitching. Do NOT alter the garment in any way.
+RULES: Absolutely NO human model, NO body parts, NO torso, NO mannequin, NO person wearing the garment. This is a product-only flat lay photograph. The garment is laid flat, not worn. Aesthetic props (plants, accessories, magazines, coffee) may surround the garment but must NOT cover it.${garmentInfo}
+Style: ${baseStyle}. Category: ${category}.${additionalContext ? ` Additional direction: ${additionalContext}` : ""}
+${ratioInstruction} Professional product photography, high resolution, no text, no watermarks.
+OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, mosaic, contact sheet, or multiple images combined. ONE image, ONE composition.`;
+        }
+
+        // ── MODEL SHOTS: hero, detail, lifestyle, alternate, editorial ──
         const modelDesc = `The product is worn by a ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""} model with ${modelConfig.bodyType || "average"} build.`;
         const outfitDirective = productInfo?.selectedOutfit ? ` OUTFIT: The model is wearing: ${productInfo.selectedOutfit}.` : "";
-        const garmentInfo = productInfo?.garmentType ? ` The garment is a ${productInfo.garmentType}.` : "";
-
-        // Inject view directive for angle-aware reference
-        const apparelViewDirective = getViewDirective(label, selectReferenceImage(label));
 
         return `APPAREL MODEL SHOOT — ${label.toUpperCase()} SHOT.
 ${apparelViewDirective ? `${apparelViewDirective}\n` : ""}POSE: ${poseDirective}
-THIS SPECIFIC POSE MUST BE EXACTLY AS DESCRIBED ABOVE. Do not default to a generic front-facing stance. Each of the 6 shots must show a fundamentally different body orientation.
+THIS SPECIFIC POSE MUST BE EXACTLY AS DESCRIBED ABOVE. Do not default to a generic front-facing stance.
 ${backgroundDirective}
 ${modelDesc}${garmentInfo}${outfitDirective}
 ${FIDELITY_BLOCK}
 GARMENT FIDELITY: The model must wear ONLY the exact garment from the reference image. Do NOT add, invent, or layer any additional clothing items (no jackets, coats, scarves, vests, accessories, hats) that are not in the reference photo. The product garment must be clearly visible and completely unobstructed.
 CONSISTENCY: Use the EXACT SAME model across all shots — same face, same hair, same skin tone, same body type. Only the pose and camera angle change between shots.
+ANTI-COMPOSITE: The output must contain exactly ONE subject. No split-screen, no inset panels, no picture-in-picture, no diptych, no triptych, no duplicate model or garment in the same frame. A single continuous photograph with one model in one pose.
 Style: ${baseStyle}. Category: ${category}.
 ${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}
 ${ratioInstruction} Professional commercial ecommerce photography, high resolution, no text, no watermarks.
