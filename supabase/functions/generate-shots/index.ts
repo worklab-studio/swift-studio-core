@@ -822,8 +822,12 @@ serve(async (req) => {
 
         return `APPAREL MODEL SHOOT — ${label.toUpperCase()} SHOT.
 ${apparelViewDirective ? `${apparelViewDirective}\n` : ""}POSE: ${poseDirective}
+THIS SPECIFIC POSE MUST BE EXACTLY AS DESCRIBED ABOVE. Do not default to a generic front-facing stance. Each of the 6 shots must show a fundamentally different body orientation.
 ${backgroundDirective}
 ${modelDesc}${garmentInfo}${outfitDirective}
+${FIDELITY_BLOCK}
+GARMENT FIDELITY: The model must wear ONLY the exact garment from the reference image. Do NOT add, invent, or layer any additional clothing items (no jackets, coats, scarves, vests, accessories, hats) that are not in the reference photo. The product garment must be clearly visible and completely unobstructed.
+CONSISTENCY: Use the EXACT SAME model across all shots — same face, same hair, same skin tone, same body type. Only the pose and camera angle change between shots.
 Style: ${baseStyle}. Category: ${category}.
 ${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}
 ${ratioInstruction} Professional commercial ecommerce photography, high resolution, no text, no watermarks.
