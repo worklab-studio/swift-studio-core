@@ -277,7 +277,7 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
     lifestyle: "Walking mid-stride, one foot forward, arms swinging naturally. Captured from 3/4 angle, slight motion blur in limbs, relaxed authentic expression.",
     alternate: "Full back view, head turned slightly over left shoulder looking back at camera. Hands in pockets or relaxed at sides, showing garment's rear construction.",
     editorial: "Leaning against a wall with arms crossed, weight on one hip, strong jawline visible. Low camera angle, confident body language.",
-    flat_lay: "Garment laid flat from directly above, neatly arranged with natural shape, paired with minimal accessories (watch, sunglasses, shoes nearby).",
+    flat_lay: "PRODUCT-ONLY FLAT LAY: Top-down bird's eye view of the garment laid flat — NO model, NO human body, NO torso, NO mannequin. The garment is neatly arranged showing its full shape on a clean surface. Styled with tasteful aesthetic props around it (a small potted plant, a watch, sunglasses, a leather belt) — props must NOT cover the garment. Top-down camera, even overhead lighting.",
   },
   minimalist: {
     hero: "Still centered pose, arms down at sides, serene neutral expression, body perfectly straight. Ultra-clean framing with maximum negative space.",
@@ -285,7 +285,7 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
     lifestyle: "Turning slowly, captured mid-rotation at 3/4 angle. Subtle movement, fabric gently shifting, calm composed expression looking slightly off-camera.",
     alternate: "Clean side profile, arms relaxed, perfect posture. Silhouette-like framing showing garment's drape and line from the side.",
     editorial: "Geometric angular pose — one arm bent at 90°, body creating clean lines. Architectural stance, minimal expression, art-gallery stillness.",
-    flat_lay: "Garment arranged in a precise minimal grid layout from above, folded cleanly with one accessory, lots of white space.",
+    flat_lay: "PRODUCT-ONLY FLAT LAY: Top-down view of the garment folded cleanly on a white surface — NO model, NO body. Precise minimal arrangement with one small accessory. Maximum white space. No person visible.",
   },
   luxury: {
     hero: "One hand in pocket, slight lean, chin elevated with confident expression. Weight shifted to back foot, elegant casual stance. Shot from slightly below.",
@@ -293,7 +293,7 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
     lifestyle: "Descending a staircase, one hand on railing, garment flowing with movement. Captured mid-step from below, regal and composed.",
     alternate: "3/4 back view, fabric trailing slightly, head turned in profile. One hand adjusting collar or cuff. Showing garment's back drape.",
     editorial: "Chin up power pose, direct intense gaze, body angled dramatically. Strong directional light creating deep chiaroscuro. Magazine cover energy.",
-    flat_lay: "Garment draped on dark velvet surface from above, with luxury accessories (leather goods, silk scarf, fine watch) artfully placed.",
+    flat_lay: "PRODUCT-ONLY FLAT LAY: Top-down view of the garment draped on dark velvet surface — NO model, NO body. Luxury accessories artfully placed around (leather goods, silk scarf, fine watch). No person visible.",
   },
   'loud-luxury': {
     hero: "Wide power stance, both hands visible, commanding presence. Chest forward, shoulders back, opulent and bold. Low camera angle emphasizing stature.",
@@ -301,7 +301,7 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
     lifestyle: "Stepping out of a luxury setting, mid-motion with purpose. Arms swinging, garment moving, captured in dynamic frozen frame.",
     alternate: "Over-the-shoulder view with dramatic head turn, fabric draping over shoulder. Theatrical body positioning showing garment's structure.",
     editorial: "Arms spread wide or hands on hips, wide stance, bold maximalist energy. Dutch angle camera, shadows and highlights exaggerated.",
-    flat_lay: "Garment displayed on marble surface from above with bold luxury props (gold accessories, crystals, ornate items), maximalist arrangement.",
+    flat_lay: "PRODUCT-ONLY FLAT LAY: Top-down view of the garment on marble surface — NO model, NO body. Bold luxury props (gold accessories, crystals, ornate items) arranged around it. Maximalist but garment fully visible. No person.",
   },
   magazine: {
     hero: "Strong jawline forward, direct intense gaze, body at 3/4 angle. One shoulder slightly forward creating depth. Print-cover-ready composition.",
@@ -309,7 +309,7 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
     lifestyle: "Wind in hair, garment caught mid-movement, striding with purpose. 3/4 angle, dynamic energy, editorial street-style feel.",
     alternate: "Profile walk — captured from the side mid-step, looking straight ahead. Clean side view showing garment's full silhouette in motion.",
     editorial: "Dutch angle with asymmetric lean, one arm extended, dramatic weight shift. Unconventional pose breaking symmetry intentionally.",
-    flat_lay: "Editorial scatter arrangement from above — garment with curated lifestyle props, magazine pages, flowers, artfully 'messy' but precise.",
+    flat_lay: "PRODUCT-ONLY FLAT LAY: Top-down editorial scatter — NO model, NO body. Garment with curated lifestyle props (magazine pages, flowers, coffee cup) arranged in artful 'messy but precise' composition. No person visible.",
   },
   'avant-garde': {
     hero: "Sculptural body position — arms creating geometric shapes, body contorted artistically. Abstract fashion pose, defying conventional modeling.",
@@ -317,7 +317,7 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
     lifestyle: "Frozen mid-leap or mid-spin, garment flying outward. Captured at peak movement, fabric as kinetic sculpture.",
     alternate: "Upside-down or extreme overhead perspective, body creating abstract shapes. Garment seen from completely unexpected angle.",
     editorial: "Body folded or twisted into angular geometric pose, limbs creating triangles and lines. Stark, bold, gallery-installation energy.",
-    flat_lay: "Garment arranged in abstract art composition from above — folded into sculptural shape, combined with unconventional objects.",
+    flat_lay: "PRODUCT-ONLY FLAT LAY: Top-down abstract art composition — NO model, NO body. Garment folded into sculptural shape, combined with unconventional objects. Artistic arrangement. No person visible.",
   },
   influencer: {
     hero: "Casual hair toss, looking slightly off-camera with genuine smile. One hand adjusting garment naturally. Warm, approachable, aspirational.",
@@ -325,7 +325,7 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
     lifestyle: "Walking with coffee in hand, candid laughing moment. Full body in lifestyle environment, golden hour warmth, Instagram-ready.",
     alternate: "Back to camera looking over shoulder with playful expression. Showing back of garment with casual body language.",
     editorial: "Sitting casually — cross-legged on floor or perched on ledge. Relaxed but styled, natural hand placement, warm lighting.",
-    flat_lay: "OOTD-style flat lay from above — garment with shoes, bag, sunglasses, phone arranged as 'outfit of the day' grid.",
+    flat_lay: "PRODUCT-ONLY FLAT LAY: Top-down OOTD-style arrangement — NO model, NO body. Garment with shoes, bag, sunglasses, phone arranged as 'outfit of the day' grid on clean surface. No person visible.",
   },
   lifestyle: {
     hero: "Natural standing pose in real-world setting, relaxed smile, arms at ease. Environmental portrait feel, approachable and relatable.",
@@ -333,7 +333,7 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
     lifestyle: "Sitting on a bench or leaning on counter, legs crossed casually. Natural body language, genuine expression, environmental storytelling.",
     alternate: "Walking away from camera, 3/4 back view. Natural stride, garment moving with body, candid documentary feel.",
     editorial: "Leaning in doorway or against railing, contemplative expression. Mixed natural light, environmental portrait with character.",
-    flat_lay: "Garment arranged naturally on bed or couch from above — 'just tossed' look with personal items (book, mug, plant).",
+    flat_lay: "PRODUCT-ONLY FLAT LAY: Top-down view of garment arranged naturally on bed or couch — NO model, NO body. 'Just tossed' look with personal items (book, mug, small plant). No person visible.",
   },
   'plain-bg': {
     hero: "Relaxed natural stance facing camera directly, hands at sides, confident but approachable expression. Full body visible, clean and centered. BODY ORIENTATION: FRONT-FACING.",
@@ -341,7 +341,7 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
     lifestyle: "Quarter turn with subtle weight shift to one hip, one hand touching garment naturally. Casual but intentional body language. BODY ORIENTATION: 3/4-FRONT.",
     alternate: "FULL BACK VIEW — model's back COMPLETELY facing the camera, showing the entire rear of the garment. Head may turn very slightly but the torso and body must face AWAY from camera. Arms relaxed at sides. Complete rear silhouette visible. BODY ORIENTATION: BACK (180° from hero).",
     editorial: "Side profile view, arms crossed confidently, weight on one leg, subtle lean. Body turned 90° from camera showing garment's side drape and silhouette. BODY ORIENTATION: SIDE PROFILE.",
-    flat_lay: "Garment laid flat on solid surface from above, neatly arranged showing full shape, minimal or no accessories.",
+    flat_lay: "PRODUCT-ONLY FLAT LAY: Top-down view of garment laid flat on solid surface — NO model, NO body. Neatly arranged showing full shape, minimal or no accessories. Clean and simple. No person visible.",
   },
 };
 
@@ -799,12 +799,12 @@ serve(async (req) => {
       if (isApparelModel && modelConfig) {
         const poseMatrix = APPAREL_POSE_MATRIX[effectivePresetId] || APPAREL_POSE_MATRIX["classic"];
         const poseDirective = poseMatrix[label] || poseMatrix["hero"];
+        const isFlatLay = label === "flat_lay";
 
         // Background control: plain-bg/ecommerce = solid color ONLY; others = Step 2 background only
         const isPlainBg = effectivePresetId === "plain-bg";
         let backgroundDirective: string;
         if (isPlainBg) {
-          // Extract color from stylePrompt or modelConfig
           const colorMatch = (stylePrompt || "").match(/solid\s+([\w\s]+?)\s+color/i);
           const bgColor = colorMatch?.[1] || "white";
           backgroundDirective = `BACKGROUND: Pure solid ${bgColor} background. No texture, no gradient, no environment, no props, no floor, no shadows on backdrop — completely clean flat ${bgColor} color filling the entire background.`;
@@ -813,21 +813,34 @@ serve(async (req) => {
           backgroundDirective = `BACKGROUND: ${stepTwoBg}. Show this environment from a different angle/perspective for each shot but do NOT change the setting itself.`;
         }
 
+        const garmentInfo = productInfo?.garmentType ? ` The garment is a ${productInfo.garmentType}.` : "";
+        const apparelViewDirective = getViewDirective(label, selectReferenceImage(label));
+
+        // ── FLAT LAY: product-only branch (no model) ──
+        if (isFlatLay) {
+          return `APPAREL FLAT LAY SHOT — PRODUCT ONLY, NO MODEL.
+${apparelViewDirective ? `${apparelViewDirective}\n` : ""}COMPOSITION: ${poseDirective}
+${FIDELITY_BLOCK}
+GARMENT FIDELITY: Preserve the EXACT garment from the reference image — same color, shape, texture, branding, print, stitching. Do NOT alter the garment in any way.
+RULES: Absolutely NO human model, NO body parts, NO torso, NO mannequin, NO person wearing the garment. This is a product-only flat lay photograph. The garment is laid flat, not worn. Aesthetic props (plants, accessories, magazines, coffee) may surround the garment but must NOT cover it.${garmentInfo}
+Style: ${baseStyle}. Category: ${category}.${additionalContext ? ` Additional direction: ${additionalContext}` : ""}
+${ratioInstruction} Professional product photography, high resolution, no text, no watermarks.
+OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, mosaic, contact sheet, or multiple images combined. ONE image, ONE composition.`;
+        }
+
+        // ── MODEL SHOTS: hero, detail, lifestyle, alternate, editorial ──
         const modelDesc = `The product is worn by a ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""} model with ${modelConfig.bodyType || "average"} build.`;
         const outfitDirective = productInfo?.selectedOutfit ? ` OUTFIT: The model is wearing: ${productInfo.selectedOutfit}.` : "";
-        const garmentInfo = productInfo?.garmentType ? ` The garment is a ${productInfo.garmentType}.` : "";
-
-        // Inject view directive for angle-aware reference
-        const apparelViewDirective = getViewDirective(label, selectReferenceImage(label));
 
         return `APPAREL MODEL SHOOT — ${label.toUpperCase()} SHOT.
 ${apparelViewDirective ? `${apparelViewDirective}\n` : ""}POSE: ${poseDirective}
-THIS SPECIFIC POSE MUST BE EXACTLY AS DESCRIBED ABOVE. Do not default to a generic front-facing stance. Each of the 6 shots must show a fundamentally different body orientation.
+THIS SPECIFIC POSE MUST BE EXACTLY AS DESCRIBED ABOVE. Do not default to a generic front-facing stance.
 ${backgroundDirective}
 ${modelDesc}${garmentInfo}${outfitDirective}
 ${FIDELITY_BLOCK}
 GARMENT FIDELITY: The model must wear ONLY the exact garment from the reference image. Do NOT add, invent, or layer any additional clothing items (no jackets, coats, scarves, vests, accessories, hats) that are not in the reference photo. The product garment must be clearly visible and completely unobstructed.
 CONSISTENCY: Use the EXACT SAME model across all shots — same face, same hair, same skin tone, same body type. Only the pose and camera angle change between shots.
+ANTI-COMPOSITE: The output must contain exactly ONE subject. No split-screen, no inset panels, no picture-in-picture, no diptych, no triptych, no duplicate model or garment in the same frame. A single continuous photograph with one model in one pose.
 Style: ${baseStyle}. Category: ${category}.
 ${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}
 ${ratioInstruction} Professional commercial ecommerce photography, high resolution, no text, no watermarks.
@@ -879,8 +892,9 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
       if (primaryRef) {
         messageContent.push({ type: "image_url", image_url: { url: primaryRef } });
       }
-      // Add secondary reference for cross-checking fidelity
-      if (allProductImages && allProductImages.length > 1 && primaryRef) {
+      // Add secondary reference for cross-checking fidelity — skip for apparel flat lays to avoid composite output
+      const isApparelFlatLay = isApparel && label === "flat_lay";
+      if (allProductImages && allProductImages.length > 1 && primaryRef && !isApparelFlatLay) {
         const secondary = allProductImages.find((url: string) => url !== primaryRef);
         if (secondary) {
           messageContent.push({ type: "image_url", image_url: { url: secondary } });
