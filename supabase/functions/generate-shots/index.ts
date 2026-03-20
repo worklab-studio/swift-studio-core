@@ -341,7 +341,7 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
     lifestyle: "Quarter turn with subtle weight shift to one hip, one hand touching garment naturally. Casual but intentional body language. BODY ORIENTATION: 3/4-FRONT.",
     alternate: "FULL BACK VIEW — model's back COMPLETELY facing the camera, showing the entire rear of the garment. Head may turn very slightly but the torso and body must face AWAY from camera. Arms relaxed at sides. Complete rear silhouette visible. BODY ORIENTATION: BACK (180° from hero).",
     editorial: "Side profile view, arms crossed confidently, weight on one leg, subtle lean. Body turned 90° from camera showing garment's side drape and silhouette. BODY ORIENTATION: SIDE PROFILE.",
-    flat_lay: "Garment laid flat on solid surface from above, neatly arranged showing full shape, minimal or no accessories.",
+    flat_lay: "PRODUCT-ONLY FLAT LAY: Top-down view of garment laid flat on solid surface — NO model, NO body. Neatly arranged showing full shape, minimal or no accessories. Clean and simple. No person visible.",
   },
 };
 
