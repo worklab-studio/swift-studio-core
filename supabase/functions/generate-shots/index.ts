@@ -333,7 +333,7 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
     lifestyle: "Sitting on a bench or leaning on counter, legs crossed casually. Natural body language, genuine expression, environmental storytelling.",
     alternate: "Walking away from camera, 3/4 back view. Natural stride, garment moving with body, candid documentary feel.",
     editorial: "Leaning in doorway or against railing, contemplative expression. Mixed natural light, environmental portrait with character.",
-    flat_lay: "Garment arranged naturally on bed or couch from above — 'just tossed' look with personal items (book, mug, plant).",
+    flat_lay: "PRODUCT-ONLY FLAT LAY: Top-down view of garment arranged naturally on bed or couch — NO model, NO body. 'Just tossed' look with personal items (book, mug, small plant). No person visible.",
   },
   'plain-bg': {
     hero: "Relaxed natural stance facing camera directly, hands at sides, confident but approachable expression. Full body visible, clean and centered. BODY ORIENTATION: FRONT-FACING.",
