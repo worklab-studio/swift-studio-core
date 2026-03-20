@@ -309,7 +309,7 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
     lifestyle: "Wind in hair, garment caught mid-movement, striding with purpose. 3/4 angle, dynamic energy, editorial street-style feel.",
     alternate: "Profile walk — captured from the side mid-step, looking straight ahead. Clean side view showing garment's full silhouette in motion.",
     editorial: "Dutch angle with asymmetric lean, one arm extended, dramatic weight shift. Unconventional pose breaking symmetry intentionally.",
-    flat_lay: "Editorial scatter arrangement from above — garment with curated lifestyle props, magazine pages, flowers, artfully 'messy' but precise.",
+    flat_lay: "PRODUCT-ONLY FLAT LAY: Top-down editorial scatter — NO model, NO body. Garment with curated lifestyle props (magazine pages, flowers, coffee cup) arranged in artful 'messy but precise' composition. No person visible.",
   },
   'avant-garde': {
     hero: "Sculptural body position — arms creating geometric shapes, body contorted artistically. Abstract fashion pose, defying conventional modeling.",
