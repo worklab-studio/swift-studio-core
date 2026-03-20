@@ -336,11 +336,11 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
     flat_lay: "Garment arranged naturally on bed or couch from above — 'just tossed' look with personal items (book, mug, plant).",
   },
   'plain-bg': {
-    hero: "Relaxed natural stance facing camera directly, hands at sides, confident but approachable expression. Full body visible, clean and centered.",
+    hero: "Relaxed natural stance facing camera directly, hands at sides, confident but approachable expression. Full body visible, clean and centered. BODY ORIENTATION: FRONT-FACING.",
     detail: "Close-up of fabric texture — weave, print detail, or material finish. Tight macro crop on the most interesting textile area.",
-    lifestyle: "Quarter turn with subtle weight shift to one hip, one hand touching garment naturally. Casual but intentional body language.",
-    alternate: "Full back view, head turned to look over shoulder. Arms relaxed or one hand adjusting collar. Complete rear silhouette visible.",
-    editorial: "Arms crossed confidently, weight on one leg, subtle lean. Direct gaze, strong but relaxed stance. Still on solid backdrop.",
+    lifestyle: "Quarter turn with subtle weight shift to one hip, one hand touching garment naturally. Casual but intentional body language. BODY ORIENTATION: 3/4-FRONT.",
+    alternate: "FULL BACK VIEW — model's back COMPLETELY facing the camera, showing the entire rear of the garment. Head may turn very slightly but the torso and body must face AWAY from camera. Arms relaxed at sides. Complete rear silhouette visible. BODY ORIENTATION: BACK (180° from hero).",
+    editorial: "Side profile view, arms crossed confidently, weight on one leg, subtle lean. Body turned 90° from camera showing garment's side drape and silhouette. BODY ORIENTATION: SIDE PROFILE.",
     flat_lay: "Garment laid flat on solid surface from above, neatly arranged showing full shape, minimal or no accessories.",
   },
 };
