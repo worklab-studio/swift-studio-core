@@ -1,31 +1,32 @@
 
 
-# Fix: AI Generating Collages Instead of Single Images
+# Fix: Product Fidelity & Pose Enforcement for Apparel Shots
 
-## Problem
-The AI model (`google/gemini-3-pro-image-preview`) is generating collage/grid layouts with multiple photos per image instead of a single photograph per shot. The screenshot shows each "shot" contains 4-6 grouped photos of the model.
+## Problems
+1. **AI adds extra clothing** (e.g., jacket over a white t-shirt) — the apparel model prompt lacks the `FIDELITY_BLOCK` and has no directive preventing the AI from adding/modifying garments.
+2. **Poses not distinct enough** — need stronger enforcement that each of the 6 shots uses a completely different pose, with at least one back view.
+3. **Model consistency** — need explicit directive for same model appearance across all 6 shots.
 
-## Root Cause
-1. The apparel model prompt (line 766) says: *"Each of the 6 shots MUST have a distinctly different pose and body position. Never repeat the same pose across shots."* — This implies all 6 shots exist in one image, confusing the model into creating a grid/collage.
-2. No explicit anti-collage directive exists in any prompt path (apparel, beauty, product, generic).
+## Changes — `supabase/functions/generate-shots/index.ts`
 
-## Fix
-Add a strong anti-collage directive to all prompt paths in `generate-shots/index.ts`:
+### 1. Add product fidelity + anti-modification block to apparel model prompt (~line 823-830)
+Add three critical directives to the apparel model prompt template:
+- `FIDELITY_BLOCK` (already defined, just not used here)
+- A new **garment-only directive**: "The model must wear ONLY the exact garment from the reference image. Do NOT add, invent, or layer any additional clothing items (no jackets, coats, scarves, accessories) that are not in the reference photo. The product garment must be clearly visible and unobstructed."
+- **Model consistency directive**: "CONSISTENCY: Use the EXACT SAME model across all shots — same face, same hair, same skin tone, same body type. Only the pose and camera angle change between shots."
 
-### 1. Apparel model prompt (~line 759-766)
-- Remove the confusing "Each of the 6 shots MUST have..." line
-- Add: `"OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, mosaic, contact sheet, or multiple images combined. ONE image, ONE model, ONE pose, ONE composition."`
+### 2. Strengthen pose matrix descriptions for ecommerce presets
+Update the `plain-bg` preset in `APPAREL_POSE_MATRIX` to make each pose more distinctly different:
+- `alternate`: Emphasize "FULL BACK VIEW — model's back completely facing the camera" to ensure a true back shot
+- Add a note that each pose MUST show a fundamentally different body orientation (front, back, side, 3/4, etc.)
 
-### 2. Beauty model prompt (~line 431-445)
-- Remove: `"THIS SHOT MUST BE DISTINCTLY DIFFERENT FROM ALL OTHER SHOTS"`
-- Add the same single-image directive
+### 3. Add a per-shot pose uniqueness reminder
+In the apparel model prompt template, add: "THIS SPECIFIC POSE MUST BE EXACTLY AS DESCRIBED ABOVE. Do not default to a generic front-facing stance."
 
-### 3. Generic model/product prompts (~line 789)
-- Add the single-image directive
-
-### 4. Product shoot prompts (~line 717)
-- Add the single-image directive
-
-### File Modified
-- `supabase/functions/generate-shots/index.ts` — Add anti-collage directive to all prompt builders, remove multi-shot language from individual prompts
+## Summary
+- Add `FIDELITY_BLOCK` to apparel prompts (already used in beauty/product paths, just missing here)
+- Add anti-layering directive to prevent AI from adding clothing not in the reference
+- Add model consistency directive
+- Strengthen back-view pose descriptions across all presets
+- One file modified: `supabase/functions/generate-shots/index.ts`
 
