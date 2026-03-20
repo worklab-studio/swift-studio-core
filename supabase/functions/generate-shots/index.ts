@@ -293,7 +293,7 @@ const APPAREL_POSE_MATRIX: Record<string, Record<string, string>> = {
     lifestyle: "Descending a staircase, one hand on railing, garment flowing with movement. Captured mid-step from below, regal and composed.",
     alternate: "3/4 back view, fabric trailing slightly, head turned in profile. One hand adjusting collar or cuff. Showing garment's back drape.",
     editorial: "Chin up power pose, direct intense gaze, body angled dramatically. Strong directional light creating deep chiaroscuro. Magazine cover energy.",
-    flat_lay: "Garment draped on dark velvet surface from above, with luxury accessories (leather goods, silk scarf, fine watch) artfully placed.",
+    flat_lay: "PRODUCT-ONLY FLAT LAY: Top-down view of the garment draped on dark velvet surface — NO model, NO body. Luxury accessories artfully placed around (leather goods, silk scarf, fine watch). No person visible.",
   },
   'loud-luxury': {
     hero: "Wide power stance, both hands visible, commanding presence. Chest forward, shoulders back, opulent and bold. Low camera angle emphasizing stature.",
