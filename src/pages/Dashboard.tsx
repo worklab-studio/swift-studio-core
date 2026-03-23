@@ -73,7 +73,7 @@ const Dashboard = () => {
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [heatmapData, setHeatmapData] = useState<{ created_at: string; amount: number }[]>([]);
   const [assetCounts, setAssetCounts] = useState<Record<string, number>>({});
-  const [stats, setStats] = useState({ projects: 0, images: 0, videos: 0 });
+  const [stats, setStats] = useState({ projects: 0, images: 0, videos: 0, models: 0 });
 
   useEffect(() => {
     if (!user) return;
