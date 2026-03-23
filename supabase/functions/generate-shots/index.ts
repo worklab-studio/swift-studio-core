@@ -888,10 +888,31 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
 
       // ── Step 1: Model identity lock (FIRST, before anything else) ──
       const modelRefUrls = (shotType === "model_shot" && modelConfig?.modelReferenceUrls) || [];
-      if (modelRefUrls.length > 0) {
-        messageContent.push({ type: "text", text: "MODEL REFERENCE PHOTOS — The following image(s) show the EXACT person who MUST appear in the generated image. Preserve their face shape, eyes, nose, lips, jawline, hairline, skin tone, and age. Do NOT replace, beautify, age-shift, or alter this person in any way. This is the same individual, not a lookalike." });
-        for (const refUrl of modelRefUrls.slice(0, 3)) {
-          messageContent.push({ type: "image_url", image_url: { url: refUrl } });
+      const supportRefUrls = (shotType === "model_shot" && modelConfig?.supportReferenceUrls) || [];
+      const identityLockSummary = (shotType === "model_shot" && modelConfig?.identityLockSummary) || "";
+      
+      if (modelRefUrls.length > 0 || supportRefUrls.length > 0) {
+        // Identity lock text with detailed summary if available
+        const lockText = identityLockSummary
+          ? `MODEL IDENTITY LOCK — The following image(s) show the EXACT person who MUST appear in the generated image. IDENTITY PROFILE: ${identityLockSummary}. Preserve their EXACT face shape, eyes, nose, lips, jawline, hairline, skin tone, hair color/texture, and age. Do NOT replace, beautify, age-shift, or alter this person. This is the SAME individual, not a lookalike or similar-looking person.`
+          : "MODEL REFERENCE PHOTOS — The following image(s) show the EXACT person who MUST appear in the generated image. Preserve their face shape, eyes, nose, lips, jawline, hairline, skin tone, and age. Do NOT replace, beautify, age-shift, or alter this person in any way. This is the same individual, not a lookalike.";
+        
+        messageContent.push({ type: "text", text: lockText });
+        
+        // PRIMARY IDENTITY PHOTO(S) — real uploads first
+        if (modelRefUrls.length > 0) {
+          messageContent.push({ type: "text", text: "PRIMARY IDENTITY PHOTO(S) — uploaded reference of the exact person:" });
+          for (const refUrl of modelRefUrls.slice(0, 3)) {
+            messageContent.push({ type: "image_url", image_url: { url: refUrl } });
+          }
+        }
+        
+        // SUPPORT ANGLES — AI-generated multi-angle refs
+        if (supportRefUrls.length > 0) {
+          messageContent.push({ type: "text", text: "SUPPORT ANGLE REFERENCES — additional views of the same person for identity anchoring:" });
+          for (const supUrl of supportRefUrls.slice(0, 3)) {
+            messageContent.push({ type: "image_url", image_url: { url: supUrl } });
+          }
         }
       }
 
