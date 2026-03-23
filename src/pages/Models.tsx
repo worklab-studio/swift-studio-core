@@ -73,6 +73,9 @@ interface CustomModel {
   facial_features: string;
   portrait_url: string | null;
   reference_images: string[];
+  identity_profile: any | null;
+  support_reference_images: string[];
+  body_visibility: string | null;
   created_at: string;
 }
 
