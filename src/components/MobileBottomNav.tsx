@@ -31,6 +31,15 @@ export const MobileBottomNav = () => {
         <span>Projects</span>
       </NavLink>
       <NavLink
+        to="/app/models"
+        end
+        className="flex flex-col items-center gap-1 text-xs text-muted-foreground"
+        activeClassName="text-primary"
+      >
+        <Users className="h-5 w-5" />
+        <span>Models</span>
+      </NavLink>
+      <NavLink
         to="/app/settings"
         end
         className="flex flex-col items-center gap-1 text-xs text-muted-foreground"

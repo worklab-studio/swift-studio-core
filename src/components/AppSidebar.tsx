@@ -13,6 +13,7 @@ const mainNav = [
   { title: 'Dashboard', url: '/app/dashboard', icon: LayoutDashboard },
   { title: 'Projects', url: '/app/projects', icon: FolderOpen },
   { title: 'Assets', url: '/app/assets', icon: Images },
+  { title: 'Models', url: '/app/models', icon: Users },
 ];
 
 const accountNav = [
