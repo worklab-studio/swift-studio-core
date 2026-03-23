@@ -1,4 +1,4 @@
-import { LayoutDashboard, Plus, FolderOpen, Images, CreditCard, Plug, Settings, LogOut, MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Plus, FolderOpen, Images, Users, CreditCard, Plug, Settings, LogOut, MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import logo from '@/assets/Logo.png';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
