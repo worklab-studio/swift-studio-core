@@ -3502,6 +3502,45 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
         </div>
       )}
       <ScrollArea className="flex-1 bg-background relative z-10">
+        {/* Custom Models Section */}
+        {customModels.length > 0 && (
+          <>
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground/60 mb-2">My Models</p>
+            <div className="grid grid-cols-5 gap-3 mb-4">
+              {customModels.map((cm) => {
+                const isSelected = modelConfig.selectedModel === cm.id;
+                const imgUrl = cm.portrait_url || cm.reference_images?.[0];
+                return (
+                  <button
+                    key={cm.id}
+                    onClick={() => setModelConfig(prev => ({ ...prev, selectedModel: prev.selectedModel === cm.id ? null : cm.id, uploadedModelUrl: null }))}
+                    className={`rounded-xl overflow-hidden border transition-all text-left ${
+                      isSelected ? 'ring-2 ring-primary ring-offset-2' : 'hover:border-primary/50 hover:shadow-md'
+                    }`}
+                  >
+                    <div className="aspect-[3/4] relative bg-muted">
+                      {imgUrl ? (
+                        <img src={imgUrl} alt={cm.name} className="w-full h-full object-cover" loading="lazy" />
+                      ) : null}
+                      {isSelected && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-primary/20">
+                          <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                            <Check className="h-4 w-4 text-primary-foreground" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-2">
+                      <p className="text-xs font-medium truncate">{cm.name}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{cm.gender === 'female' ? 'F' : 'M'} · {cm.ethnicity || 'Custom'} · {cm.bodyType}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground/60 mb-2">Library</p>
+          </>
+        )}
         <div className="grid grid-cols-5 gap-3 pb-4">
           {PLACEHOLDER_MODELS.map((m) => {
             const isSelected = modelConfig.selectedModel === m.id;
