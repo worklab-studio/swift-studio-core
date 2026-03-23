@@ -9,8 +9,9 @@ import { Separator } from '@/components/ui/separator';
 import {
   Plus, FolderOpen, ImageIcon, ArrowRight, Video,
   Gem, Shirt, Footprints, Coffee, Sparkles, Briefcase, Package,
-  ArrowDownCircle, ArrowUpCircle,
+  ArrowDownCircle, ArrowUpCircle, Users,
 } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { useNavigate } from 'react-router-dom';
 import { useNewProjectDialog } from '@/contexts/NewProjectContext';
 import { CreditHeatmap } from '@/components/dashboard/CreditHeatmap';
