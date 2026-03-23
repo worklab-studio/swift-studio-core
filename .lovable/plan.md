@@ -1,72 +1,63 @@
 
-Goal: make apparel generation produce one clean shot per file, and make flat lay behave as a true product-only flat lay across all style presets.
 
-What’s causing the current result
-- The current apparel model-shot prompt still says:
-  - “Every image MUST show ONLY the model...”
-  - while the `flat_lay` pose descriptions say the garment is laid flat from above.
-- That conflict makes the model invent composite/styled layouts instead of a single clear shot.
-- The function also always adds a secondary reference image when multiple product images exist. For apparel, that extra image can encourage Gemini to merge viewpoints into one composition.
+# Add Models Page with Custom Model Creation
 
-Implementation plan
+## Overview
+Add a "Models" nav item to the sidebar (below Assets), create a new `/app/models` page that displays all 40 built-in AI models plus user-created custom models, and allow users to create new models by uploading reference photos.
 
-1. Split apparel shot handling into two branches
-- Keep `hero`, `detail`, `lifestyle`, `alternate`, `editorial` as true model shots.
-- Treat `flat_lay` as a dedicated product-only apparel shot, even when the overall flow is “model_shot”.
-- This removes the model-vs-flat-lay contradiction.
+## Database Changes
 
-2. Add a strict anti-composite directive for apparel
-- Strengthen the apparel prompt with:
-  - one subject only
-  - no split-screen
-  - no inset/zoom panel
-  - no picture-in-picture
-  - no diptych/triptych
-  - no duplicate garment/model in the same frame
-- Keep the existing anti-collage directive, but make it more explicit for the issue shown in the screenshot.
+### 1. New `custom_models` table
+```sql
+CREATE TABLE public.custom_models (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  name text NOT NULL,
+  gender text NOT NULL DEFAULT 'female',
+  ethnicity text NOT NULL DEFAULT '',
+  body_type text NOT NULL DEFAULT 'average',
+  skin_tone text DEFAULT '',
+  age_range text DEFAULT '',
+  facial_features text DEFAULT '',
+  portrait_url text,
+  reference_images text[] DEFAULT '{}',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.custom_models ENABLE ROW LEVEL SECURITY;
+-- Standard CRUD policies for authenticated users on their own rows
+```
 
-3. Make flat lay product-only in every style preset
-- Update all `APPAREL_POSE_MATRIX[*].flat_lay` entries so they describe:
-  - garment only
-  - top-down flat lay
-  - no human body, no torso, no person wearing it
-  - tasteful aesthetic props allowed
-- For the user’s request, keep “aesthetic flat lay” styling such as plant, magazine, watch, sunglasses, fabric, etc., but always around the garment, never on-model.
+## File Changes
 
-4. Override flat-lay prompt rules
-- For apparel `flat_lay`, use a dedicated prompt block:
-  - product-only
-  - no model / no body parts
-  - top-down composition
-  - preserve exact garment shape, color, texture, branding
-  - aesthetic props allowed only if they do not cover the garment
-- For non-flat-lay apparel shots, keep the consistent-model and distinct-pose rules.
+### 2. `src/pages/Models.tsx` — New page
+- Two tabs: "Library" (40 built-in models) and "My Models" (user-created)
+- Library tab: grid of model cards with portrait images (from `model_portraits` table), filters for gender/ethnicity/body type
+- My Models tab: grid of user's custom models + "Create New Model" card
+- Create flow: dialog with name, gender, ethnicity, body type fields + multi-image upload for reference photos
+- Each custom model card shows portrait, name, attributes, and delete option
+- On creation, generate a portrait via the existing `generate-model-portraits` edge function and save to `custom_models`
 
-5. Stop sending extra reference images for apparel flat lays
-- Change reference selection behavior so flat lay uses the most relevant single reference first.
-- Avoid blindly attaching a secondary garment image for apparel shots where multiple refs can cause merged/composite output.
-- If multi-reference is still needed for fidelity, use it selectively only for labels that benefit from it, not universally.
+### 3. `src/components/AppSidebar.tsx` — Add Models nav item
+- Add `{ title: 'Models', url: '/app/models', icon: Users }` to `mainNav` array after Assets
+- Import `Users` icon from lucide-react
 
-6. Keep pose variety and back view enforcement
-- Preserve the current pose matrix improvements:
-  - distinct body orientation per shot
-  - mandatory back-facing alternate shot for ecommerce/plain background
-  - same model across non-flat-lay apparel shots
-- Refine wording so the “distinct poses” requirement clearly applies across the set, not as a cue to merge multiple views into one image.
+### 4. `src/components/MobileBottomNav.tsx` — Add Models to mobile nav
+- Add Models icon to the bottom nav bar
 
-Files to update
-- `supabase/functions/generate-shots/index.ts`
+### 5. `src/App.tsx` — Add route
+- Import Models page
+- Add `<Route path="models" element={<Models />} />` under the app layout
 
-Expected outcome
-- Each generated file is a single clean image.
-- Apparel flat lay becomes a proper product-only top-down styled shot.
-- Other 5 apparel campaign shots remain single-model images with a consistent person and clearly different poses, including a back view.
-- The product stays accurate and unobstructed, without added jackets or layered clothing.
+### 6. `src/pages/Studio.tsx` — Use custom models in model selection
+- In Step 2 (Model Selection), fetch and display custom models alongside `PLACEHOLDER_MODELS`
+- Custom models appear in a "My Models" section above the built-in library
 
-Technical notes
-- Main code areas involved:
-  - `APPAREL_POSE_MATRIX`
-  - apparel model-shot prompt block
-  - `generateSingleShot()` reference-image assembly
-- No database changes needed.
-- No frontend changes needed.
+## How Custom Model Creation Works
+1. User clicks "Create Model" on the Models page
+2. Dialog opens with fields: Name, Gender, Ethnicity, Body Type, Skin Tone, Age Range
+3. User uploads 1+ reference photos (face/body angles)
+4. Photos are uploaded to the `originals` storage bucket under `models/{userId}/{filename}`
+5. A portrait is generated via `generate-model-portraits` edge function
+6. Model record is saved to `custom_models` with reference image URLs and portrait URL
+7. The custom model becomes available in Studio's model picker
+
