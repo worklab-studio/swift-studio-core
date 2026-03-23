@@ -435,7 +435,7 @@ function buildBeautyModelPrompt(
 ${presetMod}
 SHOT DIRECTION: ${shotDesc}
 ${noModelWarning}${modelWarning}
-${modelDesc}
+${modelDesc}${modelRefDirective}
 ${beautyPosing}
 ${outfitDirective}
 ${scaleRule}
