@@ -1,36 +1,22 @@
 
 
-# Fix: Storage Upload RLS for Brand Ambassador Photos
+# Fix: Input Fields Losing Focus on Every Keystroke
 
 ## Root Cause
-The `originals` storage bucket has no RLS policy allowing authenticated users to upload files. The upload to `originals/models/{userId}/...` returns 403 "new row violates row-level security policy".
+In `src/pages/Models.tsx`, the `ModelFormFields` component is defined **inside** the `Models` component body (line 357). Every time any state changes (including typing a character), React re-renders `Models`, which creates a **new function reference** for `ModelFormFields`. React sees it as a completely different component and unmounts/remounts it — destroying focus.
 
-The error shown in the toast ("Failed to create model / new row violates row-level security policy") is actually from the storage upload step (line 302 in Models.tsx), not the `custom_models` table insert.
+## Fix — `src/pages/Models.tsx`
 
-## Fix — Database Migration
+Convert `ModelFormFields` from an inline component to **inline JSX** (or a stable component outside the parent). The simplest fix: replace `<ModelFormFields />` usage with the JSX directly, or extract it outside the component and pass `newModel`/`setNewModel` as props.
 
-Add storage policies on the `storage.objects` table for the `originals` bucket:
+**Approach**: Extract `ModelFormFields` to a component defined **outside** the `Models` function, passing `newModel` and `setNewModel` as props.
 
-```sql
--- Allow authenticated users to upload to their own folder in originals
-CREATE POLICY "Users can upload to originals"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (bucket_id = 'originals' AND (storage.foldername(name))[1] = 'models' AND (storage.foldername(name))[2] = auth.uid()::text);
+1. Move the `ModelFormFields` definition (lines 357-409) to **after** the `Models` component (outside its scope), around line 670 with the other sub-components
+2. Add props: `{ newModel, setNewModel }` with proper types
+3. Update both call sites (lines 575 and 642) to pass the props: `<ModelFormFields newModel={newModel} setNewModel={setNewModel} />`
 
--- Allow authenticated users to read their own uploads
-CREATE POLICY "Users can read own originals"
-ON storage.objects FOR SELECT
-TO authenticated
-USING (bucket_id = 'originals' AND (storage.foldername(name))[1] = 'models' AND (storage.foldername(name))[2] = auth.uid()::text);
-
--- Allow public read since bucket is public
-CREATE POLICY "Public read originals"
-ON storage.objects FOR SELECT
-TO anon
-USING (bucket_id = 'originals');
-```
+This ensures React sees the same component reference across re-renders, preserving input focus.
 
 ## Files Modified
-- Database migration only — no code changes needed
+- `src/pages/Models.tsx` — move `ModelFormFields` outside the parent component
 
