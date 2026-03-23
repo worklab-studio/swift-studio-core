@@ -3355,7 +3355,7 @@ function Step1Viewport({ productImages, productInfo, setProductInfo, analyzingPr
 }
 
 /* ── Step 2 Viewport ── */
-function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelData, selectedTemplate, setSelectedTemplate, templateCategory, modelImages, generatingPortraits, portraitProgress, portraitTotal, onGeneratePortraits, activeTemplates, loadingTemplates, onRegenerateTemplates }: {
+function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelData, selectedTemplate, setSelectedTemplate, templateCategory, modelImages, generatingPortraits, portraitProgress, portraitTotal, onGeneratePortraits, activeTemplates, loadingTemplates, onRegenerateTemplates, customModels }: {
   shootType: 'product' | 'model' | null;
   modelConfig: ModelConfig;
   setModelConfig: React.Dispatch<React.SetStateAction<ModelConfig>>;
@@ -3371,6 +3371,7 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
   activeTemplates: ProductTemplate[];
   loadingTemplates: boolean;
   onRegenerateTemplates: () => void;
+  customModels: Array<{ id: string; name: string; gender: string; ethnicity: string; bodyType: string; portrait_url: string | null; reference_images: string[] }>;
 }) {
   const filteredTemplates = templateCategory === 'All'
     ? activeTemplates
