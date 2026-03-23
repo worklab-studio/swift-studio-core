@@ -1125,6 +1125,8 @@ const Studio = () => {
           modelConfig: shootType === 'model' ? (() => {
             // Build model reference URLs array with priority
             let modelReferenceUrls: string[] = [];
+            let supportReferenceUrls: string[] = [];
+            let identityLockSummary = '';
             let hasRealModelReferences = false;
             const selectedId = modelConfig.selectedModel;
             const customModel = selectedId ? customModels.find(m => m.id === selectedId) : null;
@@ -1135,6 +1137,14 @@ const Studio = () => {
               } else if (customModel.portrait_url) {
                 modelReferenceUrls = [customModel.portrait_url];
               }
+              // Add support reference images (hidden angles)
+              if ((customModel as any).support_reference_images?.length > 0) {
+                supportReferenceUrls = (customModel as any).support_reference_images;
+              }
+              // Add identity lock summary
+              if ((customModel as any).identity_profile?.identityLockSummary) {
+                identityLockSummary = (customModel as any).identity_profile.identityLockSummary;
+              }
             } else if (modelConfig.uploadedModelUrl) {
               modelReferenceUrls = [modelConfig.uploadedModelUrl];
               hasRealModelReferences = true;
@@ -1144,6 +1154,8 @@ const Studio = () => {
             return {
               ...modelConfig,
               modelReferenceUrls,
+              supportReferenceUrls,
+              identityLockSummary,
               hasRealModelReferences,
             };
           })() : null,
