@@ -1,48 +1,21 @@
 
 
-# Fix: Storage Upload RLS Policy Name Ambiguity
+# Add Tooltip on Hover for Truncated Background Prompts
 
-## Root Cause
-The migration `20260323111116` dropped and recreated the INSERT/DELETE policies using `split_part(name, '/', 1)` instead of `split_part(storage.objects.name, '/', 1)`. The previous working migration (`20260308140153`) explicitly qualified the reference as `storage.objects.name` to avoid ambiguity with `projects.name` in the EXISTS subquery. The unqualified `name` resolves to the wrong column, breaking project-based uploads.
+## What
+Wrap truncated background prompt text (in both the trigger button and dropdown items) with a Tooltip that shows the full prompt on hover.
 
-## Fix — Database Migration
+## Changes — `src/pages/Studio.tsx`
 
-Re-create both policies with fully qualified `storage.objects.name`:
+### 1. Trigger button label (line ~2489)
+Wrap the truncated AI background label in a `Tooltip` so hovering the button shows the full prompt text.
 
-```sql
-DROP POLICY IF EXISTS "Users can upload to their project folders" ON storage.objects;
+### 2. Dropdown items (lines ~2507, 2523, 2537)
+For each `button` in the AI Suggested / Product-Tailored / FMCG sections, wrap the truncated `<span>` in a `Tooltip` that shows the full `bg` string on hover. Only add tooltip when text is actually truncated (length > 50).
 
-CREATE POLICY "Users can upload to their project folders"
-ON storage.objects FOR INSERT TO authenticated
-WITH CHECK (
-  bucket_id = 'originals' AND (
-    split_part(storage.objects.name, '/', 1) = auth.uid()::text
-    OR EXISTS (
-      SELECT 1 FROM public.projects p
-      WHERE p.id::text = split_part(storage.objects.name, '/', 1)
-      AND p.user_id = auth.uid()
-    )
-    OR (split_part(storage.objects.name, '/', 1) = 'models' AND split_part(storage.objects.name, '/', 2) = auth.uid()::text)
-  )
-);
-
-DROP POLICY IF EXISTS "Users can delete from their project folders" ON storage.objects;
-
-CREATE POLICY "Users can delete from their project folders"
-ON storage.objects FOR DELETE TO authenticated
-USING (
-  bucket_id = 'originals' AND (
-    split_part(storage.objects.name, '/', 1) = auth.uid()::text
-    OR EXISTS (
-      SELECT 1 FROM public.projects p
-      WHERE p.id::text = split_part(storage.objects.name, '/', 1)
-      AND p.user_id = auth.uid()
-    )
-    OR (split_part(storage.objects.name, '/', 1) = 'models' AND split_part(storage.objects.name, '/', 2) = auth.uid()::text)
-  )
-);
-```
+### 3. Import
+Add `Tooltip, TooltipTrigger, TooltipContent, TooltipProvider` imports from `@/components/ui/tooltip` (if not already imported).
 
 ## Files Modified
-- Database migration only — no code changes needed
+- `src/pages/Studio.tsx` — add tooltips to truncated background labels
 
