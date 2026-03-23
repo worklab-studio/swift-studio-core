@@ -1,4 +1,4 @@
-import { LayoutDashboard, Plus, FolderOpen, Settings } from 'lucide-react';
+import { LayoutDashboard, Plus, FolderOpen, Users, Settings } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useNewProjectDialog } from '@/contexts/NewProjectContext';
 
