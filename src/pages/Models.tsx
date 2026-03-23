@@ -162,7 +162,7 @@ const Models = () => {
 
   const resetCreateState = () => {
     setCreateMode(null);
-    setNewModel({ name: '', gender: 'female', ethnicity: '', bodyType: 'average', skinTone: '', ageRange: '', facialFeatures: '' });
+    setNewModel({ name: '', gender: 'female', ethnicity: '', bodyType: 'average', skinTone: '', ageRange: '', facialFeatures: '', identityProfile: null, bodyVisibility: '', identityLockSummary: '' });
     ambassadorPreviews.forEach(p => URL.revokeObjectURL(p));
     setAmbassadorFiles([]);
     setAmbassadorPreviews([]);
