@@ -315,7 +315,7 @@ const Models = () => {
       // Use the first uploaded photo as the portrait
       const portraitUrl = imageUrls[0] || null;
 
-      const { error: insertErr } = await supabase.from('custom_models').insert({
+      const { data: insertedData, error: insertErr } = await supabase.from('custom_models').insert({
         user_id: user.id,
         name: newModel.name,
         gender: newModel.gender,
@@ -326,7 +326,9 @@ const Models = () => {
         facial_features: newModel.facialFeatures,
         portrait_url: portraitUrl,
         reference_images: imageUrls,
-      } as any);
+        identity_profile: newModel.identityProfile || null,
+        body_visibility: newModel.bodyVisibility || null,
+      } as any).select().single();
 
       if (insertErr) throw insertErr;
 
@@ -335,7 +337,27 @@ const Models = () => {
       if (refreshed) setCustomModels(refreshed as unknown as CustomModel[]);
 
       resetCreateState();
-      toast({ title: 'Model created', description: `${newModel.name} has been added.` });
+      toast({ title: 'Model created', description: `${newModel.name} has been added. Generating identity references in background...` });
+
+      // Fire-and-forget: generate support reference images in background
+      if (insertedData && newModel.identityLockSummary && portraitUrl) {
+        supabase.functions.invoke('generate-support-refs', {
+          body: {
+            modelId: insertedData.id,
+            referenceImageUrl: portraitUrl,
+            identityLockSummary: newModel.identityLockSummary,
+          },
+        }).then(({ data: refData }) => {
+          if (refData?.count > 0) {
+            // Refresh models to pick up support refs
+            supabase.from('custom_models').select('*').order('created_at', { ascending: false })
+              .then(({ data: updated }) => {
+                if (updated) setCustomModels(updated as unknown as CustomModel[]);
+              });
+            toast({ title: 'Identity references ready', description: `Generated ${refData.count} support angles for stronger face-locking.` });
+          }
+        }).catch(() => { /* silent */ });
+      }
     } catch (err: any) {
       toast({ title: 'Failed to create model', description: err.message, variant: 'destructive' });
     } finally {
