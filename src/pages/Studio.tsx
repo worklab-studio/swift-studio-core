@@ -1227,8 +1227,25 @@ const Studio = () => {
     const previousUrl = shot.url;
     updateShot(shot.id, { isRegenerating: true, isEditing: false });
     try {
+      // Build model reference URLs for face consistency during edits
+      let modelReferenceUrls: string[] = [];
+      if (shootType === 'model' && modelConfig.selectedModel) {
+        const customModel = customModels.find(m => m.id === modelConfig.selectedModel);
+        if (customModel) {
+          if (customModel.reference_images?.length > 0) {
+            modelReferenceUrls = customModel.reference_images.slice(0, 3);
+          } else if (customModel.portrait_url) {
+            modelReferenceUrls = [customModel.portrait_url];
+          }
+        } else if (modelConfig.uploadedModelUrl) {
+          modelReferenceUrls = [modelConfig.uploadedModelUrl];
+        } else if (modelImages[modelConfig.selectedModel]) {
+          modelReferenceUrls = [modelImages[modelConfig.selectedModel]];
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke('edit-shot', {
-        body: { assetId: shot.id, editPrompt: shot.editPrompt },
+        body: { assetId: shot.id, editPrompt: shot.editPrompt, modelReferenceUrls: modelReferenceUrls.length > 0 ? modelReferenceUrls : undefined },
       });
       if (error || !data?.asset) {
         toast({ title: 'Edit failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
