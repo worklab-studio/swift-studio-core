@@ -502,16 +502,18 @@ const Models = () => {
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {/* Create card */}
-              <button
-                onClick={() => setCreateMode('choice')}
-                className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-muted-foreground/20 aspect-[3/4] hover:border-primary/40 hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                  <Plus className="h-5 w-5 text-primary" />
-                </div>
-                <span className="text-sm font-medium">Create Model</span>
-              </button>
+              {/* Create card — only show when no models exist */}
+              {customModels.length === 0 && (
+                <button
+                  onClick={() => setCreateMode('choice')}
+                  className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-muted-foreground/20 aspect-[3/4] hover:border-primary/40 hover:bg-accent/50 transition-colors"
+                >
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                    <Plus className="h-5 w-5 text-primary" />
+                  </div>
+                  <span className="text-sm font-medium">Create Model</span>
+                </button>
+              )}
 
               {customModels.map(m => (
                 <CustomModelCard key={m.id} model={m} onDelete={() => setDeleteTarget(m.id)} />
