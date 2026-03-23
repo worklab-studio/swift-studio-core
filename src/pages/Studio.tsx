@@ -63,7 +63,8 @@ interface Asset {
 interface ModelConfig {
   selectedModel: string | null;
   uploadedModelUrl: string | null;
-  modelReferenceUrl?: string;
+  modelReferenceUrls?: string[];
+  hasRealModelReferences?: boolean;
   gender: string;
   ethnicity: string;
   bodyType: string;
@@ -1119,10 +1120,31 @@ const Studio = () => {
           body: {
           projectId: project.id, preset: selectedPreset || 'template', shotCount: effectiveShotCount, additionalContext,
           category: project.category, shotType: shootType === 'model' ? 'model_shot' : 'product_showcase',
-          modelConfig: shootType === 'model' ? {
-            ...modelConfig,
-            modelReferenceUrl: modelConfig.uploadedModelUrl || (modelConfig.selectedModel ? modelImages[modelConfig.selectedModel] : undefined),
-          } : null,
+          modelConfig: shootType === 'model' ? (() => {
+            // Build model reference URLs array with priority
+            let modelReferenceUrls: string[] = [];
+            let hasRealModelReferences = false;
+            const selectedId = modelConfig.selectedModel;
+            const customModel = selectedId ? customModels.find(m => m.id === selectedId) : null;
+            if (customModel) {
+              if (customModel.reference_images && customModel.reference_images.length > 0) {
+                modelReferenceUrls = customModel.reference_images.slice(0, 3);
+                hasRealModelReferences = true;
+              } else if (customModel.portrait_url) {
+                modelReferenceUrls = [customModel.portrait_url];
+              }
+            } else if (modelConfig.uploadedModelUrl) {
+              modelReferenceUrls = [modelConfig.uploadedModelUrl];
+              hasRealModelReferences = true;
+            } else if (selectedId && modelImages[selectedId]) {
+              modelReferenceUrls = [modelImages[selectedId]];
+            }
+            return {
+              ...modelConfig,
+              modelReferenceUrls,
+              hasRealModelReferences,
+            };
+          })() : null,
           stylePrompt: effectiveStylePrompt,
           productImageUrl,
           productImages: productImages.length > 1 ? productImages : undefined,
@@ -1205,8 +1227,25 @@ const Studio = () => {
     const previousUrl = shot.url;
     updateShot(shot.id, { isRegenerating: true, isEditing: false });
     try {
+      // Build model reference URLs for face consistency during edits
+      let modelReferenceUrls: string[] = [];
+      if (shootType === 'model' && modelConfig.selectedModel) {
+        const customModel = customModels.find(m => m.id === modelConfig.selectedModel);
+        if (customModel) {
+          if (customModel.reference_images?.length > 0) {
+            modelReferenceUrls = customModel.reference_images.slice(0, 3);
+          } else if (customModel.portrait_url) {
+            modelReferenceUrls = [customModel.portrait_url];
+          }
+        } else if (modelConfig.uploadedModelUrl) {
+          modelReferenceUrls = [modelConfig.uploadedModelUrl];
+        } else if (modelImages[modelConfig.selectedModel]) {
+          modelReferenceUrls = [modelImages[modelConfig.selectedModel]];
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke('edit-shot', {
-        body: { assetId: shot.id, editPrompt: shot.editPrompt },
+        body: { assetId: shot.id, editPrompt: shot.editPrompt, modelReferenceUrls: modelReferenceUrls.length > 0 ? modelReferenceUrls : undefined },
       });
       if (error || !data?.asset) {
         toast({ title: 'Edit failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
@@ -3761,6 +3800,17 @@ function Step3Viewport({ selectedPreset, selectedPresetData, referenceImage, pro
                 <p className="text-sm font-semibold">{selectedModelData ? selectedModelData.name : 'Custom Model'}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{selectedModelData ? selectedModelData.attrs : 'Uploaded image'}</p>
                 {selectedModelData && <p className="text-xs text-muted-foreground mt-0.5">Age: {selectedModelData.ageRange}</p>}
+                {(() => {
+                  const cm = modelConfig.selectedModel ? customModels.find(m => m.id === modelConfig.selectedModel) : null;
+                  const isBuiltIn = modelConfig.selectedModel && PLACEHOLDER_MODELS.some(m => m.id === modelConfig.selectedModel);
+                  if (cm && (!cm.reference_images || cm.reference_images.length === 0)) {
+                    return <p className="text-[10px] text-amber-500 mt-1">⚠ Synthetic portrait only — upload reference photos for better face accuracy</p>;
+                  }
+                  if (isBuiltIn) {
+                    return <p className="text-[10px] text-amber-500 mt-1">⚠ AI-generated portrait — face will be approximate</p>;
+                  }
+                  return null;
+                })()}
               </div>
             </div>
           </div>

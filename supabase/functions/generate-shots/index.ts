@@ -406,6 +406,9 @@ function buildBeautyModelPrompt(
   const modelDesc = isModelShot && modelConfig
     ? `Model: ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""}, ${modelConfig.bodyType || "average"} build.`
     : "";
+  const modelRefDirective = isModelShot && modelConfig?.modelReferenceUrls?.length > 0
+    ? `\nMODEL IDENTITY LOCK: Reference photo(s) of the EXACT model are provided. The generated image MUST depict this EXACT same person — same face shape, eyes, nose, lips, jawline, hairline, skin tone, and age appearance. Do NOT use a lookalike, do NOT beautify, age-shift, race-shift, or replace the person. This is not a suggestion — it is the same individual.`
+    : "";
 
   const backgroundDirective = modelConfig?.backgroundPrompt || modelConfig?.background || "luxury beauty studio with soft diffused lighting, clean elegant surfaces, and a warm aspirational atmosphere";
 
@@ -432,7 +435,7 @@ function buildBeautyModelPrompt(
 ${presetMod}
 SHOT DIRECTION: ${shotDesc}
 ${noModelWarning}${modelWarning}
-${modelDesc}
+${modelDesc}${modelRefDirective}
 ${beautyPosing}
 ${outfitDirective}
 ${scaleRule}
@@ -831,7 +834,7 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
         // ── MODEL SHOTS: hero, detail, lifestyle, alternate, editorial ──
         const modelDesc = `The product is worn by a ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""} model with ${modelConfig.bodyType || "average"} build.`;
         const outfitDirective = productInfo?.selectedOutfit ? ` OUTFIT: The model is wearing: ${productInfo.selectedOutfit}.` : "";
-        const modelRefDirective = modelConfig.modelReferenceUrl ? `\nMODEL REFERENCE: A reference photo of the EXACT model is provided. The generated image MUST feature this EXACT person with the same face, hair, skin tone, and features. Do NOT alter the model's appearance in any way. Match the facial structure, hairstyle, and complexion precisely.` : "";
+        const modelRefDirective = modelConfig.modelReferenceUrls?.length > 0 ? `\nMODEL IDENTITY LOCK: Reference photo(s) of the EXACT model are provided. The generated image MUST depict this EXACT same person — same face shape, eyes, nose, lips, jawline, hairline, skin tone, and age appearance. Do NOT use a lookalike, do NOT beautify, age-shift, race-shift, or replace the person. This is not a suggestion — it is the same individual.` : "";
 
         return `APPAREL MODEL SHOOT — ${label.toUpperCase()} SHOT.
 ${apparelViewDirective ? `${apparelViewDirective}\n` : ""}POSE: ${poseDirective}
@@ -855,7 +858,7 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
       }
 
       // ── Non-apparel, non-beauty model shots ──
-      const modelRefDirective2 = shotType === "model_shot" && modelConfig?.modelReferenceUrl ? ` MODEL REFERENCE: A reference photo of the EXACT model is provided. The generated image MUST feature this EXACT person with the same face, hair, skin tone, and features. Do NOT alter the model's appearance.` : "";
+      const modelRefDirective2 = shotType === "model_shot" && modelConfig?.modelReferenceUrls?.length > 0 ? ` MODEL IDENTITY LOCK: Reference photo(s) of the EXACT model are provided. The generated image MUST depict this EXACT same person — same face shape, eyes, nose, lips, jawline, hairline, skin tone, and age appearance. Do NOT use a lookalike, do NOT beautify, age-shift, race-shift, or replace the person.` : "";
       const modelDesc = shotType === "model_shot" && modelConfig
         ? `The product is worn/held by a ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""} model with ${modelConfig.bodyType || "average"} build. Background: ${modelConfig.backgroundPrompt || modelConfig.background || "studio"}.${modelRefDirective2}`
         : "Product-only shot, no human model.";
@@ -881,22 +884,30 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
     async function generateSingleShot(label: string, prompt: string): Promise<any | null> {
       const isShowcase = showcaseType && isProductShootWithTemplate && productDescription;
       const primaryRef = selectReferenceImage(label);
-      const messageContent: any[] = [{ type: "text", text: prompt }];
-      
-      // Add view context to prompt if we have multi-image refs (always inject when views data exists)
+      const messageContent: any[] = [];
+
+      // ── Step 1: Model identity lock (FIRST, before anything else) ──
+      const modelRefUrls = (shotType === "model_shot" && modelConfig?.modelReferenceUrls) || [];
+      if (modelRefUrls.length > 0) {
+        messageContent.push({ type: "text", text: "MODEL REFERENCE PHOTOS — The following image(s) show the EXACT person who MUST appear in the generated image. Preserve their face shape, eyes, nose, lips, jawline, hairline, skin tone, and age. Do NOT replace, beautify, age-shift, or alter this person in any way. This is the same individual, not a lookalike." });
+        for (const refUrl of modelRefUrls.slice(0, 3)) {
+          messageContent.push({ type: "image_url", image_url: { url: refUrl } });
+        }
+      }
+
+      // ── Step 2: Main prompt ──
+      let promptText = prompt;
       if (allProductImages && imageViews && primaryRef) {
         const viewLabel = imageViews[primaryRef];
         if (viewLabel) {
-          messageContent[0] = { type: "text", text: `${prompt}\n\nREFERENCE IMAGE VIEW: This reference shows the product from the ${viewLabel} angle. Maintain exact product details, colors, textures, and branding from this reference.` };
+          promptText = `${prompt}\n\nREFERENCE IMAGE VIEW: This reference shows the product from the ${viewLabel} angle. Maintain exact product details, colors, textures, and branding from this reference.`;
         }
       }
-      
+      messageContent.push({ type: "text", text: promptText });
+
+      // ── Step 3: Product reference image ──
       if (primaryRef) {
         messageContent.push({ type: "image_url", image_url: { url: primaryRef } });
-      }
-      // Inject model reference photo for face consistency
-      if (shotType === "model_shot" && modelConfig?.modelReferenceUrl) {
-        messageContent.push({ type: "image_url", image_url: { url: modelConfig.modelReferenceUrl } });
       }
       // Add secondary reference for cross-checking fidelity — skip for apparel flat lays to avoid composite output
       const isApparelFlatLay = isApparel && label === "flat_lay";
