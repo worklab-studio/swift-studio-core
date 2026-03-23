@@ -586,7 +586,7 @@ const Models = () => {
               ))}
             </div>
           )}
-          <ModelFormFields />
+          <ModelFormFields newModel={newModel} setNewModel={setNewModel} />
           <DialogFooter>
             <Button variant="outline" onClick={resetCreateState} disabled={creating}>Cancel</Button>
             <Button onClick={handleCreateFromAmbassador} disabled={creating}>
