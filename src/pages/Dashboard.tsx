@@ -9,8 +9,9 @@ import { Separator } from '@/components/ui/separator';
 import {
   Plus, FolderOpen, ImageIcon, ArrowRight, Video,
   Gem, Shirt, Footprints, Coffee, Sparkles, Briefcase, Package,
-  ArrowDownCircle, ArrowUpCircle,
+  ArrowDownCircle, ArrowUpCircle, Users,
 } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { useNavigate } from 'react-router-dom';
 import { useNewProjectDialog } from '@/contexts/NewProjectContext';
 import { CreditHeatmap } from '@/components/dashboard/CreditHeatmap';
@@ -72,7 +73,7 @@ const Dashboard = () => {
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [heatmapData, setHeatmapData] = useState<{ created_at: string; amount: number }[]>([]);
   const [assetCounts, setAssetCounts] = useState<Record<string, number>>({});
-  const [stats, setStats] = useState({ projects: 0, images: 0, videos: 0 });
+  const [stats, setStats] = useState({ projects: 0, images: 0, videos: 0, models: 0 });
 
   useEffect(() => {
     if (!user) return;
@@ -84,6 +85,7 @@ const Dashboard = () => {
         { count: projectCount },
         { count: imageCount },
         { count: videoCount },
+        { count: modelCount },
       ] = await Promise.all([
         supabase
           .from('projects')
@@ -113,12 +115,17 @@ const Dashboard = () => {
           .from('assets')
           .select('*', { count: 'exact', head: true })
           .eq('asset_type', 'video'),
+        supabase
+          .from('custom_models')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id),
       ]);
 
       setStats({
         projects: projectCount ?? 0,
         images: imageCount ?? 0,
         videos: videoCount ?? 0,
+        models: modelCount ?? 0,
       });
 
       setProjects(recentProjects ?? []);
@@ -157,47 +164,59 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      {(() => {
+        const creditsMax = profile?.plan === 'pro' ? 500 : profile?.plan === 'starter' ? 100 : 10;
+        const creditsRemaining = profile?.credits_remaining ?? 0;
+        const creditsPct = Math.round((creditsRemaining / creditsMax) * 100);
+        const creditColor = creditsPct > 50 ? '#22c55e' : creditsPct > 20 ? '#f59e0b' : '#ef4444';
+        return (
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        {[
+          { label: 'Total Projects', value: stats.projects, icon: FolderOpen },
+          { label: 'Generated Images', value: stats.images, icon: ImageIcon },
+          { label: 'Generated Videos', value: stats.videos, icon: Video },
+          { label: 'Custom Models', value: stats.models, icon: Users },
+        ].map(({ label, value, icon: Icon }) => (
+          <Card key={label}>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="bg-primary/10 p-2.5 rounded-full shrink-0">
+                <Icon className="h-5 w-5 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-muted-foreground truncate">{label}</p>
+                <h3 className="text-xl font-bold">
+                  {loading ? <Skeleton className="h-6 w-12 mt-1" /> : value}
+                </h3>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
         <Card>
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="bg-primary/10 p-3 rounded-full">
-              <FolderOpen className="h-6 w-6 text-primary" />
+          <CardContent className="p-4 flex flex-col gap-2">
+            <div className="flex items-center gap-3">
+              <div className="bg-primary/10 p-2.5 rounded-full shrink-0">
+                <Gem className="h-5 w-5 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-muted-foreground truncate">Credits Left</p>
+                <h3 className="text-xl font-bold">
+                  {loading ? <Skeleton className="h-6 w-12 mt-1" /> : creditsRemaining}
+                </h3>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Total Projects</p>
-              <h3 className="text-2xl font-bold">
-                {loading ? <Skeleton className="h-8 w-16 mt-1" /> : stats.projects}
-              </h3>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="bg-primary/10 p-3 rounded-full">
-              <ImageIcon className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Generated Images</p>
-              <h3 className="text-2xl font-bold">
-                {loading ? <Skeleton className="h-8 w-16 mt-1" /> : stats.images}
-              </h3>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="bg-primary/10 p-3 rounded-full">
-              <Video className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Generated Videos</p>
-              <h3 className="text-2xl font-bold">
-                {loading ? <Skeleton className="h-8 w-16 mt-1" /> : stats.videos}
-              </h3>
-            </div>
+            {!loading && (
+              <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${creditsPct}%`, backgroundColor: creditColor }}
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
+        );
+      })()}
 
       {/* Credit Usage Heatmap */}
       {loading ? (
