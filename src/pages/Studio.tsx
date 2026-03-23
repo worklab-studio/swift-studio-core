@@ -1243,6 +1243,8 @@ const Studio = () => {
     try {
       // Build model reference URLs for face consistency during edits
       let modelReferenceUrls: string[] = [];
+      let supportReferenceUrls: string[] = [];
+      let identityLockSummary = '';
       if (shootType === 'model' && modelConfig.selectedModel) {
         const customModel = customModels.find(m => m.id === modelConfig.selectedModel);
         if (customModel) {
@@ -1250,6 +1252,12 @@ const Studio = () => {
             modelReferenceUrls = customModel.reference_images.slice(0, 3);
           } else if (customModel.portrait_url) {
             modelReferenceUrls = [customModel.portrait_url];
+          }
+          if ((customModel as any).support_reference_images?.length > 0) {
+            supportReferenceUrls = (customModel as any).support_reference_images;
+          }
+          if ((customModel as any).identity_profile?.identityLockSummary) {
+            identityLockSummary = (customModel as any).identity_profile.identityLockSummary;
           }
         } else if (modelConfig.uploadedModelUrl) {
           modelReferenceUrls = [modelConfig.uploadedModelUrl];
@@ -1259,7 +1267,13 @@ const Studio = () => {
       }
 
       const { data, error } = await supabase.functions.invoke('edit-shot', {
-        body: { assetId: shot.id, editPrompt: shot.editPrompt, modelReferenceUrls: modelReferenceUrls.length > 0 ? modelReferenceUrls : undefined },
+        body: {
+          assetId: shot.id,
+          editPrompt: shot.editPrompt,
+          modelReferenceUrls: modelReferenceUrls.length > 0 ? modelReferenceUrls : undefined,
+          supportReferenceUrls: supportReferenceUrls.length > 0 ? supportReferenceUrls : undefined,
+          identityLockSummary: identityLockSummary || undefined,
+        },
       });
       if (error || !data?.asset) {
         toast({ title: 'Edit failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
