@@ -81,7 +81,31 @@ serve(async (req) => {
       });
     }
 
-    // Call AI with existing image + edit prompt
+    // Build message content with model references for face consistency
+    const messageContent: any[] = [];
+
+    // Add model reference photos first for identity lock
+    const refUrls = Array.isArray(modelReferenceUrls) ? modelReferenceUrls.slice(0, 3) : [];
+    if (refUrls.length > 0) {
+      messageContent.push({
+        type: "text",
+        text: "MODEL REFERENCE PHOTOS — The following image(s) show the EXACT person who MUST remain in the edited image. Preserve their face shape, eyes, nose, lips, jawline, hairline, skin tone, and age. Do NOT replace or alter this person.",
+      });
+      for (const refUrl of refUrls) {
+        messageContent.push({ type: "image_url", image_url: { url: refUrl } });
+      }
+    }
+
+    messageContent.push({
+      type: "text",
+      text: `Edit this product photography image: ${editPrompt}. Keep the product intact and recognizable.${refUrls.length > 0 ? " Keep the model's face and identity EXACTLY the same — do not change the person." : ""} Professional commercial photography quality. No text, no watermarks.`,
+    });
+    messageContent.push({
+      type: "image_url",
+      image_url: { url: currentAsset.url },
+    });
+
+    // Call AI with existing image + edit prompt + model references
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -93,16 +117,7 @@ serve(async (req) => {
         messages: [
           {
             role: "user",
-            content: [
-              {
-                type: "text",
-                text: `Edit this product photography image: ${editPrompt}. Keep the product intact and recognizable. Professional commercial photography quality. No text, no watermarks.`,
-              },
-              {
-                type: "image_url",
-                image_url: { url: currentAsset.url },
-              },
-            ],
+            content: messageContent,
           },
         ],
         modalities: ["image", "text"],
