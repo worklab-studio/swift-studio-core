@@ -406,6 +406,9 @@ function buildBeautyModelPrompt(
   const modelDesc = isModelShot && modelConfig
     ? `Model: ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""}, ${modelConfig.bodyType || "average"} build.`
     : "";
+  const modelRefDirective = isModelShot && modelConfig?.modelReferenceUrls?.length > 0
+    ? `\nMODEL IDENTITY LOCK: Reference photo(s) of the EXACT model are provided. The generated image MUST depict this EXACT same person — same face shape, eyes, nose, lips, jawline, hairline, skin tone, and age appearance. Do NOT use a lookalike, do NOT beautify, age-shift, race-shift, or replace the person. This is not a suggestion — it is the same individual.`
+    : "";
 
   const backgroundDirective = modelConfig?.backgroundPrompt || modelConfig?.background || "luxury beauty studio with soft diffused lighting, clean elegant surfaces, and a warm aspirational atmosphere";
 
