@@ -2523,7 +2523,18 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                         return (
                           <button key={val} onClick={() => setModelConfig(prev => ({ ...prev, background: val }))} className={`w-full text-left px-2 py-1.5 text-xs rounded-md flex items-center gap-2 transition-colors ${modelConfig.background === val ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}>
                             {modelConfig.background === val && <Check className="h-3 w-3 shrink-0" />}
-                            <span className="truncate">{bg.length > 50 ? bg.substring(0, 50) + '…' : bg}</span>
+                            {bg.length > 50 ? (
+                              <TooltipProvider delayDuration={200}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="truncate">{bg.substring(0, 50) + '…'}</span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="right" className="max-w-[300px] text-xs whitespace-normal">{bg}</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              <span className="truncate">{bg}</span>
+                            )}
                           </button>
                         );
                       })}
