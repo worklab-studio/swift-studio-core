@@ -498,7 +498,13 @@ const Models = () => {
               )}
 
               {customModels.map(m => (
-                <CustomModelCard key={m.id} model={m} onDelete={() => setDeleteTarget(m.id)} />
+                <CustomModelCard
+                  key={m.id}
+                  model={m}
+                  onDelete={() => setDeleteTarget(m.id)}
+                  isGenerating={generatingRefModelId === m.id}
+                  onClick={() => setSelectedModel(m)}
+                />
               ))}
 
               {customModels.length === 0 && (
