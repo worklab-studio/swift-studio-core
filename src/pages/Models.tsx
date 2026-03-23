@@ -112,6 +112,7 @@ const Models = () => {
   const [newModel, setNewModel] = useState({
     name: '', gender: 'female', ethnicity: '', bodyType: 'average',
     skinTone: '', ageRange: '', facialFeatures: '',
+    identityProfile: null as any, bodyVisibility: '' as string, identityLockSummary: '' as string,
   });
 
   // Ambassador upload state
