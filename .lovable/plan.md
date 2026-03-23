@@ -1,63 +1,56 @@
 
 
-# Add Models Page with Custom Model Creation
+# Revamp Create Model: Two Creation Modes
 
 ## Overview
-Add a "Models" nav item to the sidebar (below Assets), create a new `/app/models` page that displays all 40 built-in AI models plus user-created custom models, and allow users to create new models by uploading reference photos.
+Replace the single "Create Custom Model" dialog with two distinct creation paths:
 
-## Database Changes
+1. **Create from Scratch** — Manual entry of name, gender, ethnicity, body type, skin tone, age range, facial features. No reference photo required. AI generates a portrait from the description.
+2. **Upload Brand Ambassador** — User uploads 1+ photos of a real person. AI analyzes the photos to auto-detect gender, ethnicity, body type, skin tone, age range, and facial features. User can then review and edit the auto-filled name, age, and ethnicity before saving.
 
-### 1. New `custom_models` table
-```sql
-CREATE TABLE public.custom_models (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  name text NOT NULL,
-  gender text NOT NULL DEFAULT 'female',
-  ethnicity text NOT NULL DEFAULT '',
-  body_type text NOT NULL DEFAULT 'average',
-  skin_tone text DEFAULT '',
-  age_range text DEFAULT '',
-  facial_features text DEFAULT '',
-  portrait_url text,
-  reference_images text[] DEFAULT '{}',
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-ALTER TABLE public.custom_models ENABLE ROW LEVEL SECURITY;
--- Standard CRUD policies for authenticated users on their own rows
+## Changes
+
+### 1. `src/pages/Models.tsx` — Restructure the creation flow
+
+**Replace the single "Create Model" button** with a choice dialog that offers two cards:
+- "Create from Scratch" — opens the existing form (minus the reference photos section)
+- "Upload Brand Ambassador" — opens a photo upload flow
+
+**"Create from Scratch" dialog:**
+- Same fields as current (name, gender, body type, ethnicity, age range, skin tone, facial features)
+- Remove the reference photos section entirely
+- On submit: call `generate-model-portraits` to create a portrait from the text description, then save to `custom_models`
+
+**"Upload Brand Ambassador" dialog:**
+- Step 1: Upload 1+ photos of the person (drag & drop or file picker)
+- Step 2: Once uploaded, call a new edge function `analyze-model-photo` that uses AI vision to detect attributes (gender, ethnicity, body type, skin tone, age range, facial features)
+- Step 3: Show a review form with AI-detected values pre-filled. User can edit name (required), age range, ethnicity, and any other field before confirming.
+- On submit: upload photos to `originals` bucket, use the first uploaded photo as the portrait (or generate one), save to `custom_models` with reference_images
+
+### 2. `supabase/functions/analyze-model-photo/index.ts` — New edge function
+
+- Accepts an image (base64 or URL) in the request body
+- Calls Gemini vision (`google/gemini-2.5-flash`) with a prompt to analyze the person and return structured data:
+  - `gender`, `ethnicity`, `bodyType`, `skinTone`, `ageRange`, `facialFeatures`, `suggestedName`
+- Uses tool calling to extract structured JSON output
+- Returns the detected attributes to the client
+
+### 3. State management updates in Models.tsx
+
+- Add `createMode` state: `null | 'choice' | 'scratch' | 'ambassador'`
+- Add `analyzing` loading state for the AI analysis step
+- Add `detectedAttrs` state to hold AI-detected values during ambassador flow
+- The "Create Model" button opens the choice dialog (`createMode = 'choice'`)
+
+## Flow Summary
+
+```text
+[Create Model] → Choice Dialog
+  ├─ "Create from Scratch" → Form (no photos) → Generate portrait → Save
+  └─ "Upload Brand Ambassador" → Upload photos → AI analyzes → Review/edit form → Save
 ```
 
-## File Changes
-
-### 2. `src/pages/Models.tsx` — New page
-- Two tabs: "Library" (40 built-in models) and "My Models" (user-created)
-- Library tab: grid of model cards with portrait images (from `model_portraits` table), filters for gender/ethnicity/body type
-- My Models tab: grid of user's custom models + "Create New Model" card
-- Create flow: dialog with name, gender, ethnicity, body type fields + multi-image upload for reference photos
-- Each custom model card shows portrait, name, attributes, and delete option
-- On creation, generate a portrait via the existing `generate-model-portraits` edge function and save to `custom_models`
-
-### 3. `src/components/AppSidebar.tsx` — Add Models nav item
-- Add `{ title: 'Models', url: '/app/models', icon: Users }` to `mainNav` array after Assets
-- Import `Users` icon from lucide-react
-
-### 4. `src/components/MobileBottomNav.tsx` — Add Models to mobile nav
-- Add Models icon to the bottom nav bar
-
-### 5. `src/App.tsx` — Add route
-- Import Models page
-- Add `<Route path="models" element={<Models />} />` under the app layout
-
-### 6. `src/pages/Studio.tsx` — Use custom models in model selection
-- In Step 2 (Model Selection), fetch and display custom models alongside `PLACEHOLDER_MODELS`
-- Custom models appear in a "My Models" section above the built-in library
-
-## How Custom Model Creation Works
-1. User clicks "Create Model" on the Models page
-2. Dialog opens with fields: Name, Gender, Ethnicity, Body Type, Skin Tone, Age Range
-3. User uploads 1+ reference photos (face/body angles)
-4. Photos are uploaded to the `originals` storage bucket under `models/{userId}/{filename}`
-5. A portrait is generated via `generate-model-portraits` edge function
-6. Model record is saved to `custom_models` with reference image URLs and portrait URL
-7. The custom model becomes available in Studio's model picker
+## Files Modified
+- `src/pages/Models.tsx` — Restructure dialog into two flows
+- `supabase/functions/analyze-model-photo/index.ts` — New edge function for AI photo analysis
 
