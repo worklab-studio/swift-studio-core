@@ -1,62 +1,88 @@
 
-Fix the face-locking by strengthening both the data we send and how the image model uses it.
+Fix approach: use a hybrid solution, not just prompt tweaks.
 
-What I found
-- The app is already sending one `modelReferenceUrl` to the generator, so the issue is not “missing wiring” anymore.
-- The weak spots are:
-  1. only one face reference is sent, even though ambassador models can have multiple uploaded photos,
-  2. the reference is sent as an unlabeled extra image, so the model can treat it loosely,
-  3. beauty / some other model-shot branches are less explicit about identity preservation,
-  4. edited shots don’t preserve the selected face,
-  5. some custom models only have an AI-generated portrait and no real uploaded reference photos, so “exact same face” is not realistically enforceable.
+Why the current setup still fails
+- The app now sends reference images, but the generator is still being asked to invent a new scene and a new worn-product shot in one pass.
+- With only 1 ambassador image, the model does not have enough angle/body information, so it drifts to a lookalike.
+- The saved profile is too shallow for identity locking: it stores coarse traits, not a strong facial/body signature.
+- Brand ambassador analysis currently uses only the first uploaded photo, so even multi-photo models are underused.
 
-Plan
+What I would build
 
-1. Strengthen the Studio payload
-- In `src/pages/Studio.tsx`, replace the single `modelReferenceUrl` approach with `modelReferenceUrls: string[]`.
-- Build that array with this priority:
-  - selected custom ambassador model: all `reference_images`, fallback to `portrait_url`
-  - built-in library model: portrait from `modelImages`
-  - manual uploaded model: `uploadedModelUrl`
-- Also pass a small flag like `hasRealModelReferences` so the generator knows whether it has real face-lock data or only a synthetic portrait.
+1. Upgrade ambassador analysis into an “identity profile”
+- Expand `supabase/functions/analyze-model-photo/index.ts` to return a much richer structured profile:
+  - face shape, eye shape/set, nose shape, lip shape, jawline, cheekbones, eyebrow shape, hairline, hair color/texture/length
+  - skin tone, age appearance, shoulder width/frame, body proportions if visible
+  - visibility flags: face-only / waist-up / full-body
+  - a compact “identity lock summary” string for generation
+- When multiple ambassador photos exist, analyze all of them and merge the result instead of only using the first.
 
-2. Make the generator use references properly
-- In `supabase/functions/generate-shots/index.ts`, update the request content structure so references are explicitly labeled:
-  - text block: exact model identity instructions
-  - model reference image(s)
-  - text block: exact product fidelity instructions
-  - product reference image(s)
-- Don’t just append one unlabeled face image at the end.
-- Use all available model reference photos, capped to a safe small number (for example 3), so the face is anchored from multiple angles.
+2. Save stronger identity data on the model
+- Extend `custom_models` with fields like:
+  - `identity_profile jsonb`
+  - `support_reference_images text[]`
+  - `source_reference_count integer`
+  - `body_visibility text`
+- Keep existing RLS; current owner-only policies already fit this change.
 
-3. Tighten the prompt rules for identity lock
-- Strengthen apparel, beauty, and generic model-shot prompt builders with stricter identity rules:
-  - same person, not lookalike
-  - preserve face shape, eyes, nose, lips, jawline, hairline, skin tone, age appearance
-  - do not beautify, age-shift, race-shift, gender-shift, or replace the person
-- Add the same directive to the beauty model prompt path too, since that branch currently relies less on explicit face-lock wording.
+3. Auto-create hidden support references for 1-photo ambassadors
+- Add a backend function that takes the original ambassador photo(s) + identity profile and creates a hidden “reference pack”.
+- For a single uploaded image, generate 3–4 neutral support refs on plain backgrounds:
+  - front head/shoulders
+  - 3/4 face
+  - waist-up neutral
+  - full-body neutral if enough body is visible or can be safely inferred
+- These are not shown in the normal UI, but are stored and used as extra anchors during generation/editing.
+- This is the part most likely to improve real-world consistency for users who upload only one image.
 
-4. Use the better model path when face references are present
-- For shots that include model references, switch generation to the image-edit/reference-oriented image model path rather than treating it like a generic generation.
-- Keep the current path for non-model/product-only generations.
-- This should improve adherence to both the garment and the selected person.
+4. Always send ordered references by role
+- In `src/pages/Studio.tsx`, stop treating all refs equally.
+- Send a structured bundle:
+  - primary real ambassador photo first
+  - any additional real uploads next
+  - hidden support refs after that
+  - identity profile + identity lock summary
+- For apparel/model shots, also send the best body-visible ref first when available.
 
-5. Preserve face consistency in edits too
-- Update `src/pages/Studio.tsx` edit flow and `supabase/functions/edit-shot/index.ts` so “Edit with prompt” also sends the selected model reference images when a model shot is being edited.
-- That prevents edits from drifting to a different face after the initial generation.
+5. Rework generation to use the identity pack more strictly
+- In `supabase/functions/generate-shots/index.ts`:
+  - label refs explicitly as `PRIMARY IDENTITY PHOTO`, `BODY REFERENCE`, `SUPPORT ANGLES`, `PRODUCT REFERENCE`
+  - strengthen prompt rules to preserve exact face and exact physique, not just “same person”
+  - for model shots, prefer the reference/edit-style image path whenever model refs exist
+  - use shot-specific reference priority:
+    - beauty closeups → face refs first
+    - apparel/editorial/lifestyle → body-visible ref first, then face refs
 
-6. Add a guardrail in the UI
-- In `src/pages/Studio.tsx`, show a subtle note when a selected custom model has no real uploaded `reference_images` and only a generated portrait.
-- Example meaning: exact face lock is strongest for ambassador models with uploaded photos; synthetic-only models will be approximate.
-- This avoids false expectations for scratch-created models.
+6. Apply the same identity pack to edits
+- In `src/pages/Studio.tsx` and `supabase/functions/edit-shot/index.ts`, send the same ordered identity pack during “Edit with prompt”.
+- This prevents face/body drift after the first generation.
 
-Files to update
-- `src/pages/Studio.tsx`
-- `supabase/functions/generate-shots/index.ts`
-- `supabase/functions/edit-shot/index.ts`
+7. Add a practical guardrail for body accuracy
+- If the only uploaded ambassador image is a tight headshot, exact body type cannot be guaranteed.
+- Add a subtle note in Models/Studio:
+  - “Face lock is strong. Body lock is strongest with at least one waist-up or full-body photo.”
+- Still proceed automatically with hidden support refs so one-photo uploads work as well as possible.
+
+Why this is the best fix
+- “Analyze the face better” alone is not enough; text attributes still allow drift.
+- “Generate hidden angle shots” alone is risky unless those shots are grounded in a structured identity profile.
+- The strongest solution is both:
+  - richer identity analysis
+  - hidden support reference generation
+  - consistent use of that identity pack in generation and edits
+
+Implementation scope
+- Database migration: extend `custom_models`
+- Update:
+  - `supabase/functions/analyze-model-photo/index.ts`
+  - new backend function for hidden support refs
+  - `src/pages/Models.tsx`
+  - `src/pages/Studio.tsx`
+  - `supabase/functions/generate-shots/index.ts`
+  - `supabase/functions/edit-shot/index.ts`
 
 Expected result
-- Ambassador models with uploaded photos will generate much closer to the exact selected face.
-- Face consistency will hold better across hero / lifestyle / editorial variations.
-- Edited shots will stop drifting to a different person.
-- Users will get clear feedback when a model lacks real face references.
+- Single-photo brand ambassadors will retain the selected face much better.
+- Multi-photo ambassadors will lock even more strongly because all real uploads get used.
+- Body type consistency improves because generation gets a body-aware reference instead of only a face.
+- Edits stop drifting away from the selected ambassador.
