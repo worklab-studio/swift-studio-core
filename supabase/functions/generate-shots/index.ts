@@ -834,7 +834,7 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
         // ── MODEL SHOTS: hero, detail, lifestyle, alternate, editorial ──
         const modelDesc = `The product is worn by a ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""} model with ${modelConfig.bodyType || "average"} build.`;
         const outfitDirective = productInfo?.selectedOutfit ? ` OUTFIT: The model is wearing: ${productInfo.selectedOutfit}.` : "";
-        const modelRefDirective = modelConfig.modelReferenceUrl ? `\nMODEL REFERENCE: A reference photo of the EXACT model is provided. The generated image MUST feature this EXACT person with the same face, hair, skin tone, and features. Do NOT alter the model's appearance in any way. Match the facial structure, hairstyle, and complexion precisely.` : "";
+        const modelRefDirective = modelConfig.modelReferenceUrls?.length > 0 ? `\nMODEL IDENTITY LOCK: Reference photo(s) of the EXACT model are provided. The generated image MUST depict this EXACT same person — same face shape, eyes, nose, lips, jawline, hairline, skin tone, and age appearance. Do NOT use a lookalike, do NOT beautify, age-shift, race-shift, or replace the person. This is not a suggestion — it is the same individual.` : "";
 
         return `APPAREL MODEL SHOOT — ${label.toUpperCase()} SHOT.
 ${apparelViewDirective ? `${apparelViewDirective}\n` : ""}POSE: ${poseDirective}
