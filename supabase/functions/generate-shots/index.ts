@@ -884,22 +884,30 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
     async function generateSingleShot(label: string, prompt: string): Promise<any | null> {
       const isShowcase = showcaseType && isProductShootWithTemplate && productDescription;
       const primaryRef = selectReferenceImage(label);
-      const messageContent: any[] = [{ type: "text", text: prompt }];
-      
-      // Add view context to prompt if we have multi-image refs (always inject when views data exists)
+      const messageContent: any[] = [];
+
+      // ── Step 1: Model identity lock (FIRST, before anything else) ──
+      const modelRefUrls = (shotType === "model_shot" && modelConfig?.modelReferenceUrls) || [];
+      if (modelRefUrls.length > 0) {
+        messageContent.push({ type: "text", text: "MODEL REFERENCE PHOTOS — The following image(s) show the EXACT person who MUST appear in the generated image. Preserve their face shape, eyes, nose, lips, jawline, hairline, skin tone, and age. Do NOT replace, beautify, age-shift, or alter this person in any way. This is the same individual, not a lookalike." });
+        for (const refUrl of modelRefUrls.slice(0, 3)) {
+          messageContent.push({ type: "image_url", image_url: { url: refUrl } });
+        }
+      }
+
+      // ── Step 2: Main prompt ──
+      let promptText = prompt;
       if (allProductImages && imageViews && primaryRef) {
         const viewLabel = imageViews[primaryRef];
         if (viewLabel) {
-          messageContent[0] = { type: "text", text: `${prompt}\n\nREFERENCE IMAGE VIEW: This reference shows the product from the ${viewLabel} angle. Maintain exact product details, colors, textures, and branding from this reference.` };
+          promptText = `${prompt}\n\nREFERENCE IMAGE VIEW: This reference shows the product from the ${viewLabel} angle. Maintain exact product details, colors, textures, and branding from this reference.`;
         }
       }
-      
+      messageContent.push({ type: "text", text: promptText });
+
+      // ── Step 3: Product reference image ──
       if (primaryRef) {
         messageContent.push({ type: "image_url", image_url: { url: primaryRef } });
-      }
-      // Inject model reference photo for face consistency
-      if (shotType === "model_shot" && modelConfig?.modelReferenceUrl) {
-        messageContent.push({ type: "image_url", image_url: { url: modelConfig.modelReferenceUrl } });
       }
       // Add secondary reference for cross-checking fidelity — skip for apparel flat lays to avoid composite output
       const isApparelFlatLay = isApparel && label === "flat_lay";
