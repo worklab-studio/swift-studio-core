@@ -1697,6 +1697,7 @@ const Studio = () => {
                     activeTemplates={dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES}
                     loadingTemplates={loadingTemplates}
                     onRegenerateTemplates={fetchDynamicTemplates}
+                    customModels={customModels}
                   />
                 )}
                 {activeStep === 3 && (
