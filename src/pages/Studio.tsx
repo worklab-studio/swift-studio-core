@@ -41,6 +41,7 @@ import { toast } from '@/hooks/use-toast';
 import { Check, Package, Upload, X, Loader2, ArrowLeft, Download, Link2, Pencil, RotateCcw, Undo2, Play, Share2, RefreshCw, ImageIcon, Palette, Eye, Sparkles, Camera, Plus, LayoutGrid, Tag, ChevronDown, PenLine, Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 
 /* ── Types ── */
 interface Project {
@@ -2469,10 +2470,9 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full h-8 text-xs justify-between font-normal">
-                    <span className="truncate">{(() => {
+                    {(() => {
                       const bg = modelConfig.background;
-                      if (!bg) return 'Select background';
-                      // Find display label
+                      if (!bg) return <span className="truncate">Select background</span>;
                       const genericMap: Record<string, string> = {
                         'white-sweep': 'White sweep', 'gray-seamless': 'Gray seamless', 'dark-studio': 'Dark studio',
                         'colored-gel': 'Colored gel', 'pastel-gradient': 'Pastel gradient', 'warm-beige': 'Warm beige',
@@ -2482,15 +2482,34 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                         'fog-mist': 'Fog / mist', 'neon-glow': 'Neon glow', 'dark-moody': 'Dark moody',
                         'ethereal-light': 'Ethereal light', 'custom': 'Custom prompt',
                       };
-                      if (genericMap[bg]) return genericMap[bg];
-                      if (bg.startsWith('ai-model-bg-')) {
+                      let displayLabel = bg;
+                      let fullLabel = bg;
+                      if (genericMap[bg]) { displayLabel = genericMap[bg]; fullLabel = genericMap[bg]; }
+                      else if (bg.startsWith('ai-model-bg-')) {
                         const idx = parseInt(bg.replace('ai-model-bg-', ''));
                         const label = productInfo?.suggestedModelShootBackgrounds?.[idx];
-                        return label ? (label.length > 40 ? label.substring(0, 40) + '…' : label) : bg;
+                        fullLabel = label || bg;
+                        displayLabel = label ? (label.length > 40 ? label.substring(0, 40) + '…' : label) : bg;
+                      } else if (bg.startsWith('beauty-bg-') || bg.startsWith('fmcg-bg-')) {
+                        displayLabel = bg.split('-').slice(2).join(' ');
+                        fullLabel = displayLabel;
                       }
-                      if (bg.startsWith('beauty-bg-') || bg.startsWith('fmcg-bg-')) return bg.split('-').slice(2).join(' ');
-                      return bg;
-                    })()}</span>
+                      if (fullLabel.length > 40) {
+                        return (
+                          <TooltipProvider delayDuration={200}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="truncate">{displayLabel}</span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[300px] text-xs whitespace-normal">
+                                {fullLabel}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        );
+                      }
+                      return <span className="truncate">{displayLabel}</span>;
+                    })()}
                     <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
@@ -2504,7 +2523,18 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                         return (
                           <button key={val} onClick={() => setModelConfig(prev => ({ ...prev, background: val }))} className={`w-full text-left px-2 py-1.5 text-xs rounded-md flex items-center gap-2 transition-colors ${modelConfig.background === val ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}>
                             {modelConfig.background === val && <Check className="h-3 w-3 shrink-0" />}
-                            <span className="truncate">{bg.length > 50 ? bg.substring(0, 50) + '…' : bg}</span>
+                            {bg.length > 50 ? (
+                              <TooltipProvider delayDuration={200}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="truncate">{bg.substring(0, 50) + '…'}</span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="right" className="max-w-[300px] text-xs whitespace-normal">{bg}</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              <span className="truncate">{bg}</span>
+                            )}
                           </button>
                         );
                       })}
@@ -2520,7 +2550,18 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                         return (
                           <button key={val} onClick={() => setModelConfig(prev => ({ ...prev, background: val }))} className={`w-full text-left px-2 py-1.5 text-xs rounded-md flex items-center gap-2 transition-colors ${modelConfig.background === val ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}>
                             {modelConfig.background === val && <Check className="h-3 w-3 shrink-0" />}
-                            <span className="truncate">{bg.length > 50 ? bg.substring(0, 50) + '…' : bg}</span>
+                            {bg.length > 50 ? (
+                              <TooltipProvider delayDuration={200}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="truncate">{bg.substring(0, 50) + '…'}</span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="right" className="max-w-[300px] text-xs whitespace-normal">{bg}</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              <span className="truncate">{bg}</span>
+                            )}
                           </button>
                         );
                       })}
@@ -2534,7 +2575,18 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                         return (
                           <button key={val} onClick={() => setModelConfig(prev => ({ ...prev, background: val }))} className={`w-full text-left px-2 py-1.5 text-xs rounded-md flex items-center gap-2 transition-colors ${modelConfig.background === val ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted'}`}>
                             {modelConfig.background === val && <Check className="h-3 w-3 shrink-0" />}
-                            <span className="truncate">{bg.length > 50 ? bg.substring(0, 50) + '…' : bg}</span>
+                            {bg.length > 50 ? (
+                              <TooltipProvider delayDuration={200}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="truncate">{bg.substring(0, 50) + '…'}</span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="right" className="max-w-[300px] text-xs whitespace-normal">{bg}</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              <span className="truncate">{bg}</span>
+                            )}
                           </button>
                         );
                       })}
