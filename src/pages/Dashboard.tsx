@@ -125,6 +125,7 @@ const Dashboard = () => {
         projects: projectCount ?? 0,
         images: imageCount ?? 0,
         videos: videoCount ?? 0,
+        models: modelCount ?? 0,
       });
 
       setProjects(recentProjects ?? []);
