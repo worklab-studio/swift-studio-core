@@ -1768,6 +1768,7 @@ const Studio = () => {
                     activeTemplates={dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES}
                     projectCategory={project?.category || ''}
                     categoryPresetImages={categoryPresetImages}
+                    customModels={customModels}
                   />
                 )}
                 {activeStep === 4 && (
@@ -3706,7 +3707,7 @@ function AnimatedConnector() {
 }
 
 /* ── Step 3 Viewport ── */
-function Step3Viewport({ selectedPreset, selectedPresetData, referenceImage, productImages, shootType, modelConfig, selectedModelData, modelImages, selectedTemplate, activeTemplates, projectCategory, categoryPresetImages }: {
+function Step3Viewport({ selectedPreset, selectedPresetData, referenceImage, productImages, shootType, modelConfig, selectedModelData, modelImages, selectedTemplate, activeTemplates, projectCategory, categoryPresetImages, customModels }: {
   selectedPreset: string | null;
   selectedPresetData: typeof STYLE_PRESETS[0] | undefined;
   referenceImage: string | null;
@@ -3719,6 +3720,7 @@ function Step3Viewport({ selectedPreset, selectedPresetData, referenceImage, pro
   activeTemplates: ProductTemplate[];
   projectCategory: string;
   categoryPresetImages: Record<string, Record<string, string>>;
+  customModels: Array<{ id: string; name: string; gender: string; ethnicity: string; bodyType: string; portrait_url: string | null; reference_images: string[] }>;
 }) {
   const tpl = selectedTemplate ? activeTemplates.find(t => t.id === selectedTemplate) : null;
   const presetImg = selectedPresetData ? (() => {
