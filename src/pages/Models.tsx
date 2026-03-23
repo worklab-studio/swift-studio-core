@@ -653,6 +653,80 @@ const Models = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Model Detail Dialog */}
+      <Dialog open={!!selectedModel} onOpenChange={open => !open && setSelectedModel(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          {selectedModel && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{selectedModel.name}</DialogTitle>
+                <DialogDescription>Model details and reference images</DialogDescription>
+              </DialogHeader>
+
+              {/* Main portrait */}
+              <div className="flex justify-center">
+                <div className="w-48 h-64 rounded-xl overflow-hidden bg-muted">
+                  {(selectedModel.portrait_url || selectedModel.reference_images?.[0]) ? (
+                    <img
+                      src={selectedModel.portrait_url || selectedModel.reference_images[0]}
+                      alt={selectedModel.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <Users className="h-10 w-10 text-muted-foreground/40" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Attributes */}
+              <div className="flex flex-wrap gap-1.5">
+                <Badge variant="secondary">{selectedModel.gender}</Badge>
+                {selectedModel.ethnicity && <Badge variant="outline">{selectedModel.ethnicity}</Badge>}
+                <Badge variant="outline">{selectedModel.body_type}</Badge>
+                {selectedModel.age_range && <Badge variant="outline">{selectedModel.age_range}</Badge>}
+                {selectedModel.skin_tone && <Badge variant="outline">{selectedModel.skin_tone}</Badge>}
+              </div>
+              {selectedModel.facial_features && (
+                <p className="text-xs text-muted-foreground">{selectedModel.facial_features}</p>
+              )}
+
+              {/* Uploaded References */}
+              {selectedModel.reference_images?.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">Uploaded References</h4>
+                  <div className="grid grid-cols-4 gap-2">
+                    {selectedModel.reference_images.map((url, idx) => (
+                      <img key={idx} src={url} alt={`Reference ${idx + 1}`} className="rounded-lg aspect-square object-cover bg-muted border" />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* AI-Generated Angles */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">AI-Generated Angles</h4>
+                {generatingRefModelId === selectedModel.id ? (
+                  <div className="flex items-center gap-2 py-4 justify-center text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Generating support angles...
+                  </div>
+                ) : selectedModel.support_reference_images?.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {selectedModel.support_reference_images.map((url, idx) => (
+                      <img key={idx} src={url} alt={`AI Angle ${idx + 1}`} className="rounded-lg aspect-square object-cover bg-muted border" />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground py-2">No AI-generated angles yet.</p>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
