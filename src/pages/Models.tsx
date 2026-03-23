@@ -814,8 +814,8 @@ const ModelCard = ({ model, portraitUrl }: { model: BuiltInModel; portraitUrl?: 
   </Card>
 );
 
-const CustomModelCard = ({ model, onDelete }: { model: CustomModel; onDelete: () => void }) => (
-  <Card className="group overflow-hidden border hover:shadow-md transition-shadow relative">
+const CustomModelCard = ({ model, onDelete, isGenerating, onClick }: { model: CustomModel; onDelete: () => void; isGenerating?: boolean; onClick?: () => void }) => (
+  <Card className="group overflow-hidden border hover:shadow-md transition-shadow relative cursor-pointer" onClick={onClick}>
     <button
       onClick={e => { e.stopPropagation(); onDelete(); }}
       className="absolute top-2 right-2 z-10 rounded-full bg-background/80 p-1.5 opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground transition-all"
@@ -830,6 +830,12 @@ const CustomModelCard = ({ model, onDelete }: { model: CustomModel; onDelete: ()
       ) : (
         <div className="flex h-full items-center justify-center">
           <Users className="h-8 w-8 text-muted-foreground/40" />
+        </div>
+      )}
+      {isGenerating && (
+        <div className="absolute inset-x-0 bottom-0 bg-background/90 backdrop-blur-sm px-2 py-1.5 flex items-center gap-1.5">
+          <Loader2 className="h-3 w-3 animate-spin text-primary" />
+          <span className="text-[10px] font-medium text-primary">Generating angles...</span>
         </div>
       )}
     </div>
