@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
@@ -8,12 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, Upload, Loader2, Trash2, Users, Search, Filter } from 'lucide-react';
+import { Plus, Upload, Loader2, Trash2, Users, Search, Sparkles, PenTool, Camera } from 'lucide-react';
 import heic2any from 'heic2any';
 
 /* ── Built-in model data (same 40 as Studio) ── */
@@ -77,9 +76,19 @@ interface CustomModel {
   created_at: string;
 }
 
+type CreateMode = null | 'choice' | 'scratch' | 'ambassador' | 'ambassador-review';
+
 const GENDER_OPTIONS = ['all', 'female', 'male'];
 const ETHNICITY_OPTIONS = ['all', 'South Asian', 'Black', 'East Asian', 'Caucasian', 'Latina', 'Middle Eastern', 'Mixed', 'Southeast Asian'];
 const BODY_TYPE_OPTIONS = ['all', 'slim', 'athletic', 'average', 'curvy', 'plus size'];
+
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
 const Models = () => {
   const { user } = useAuth();
@@ -93,15 +102,18 @@ const Models = () => {
   const [ethnicityFilter, setEthnicityFilter] = useState('all');
   const [bodyTypeFilter, setBodyTypeFilter] = useState('all');
 
-  // Create dialog state
-  const [showCreate, setShowCreate] = useState(false);
+  // Create flow state
+  const [createMode, setCreateMode] = useState<CreateMode>(null);
   const [creating, setCreating] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const [newModel, setNewModel] = useState({
     name: '', gender: 'female', ethnicity: '', bodyType: 'average',
     skinTone: '', ageRange: '', facialFeatures: '',
   });
-  const [refFiles, setRefFiles] = useState<File[]>([]);
-  const [refPreviews, setRefPreviews] = useState<string[]>([]);
+
+  // Ambassador upload state
+  const [ambassadorFiles, setAmbassadorFiles] = useState<File[]>([]);
+  const [ambassadorPreviews, setAmbassadorPreviews] = useState<string[]>([]);
 
   // Delete dialog
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -144,8 +156,16 @@ const Models = () => {
     return true;
   });
 
-  // Handle reference file selection
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const resetCreateState = () => {
+    setCreateMode(null);
+    setNewModel({ name: '', gender: 'female', ethnicity: '', bodyType: 'average', skinTone: '', ageRange: '', facialFeatures: '' });
+    ambassadorPreviews.forEach(p => URL.revokeObjectURL(p));
+    setAmbassadorFiles([]);
+    setAmbassadorPreviews([]);
+  };
+
+  // Handle ambassador file selection
+  const handleAmbassadorFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const processedFiles: File[] = [];
     const previews: string[] = [];
@@ -162,41 +182,62 @@ const Models = () => {
       previews.push(URL.createObjectURL(processedFile));
     }
 
-    setRefFiles(prev => [...prev, ...processedFiles]);
-    setRefPreviews(prev => [...prev, ...previews]);
+    setAmbassadorFiles(prev => [...prev, ...processedFiles]);
+    setAmbassadorPreviews(prev => [...prev, ...previews]);
   };
 
-  const removeRefFile = (idx: number) => {
-    URL.revokeObjectURL(refPreviews[idx]);
-    setRefFiles(prev => prev.filter((_, i) => i !== idx));
-    setRefPreviews(prev => prev.filter((_, i) => i !== idx));
+  const removeAmbassadorFile = (idx: number) => {
+    URL.revokeObjectURL(ambassadorPreviews[idx]);
+    setAmbassadorFiles(prev => prev.filter((_, i) => i !== idx));
+    setAmbassadorPreviews(prev => prev.filter((_, i) => i !== idx));
   };
 
-  // Create custom model
-  const handleCreate = async () => {
-    if (!user || !newModel.name.trim()) {
-      toast({ title: 'Name is required', variant: 'destructive' });
+  // Analyze ambassador photos with AI
+  const handleAnalyzePhotos = async () => {
+    if (ambassadorFiles.length === 0) {
+      toast({ title: 'Upload at least one photo', variant: 'destructive' });
       return;
     }
-    if (refFiles.length === 0) {
-      toast({ title: 'Upload at least one reference photo', variant: 'destructive' });
+
+    setAnalyzing(true);
+    try {
+      const base64 = await fileToBase64(ambassadorFiles[0]);
+
+      const { data, error } = await supabase.functions.invoke('analyze-model-photo', {
+        body: { imageBase64: base64 },
+      });
+
+      if (error) throw new Error(error.message || 'Analysis failed');
+
+      setNewModel({
+        name: data.suggestedName || '',
+        gender: data.gender || 'female',
+        ethnicity: data.ethnicity || '',
+        bodyType: data.bodyType || 'average',
+        skinTone: data.skinTone || '',
+        ageRange: data.ageRange || '',
+        facialFeatures: data.facialFeatures || '',
+      });
+
+      setCreateMode('ambassador-review');
+      toast({ title: 'Analysis complete', description: 'Review and edit the detected attributes below.' });
+    } catch (err: any) {
+      toast({ title: 'Analysis failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  // Create from scratch (no reference photos)
+  const handleCreateFromScratch = async () => {
+    if (!user || !newModel.name.trim()) {
+      toast({ title: 'Name is required', variant: 'destructive' });
       return;
     }
 
     setCreating(true);
     try {
-      // 1. Upload reference images
-      const imageUrls: string[] = [];
-      for (const file of refFiles) {
-        const ext = file.name.split('.').pop() || 'jpg';
-        const path = `models/${user.id}/${crypto.randomUUID()}.${ext}`;
-        const { error } = await supabase.storage.from('originals').upload(path, file, { contentType: file.type });
-        if (error) throw error;
-        const { data: urlData } = supabase.storage.from('originals').getPublicUrl(path);
-        imageUrls.push(urlData.publicUrl);
-      }
-
-      // 2. Generate portrait
+      // Generate portrait from description
       let portraitUrl: string | null = null;
       try {
         const { data: portraitData, error: portraitErr } = await supabase.functions.invoke('generate-model-portraits', {
@@ -213,14 +254,60 @@ const Models = () => {
             },
           },
         });
-        if (!portraitErr && portraitData?.imageUrl) {
-          portraitUrl = portraitData.imageUrl;
-        }
-      } catch {
-        // Portrait generation is optional, continue without it
+        if (!portraitErr && portraitData?.imageUrl) portraitUrl = portraitData.imageUrl;
+      } catch { /* optional */ }
+
+      const { error: insertErr } = await supabase.from('custom_models').insert({
+        user_id: user.id,
+        name: newModel.name,
+        gender: newModel.gender,
+        ethnicity: newModel.ethnicity,
+        body_type: newModel.bodyType,
+        skin_tone: newModel.skinTone,
+        age_range: newModel.ageRange,
+        facial_features: newModel.facialFeatures,
+        portrait_url: portraitUrl,
+        reference_images: [],
+      } as any);
+
+      if (insertErr) throw insertErr;
+
+      const { data: refreshed } = await supabase
+        .from('custom_models').select('*').order('created_at', { ascending: false });
+      if (refreshed) setCustomModels(refreshed as unknown as CustomModel[]);
+
+      resetCreateState();
+      toast({ title: 'Model created', description: `${newModel.name} has been added.` });
+    } catch (err: any) {
+      toast({ title: 'Failed to create model', description: err.message, variant: 'destructive' });
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  // Create from ambassador (with uploaded photos)
+  const handleCreateFromAmbassador = async () => {
+    if (!user || !newModel.name.trim()) {
+      toast({ title: 'Name is required', variant: 'destructive' });
+      return;
+    }
+
+    setCreating(true);
+    try {
+      // Upload reference images
+      const imageUrls: string[] = [];
+      for (const file of ambassadorFiles) {
+        const ext = file.name.split('.').pop() || 'jpg';
+        const path = `models/${user.id}/${crypto.randomUUID()}.${ext}`;
+        const { error } = await supabase.storage.from('originals').upload(path, file, { contentType: file.type });
+        if (error) throw error;
+        const { data: urlData } = supabase.storage.from('originals').getPublicUrl(path);
+        imageUrls.push(urlData.publicUrl);
       }
 
-      // 3. Save to database
+      // Use the first uploaded photo as the portrait
+      const portraitUrl = imageUrls[0] || null;
+
       const { error: insertErr } = await supabase.from('custom_models').insert({
         user_id: user.id,
         name: newModel.name,
@@ -236,20 +323,12 @@ const Models = () => {
 
       if (insertErr) throw insertErr;
 
-      // 4. Refresh list
       const { data: refreshed } = await supabase
-        .from('custom_models')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from('custom_models').select('*').order('created_at', { ascending: false });
       if (refreshed) setCustomModels(refreshed as unknown as CustomModel[]);
 
-      // Reset
-      setShowCreate(false);
-      setNewModel({ name: '', gender: 'female', ethnicity: '', bodyType: 'average', skinTone: '', ageRange: '', facialFeatures: '' });
-      refPreviews.forEach(p => URL.revokeObjectURL(p));
-      setRefFiles([]);
-      setRefPreviews([]);
-      toast({ title: 'Model created', description: `${newModel.name} has been added to your models.` });
+      resetCreateState();
+      toast({ title: 'Model created', description: `${newModel.name} has been added.` });
     } catch (err: any) {
       toast({ title: 'Failed to create model', description: err.message, variant: 'destructive' });
     } finally {
@@ -274,6 +353,61 @@ const Models = () => {
     }
   };
 
+  /* ── Shared form fields component ── */
+  const ModelFormFields = () => (
+    <div className="space-y-4">
+      <div className="space-y-1.5">
+        <Label>Name *</Label>
+        <Input value={newModel.name} onChange={e => setNewModel(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Sarah" />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label>Gender</Label>
+          <Select value={newModel.gender} onValueChange={v => setNewModel(p => ({ ...p, gender: v }))}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="female">Female</SelectItem>
+              <SelectItem value="male">Male</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label>Body Type</Label>
+          <Select value={newModel.bodyType} onValueChange={v => setNewModel(p => ({ ...p, bodyType: v }))}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="slim">Slim</SelectItem>
+              <SelectItem value="athletic">Athletic</SelectItem>
+              <SelectItem value="average">Average</SelectItem>
+              <SelectItem value="curvy">Curvy</SelectItem>
+              <SelectItem value="plus size">Plus Size</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label>Ethnicity</Label>
+          <Input value={newModel.ethnicity} onChange={e => setNewModel(p => ({ ...p, ethnicity: e.target.value }))} placeholder="e.g. South Asian" />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Age Range</Label>
+          <Input value={newModel.ageRange} onChange={e => setNewModel(p => ({ ...p, ageRange: e.target.value }))} placeholder="e.g. 24-28" />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label>Skin Tone</Label>
+          <Input value={newModel.skinTone} onChange={e => setNewModel(p => ({ ...p, skinTone: e.target.value }))} placeholder="e.g. warm brown" />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Facial Features</Label>
+          <Input value={newModel.facialFeatures} onChange={e => setNewModel(p => ({ ...p, facialFeatures: e.target.value }))} placeholder="e.g. high cheekbones" />
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex flex-col gap-6 p-6 pb-24 sm:pb-6">
       {/* Header */}
@@ -282,7 +416,7 @@ const Models = () => {
           <h1 className="text-2xl font-semibold tracking-tight">Models</h1>
           <p className="text-sm text-muted-foreground">Browse the AI model library or create your own custom models.</p>
         </div>
-        <Button onClick={() => setShowCreate(true)} className="mt-2 sm:mt-0">
+        <Button onClick={() => setCreateMode('choice')} className="mt-2 sm:mt-0">
           <Plus className="h-4 w-4 mr-1" /> Create Model
         </Button>
       </div>
@@ -370,7 +504,7 @@ const Models = () => {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
               {/* Create card */}
               <button
-                onClick={() => setShowCreate(true)}
+                onClick={() => setCreateMode('choice')}
                 className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-muted-foreground/20 aspect-[3/4] hover:border-primary/40 hover:bg-accent/50 transition-colors"
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
@@ -393,91 +527,122 @@ const Models = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Create Model Dialog */}
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+      {/* ── Choice Dialog ── */}
+      <Dialog open={createMode === 'choice'} onOpenChange={open => !open && resetCreateState()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create Model</DialogTitle>
+            <DialogDescription>Choose how you'd like to create your model.</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-4">
+            <button
+              onClick={() => setCreateMode('scratch')}
+              className="flex flex-col items-center gap-3 rounded-xl border-2 border-muted-foreground/15 p-6 hover:border-primary/50 hover:bg-accent/50 transition-colors text-center"
+            >
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                <PenTool className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">Create from Scratch</p>
+                <p className="text-xs text-muted-foreground mt-1">Describe attributes manually and AI generates a portrait</p>
+              </div>
+            </button>
+            <button
+              onClick={() => setCreateMode('ambassador')}
+              className="flex flex-col items-center gap-3 rounded-xl border-2 border-muted-foreground/15 p-6 hover:border-primary/50 hover:bg-accent/50 transition-colors text-center"
+            >
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                <Camera className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">Brand Ambassador</p>
+                <p className="text-xs text-muted-foreground mt-1">Upload photos and AI auto-detects attributes</p>
+              </div>
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Create from Scratch Dialog ── */}
+      <Dialog open={createMode === 'scratch'} onOpenChange={open => !open && resetCreateState()}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Create Custom Model</DialogTitle>
+            <DialogTitle>Create from Scratch</DialogTitle>
+            <DialogDescription>Describe the model's attributes. AI will generate a matching portrait.</DialogDescription>
+          </DialogHeader>
+          <ModelFormFields />
+          <DialogFooter>
+            <Button variant="outline" onClick={resetCreateState} disabled={creating}>Cancel</Button>
+            <Button onClick={handleCreateFromScratch} disabled={creating}>
+              {creating && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+              {creating ? 'Creating...' : 'Create Model'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Brand Ambassador Upload Dialog ── */}
+      <Dialog open={createMode === 'ambassador'} onOpenChange={open => !open && resetCreateState()}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Upload Brand Ambassador</DialogTitle>
+            <DialogDescription>Upload 1 or more photos. AI will analyze and auto-detect attributes.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <Label>Name *</Label>
-              <Input value={newModel.name} onChange={e => setNewModel(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Sarah" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Gender</Label>
-                <Select value={newModel.gender} onValueChange={v => setNewModel(p => ({ ...p, gender: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="male">Male</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Body Type</Label>
-                <Select value={newModel.bodyType} onValueChange={v => setNewModel(p => ({ ...p, bodyType: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="slim">Slim</SelectItem>
-                    <SelectItem value="athletic">Athletic</SelectItem>
-                    <SelectItem value="average">Average</SelectItem>
-                    <SelectItem value="curvy">Curvy</SelectItem>
-                    <SelectItem value="plus size">Plus Size</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Ethnicity</Label>
-                <Input value={newModel.ethnicity} onChange={e => setNewModel(p => ({ ...p, ethnicity: e.target.value }))} placeholder="e.g. South Asian" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Age Range</Label>
-                <Input value={newModel.ageRange} onChange={e => setNewModel(p => ({ ...p, ageRange: e.target.value }))} placeholder="e.g. 24-28" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Skin Tone</Label>
-                <Input value={newModel.skinTone} onChange={e => setNewModel(p => ({ ...p, skinTone: e.target.value }))} placeholder="e.g. warm brown" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Facial Features</Label>
-                <Input value={newModel.facialFeatures} onChange={e => setNewModel(p => ({ ...p, facialFeatures: e.target.value }))} placeholder="e.g. high cheekbones" />
-              </div>
-            </div>
-
-            {/* Reference Photos */}
-            <div className="space-y-1.5">
-              <Label>Reference Photos *</Label>
-              <p className="text-xs text-muted-foreground">Upload 1 or more angled shots of the model for best results.</p>
-              <div className="flex flex-wrap gap-3 mt-2">
-                {refPreviews.map((url, i) => (
-                  <div key={i} className="relative h-20 w-20 rounded-lg overflow-hidden border">
-                    <img src={url} alt="" className="h-full w-full object-cover" />
-                    <button
-                      onClick={() => removeRefFile(i)}
-                      className="absolute top-0.5 right-0.5 rounded-full bg-background/80 p-0.5 hover:bg-destructive hover:text-destructive-foreground transition-colors"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-                <label className="flex h-20 w-20 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/20 hover:border-primary/40 transition-colors">
-                  <Upload className="h-5 w-5 text-muted-foreground" />
-                  <input type="file" className="hidden" accept="image/*,.heic,.heif" multiple onChange={handleFileSelect} />
-                </label>
-              </div>
+            <div className="flex flex-wrap gap-3">
+              {ambassadorPreviews.map((url, i) => (
+                <div key={i} className="relative h-24 w-24 rounded-lg overflow-hidden border">
+                  <img src={url} alt="" className="h-full w-full object-cover" />
+                  <button
+                    onClick={() => removeAmbassadorFile(i)}
+                    className="absolute top-0.5 right-0.5 rounded-full bg-background/80 p-0.5 hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+              <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-muted-foreground/20 hover:border-primary/40 transition-colors">
+                <Upload className="h-5 w-5 text-muted-foreground" />
+                <span className="text-[10px] text-muted-foreground">Add Photo</span>
+                <input type="file" className="hidden" accept="image/*,.heic,.heif" multiple onChange={handleAmbassadorFileSelect} />
+              </label>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreate(false)} disabled={creating}>Cancel</Button>
-            <Button onClick={handleCreate} disabled={creating}>
+            <Button variant="outline" onClick={resetCreateState} disabled={analyzing}>Cancel</Button>
+            <Button onClick={handleAnalyzePhotos} disabled={analyzing || ambassadorFiles.length === 0}>
+              {analyzing && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+              {analyzing ? 'Analyzing...' : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-1" /> Analyze with AI
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Ambassador Review Dialog ── */}
+      <Dialog open={createMode === 'ambassador-review'} onOpenChange={open => !open && resetCreateState()}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Review & Edit</DialogTitle>
+            <DialogDescription>AI detected these attributes. Edit anything before saving.</DialogDescription>
+          </DialogHeader>
+          {/* Show uploaded photo thumbnails */}
+          {ambassadorPreviews.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {ambassadorPreviews.map((url, i) => (
+                <img key={i} src={url} alt="" className="h-16 w-16 rounded-lg object-cover border flex-shrink-0" />
+              ))}
+            </div>
+          )}
+          <ModelFormFields />
+          <DialogFooter>
+            <Button variant="outline" onClick={resetCreateState} disabled={creating}>Cancel</Button>
+            <Button onClick={handleCreateFromAmbassador} disabled={creating}>
               {creating && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-              {creating ? 'Creating...' : 'Create Model'}
+              {creating ? 'Saving...' : 'Save Model'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.generate-preset-images]
 verify_jwt = false
+
+[functions.analyze-model-photo]
+verify_jwt = false
