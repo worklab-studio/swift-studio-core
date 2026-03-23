@@ -618,6 +618,65 @@ const Models = () => {
 
 /* ── Sub-components ── */
 
+type ModelFormState = {
+  name: string; gender: string; ethnicity: string; bodyType: string;
+  skinTone: string; ageRange: string; facialFeatures: string;
+};
+
+const ModelFormFields = ({ newModel, setNewModel }: { newModel: ModelFormState; setNewModel: React.Dispatch<React.SetStateAction<ModelFormState>> }) => (
+  <div className="space-y-4">
+    <div className="space-y-1.5">
+      <Label>Name *</Label>
+      <Input value={newModel.name} onChange={e => setNewModel(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Sarah" />
+    </div>
+    <div className="grid grid-cols-2 gap-3">
+      <div className="space-y-1.5">
+        <Label>Gender</Label>
+        <Select value={newModel.gender} onValueChange={v => setNewModel(p => ({ ...p, gender: v }))}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="female">Female</SelectItem>
+            <SelectItem value="male">Male</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1.5">
+        <Label>Body Type</Label>
+        <Select value={newModel.bodyType} onValueChange={v => setNewModel(p => ({ ...p, bodyType: v }))}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="slim">Slim</SelectItem>
+            <SelectItem value="athletic">Athletic</SelectItem>
+            <SelectItem value="average">Average</SelectItem>
+            <SelectItem value="curvy">Curvy</SelectItem>
+            <SelectItem value="plus size">Plus Size</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+    <div className="grid grid-cols-2 gap-3">
+      <div className="space-y-1.5">
+        <Label>Ethnicity</Label>
+        <Input value={newModel.ethnicity} onChange={e => setNewModel(p => ({ ...p, ethnicity: e.target.value }))} placeholder="e.g. South Asian" />
+      </div>
+      <div className="space-y-1.5">
+        <Label>Age Range</Label>
+        <Input value={newModel.ageRange} onChange={e => setNewModel(p => ({ ...p, ageRange: e.target.value }))} placeholder="e.g. 24-28" />
+      </div>
+    </div>
+    <div className="grid grid-cols-2 gap-3">
+      <div className="space-y-1.5">
+        <Label>Skin Tone</Label>
+        <Input value={newModel.skinTone} onChange={e => setNewModel(p => ({ ...p, skinTone: e.target.value }))} placeholder="e.g. warm brown" />
+      </div>
+      <div className="space-y-1.5">
+        <Label>Facial Features</Label>
+        <Input value={newModel.facialFeatures} onChange={e => setNewModel(p => ({ ...p, facialFeatures: e.target.value }))} placeholder="e.g. high cheekbones" />
+      </div>
+    </div>
+  </div>
+);
+
 const ModelCard = ({ model, portraitUrl }: { model: BuiltInModel; portraitUrl?: string }) => (
   <Card className="group overflow-hidden border hover:shadow-md transition-shadow">
     <div className="aspect-[3/4] bg-muted relative overflow-hidden">
