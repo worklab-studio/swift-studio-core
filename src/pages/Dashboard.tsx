@@ -207,11 +207,8 @@ const Dashboard = () => {
             {!loading && (
               <Progress
                 value={creditsPct}
-                className="h-1.5 [&>div]:transition-all"
-                style={{ '--progress-color': 'var(--primary)' } as React.CSSProperties}
-              >
-                <div className={`h-full ${creditColor} rounded-full transition-all`} style={{ width: `${creditsPct}%` }} />
-              </Progress>
+                className={`h-1.5 [&>div]:${creditColor}`}
+              />
             )}
           </CardContent>
         </Card>
