@@ -3834,10 +3834,13 @@ function Step3Viewport({ selectedPreset, selectedPresetData, referenceImage, pro
                   const cm = modelConfig.selectedModel ? customModels.find(m => m.id === modelConfig.selectedModel) : null;
                   const isBuiltIn = modelConfig.selectedModel && PLACEHOLDER_MODELS.some(m => m.id === modelConfig.selectedModel);
                   if (cm && (!cm.reference_images || cm.reference_images.length === 0)) {
-                    return <p className="text-[10px] text-amber-500 mt-1">⚠ Synthetic portrait only — upload reference photos for better face accuracy</p>;
+                    return <p className="text-[10px] text-warning mt-1">⚠ Synthetic portrait only — upload reference photos for better face accuracy</p>;
                   }
                   if (isBuiltIn) {
-                    return <p className="text-[10px] text-amber-500 mt-1">⚠ AI-generated portrait — face will be approximate</p>;
+                    return <p className="text-[10px] text-warning mt-1">⚠ AI-generated portrait — face will be approximate</p>;
+                  }
+                  if (cm && cm.reference_images?.length > 0 && (cm as any).body_visibility === 'face-only') {
+                    return <p className="text-[10px] text-muted-foreground mt-1">💡 Face lock is strong. Add a waist-up or full-body photo for even better body accuracy.</p>;
                   }
                   return null;
                 })()}
