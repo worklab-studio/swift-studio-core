@@ -479,10 +479,13 @@ const Studio = () => {
   const [portraitProgress, setPortraitProgress] = useState(0);
   const [portraitTotal, setPortraitTotal] = useState(0);
 
+  // Custom models from database
+  const [customModels, setCustomModels] = useState<Array<{ id: string; name: string; gender: string; ethnicity: string; bodyType: string; skinTone: string; ageRange: string; facialFeatures: string; portrait_url: string | null; reference_images: string[] }>>([]);
+
   const referenceInputRef = useRef<HTMLInputElement>(null);
   const modelUploadRef = useRef<HTMLInputElement>(null);
 
-  /* ── Load persisted model portraits from DB ── */
+  /* ── Load persisted model portraits + custom models from DB ── */
   useEffect(() => {
     const loadPortraits = async () => {
       const { data, error } = await supabase
@@ -498,7 +501,19 @@ const Studio = () => {
         setModelImages(map);
       }
     };
+    const loadCustomModels = async () => {
+      const { data } = await supabase.from('custom_models').select('*').order('created_at', { ascending: false });
+      if (data) {
+        setCustomModels(data.map((d: any) => ({
+          id: d.id, name: d.name, gender: d.gender, ethnicity: d.ethnicity,
+          bodyType: d.body_type, skinTone: d.skin_tone, ageRange: d.age_range,
+          facialFeatures: d.facial_features, portrait_url: d.portrait_url,
+          reference_images: d.reference_images || [],
+        })));
+      }
+    };
     loadPortraits();
+    loadCustomModels();
   }, []);
 
   /* ── Load category-specific preset images from DB ── */
