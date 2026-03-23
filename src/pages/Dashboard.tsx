@@ -115,6 +115,10 @@ const Dashboard = () => {
           .from('assets')
           .select('*', { count: 'exact', head: true })
           .eq('asset_type', 'video'),
+        supabase
+          .from('custom_models')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id),
       ]);
 
       setStats({
