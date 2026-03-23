@@ -205,10 +205,12 @@ const Dashboard = () => {
               </div>
             </div>
             {!loading && (
-              <Progress
-                value={creditsPct}
-                className={`h-1.5 [&>div]:${creditColor}`}
-              />
+              <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${creditsPct}%`, backgroundColor: creditColor }}
+                />
+              </div>
             )}
           </CardContent>
         </Card>
