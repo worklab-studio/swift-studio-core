@@ -519,7 +519,7 @@ const Models = () => {
             <DialogTitle>Create from Scratch</DialogTitle>
             <DialogDescription>Describe the model's attributes. AI will generate a matching portrait.</DialogDescription>
           </DialogHeader>
-          <ModelFormFields />
+          <ModelFormFields newModel={newModel} setNewModel={setNewModel} />
           <DialogFooter>
             <Button variant="outline" onClick={resetCreateState} disabled={creating}>Cancel</Button>
             <Button onClick={handleCreateFromScratch} disabled={creating}>
