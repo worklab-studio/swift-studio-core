@@ -85,6 +85,51 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_models: {
+        Row: {
+          age_range: string | null
+          body_type: string
+          created_at: string
+          ethnicity: string
+          facial_features: string | null
+          gender: string
+          id: string
+          name: string
+          portrait_url: string | null
+          reference_images: string[] | null
+          skin_tone: string | null
+          user_id: string
+        }
+        Insert: {
+          age_range?: string | null
+          body_type?: string
+          created_at?: string
+          ethnicity?: string
+          facial_features?: string | null
+          gender?: string
+          id?: string
+          name: string
+          portrait_url?: string | null
+          reference_images?: string[] | null
+          skin_tone?: string | null
+          user_id: string
+        }
+        Update: {
+          age_range?: string | null
+          body_type?: string
+          created_at?: string
+          ethnicity?: string
+          facial_features?: string | null
+          gender?: string
+          id?: string
+          name?: string
+          portrait_url?: string | null
+          reference_images?: string[] | null
+          skin_tone?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       model_portraits: {
         Row: {
           created_at: string

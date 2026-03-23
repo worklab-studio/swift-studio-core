@@ -479,10 +479,13 @@ const Studio = () => {
   const [portraitProgress, setPortraitProgress] = useState(0);
   const [portraitTotal, setPortraitTotal] = useState(0);
 
+  // Custom models from database
+  const [customModels, setCustomModels] = useState<Array<{ id: string; name: string; gender: string; ethnicity: string; bodyType: string; skinTone: string; ageRange: string; facialFeatures: string; portrait_url: string | null; reference_images: string[] }>>([]);
+
   const referenceInputRef = useRef<HTMLInputElement>(null);
   const modelUploadRef = useRef<HTMLInputElement>(null);
 
-  /* ── Load persisted model portraits from DB ── */
+  /* ── Load persisted model portraits + custom models from DB ── */
   useEffect(() => {
     const loadPortraits = async () => {
       const { data, error } = await supabase
@@ -498,7 +501,29 @@ const Studio = () => {
         setModelImages(map);
       }
     };
+    const loadCustomModels = async () => {
+      const { data } = await supabase.from('custom_models').select('*').order('created_at', { ascending: false });
+      if (data) {
+        const models = data.map((d: any) => ({
+          id: d.id, name: d.name, gender: d.gender, ethnicity: d.ethnicity,
+          bodyType: d.body_type, skinTone: d.skin_tone, ageRange: d.age_range,
+          facialFeatures: d.facial_features, portrait_url: d.portrait_url,
+          reference_images: d.reference_images || [],
+        }));
+        setCustomModels(models);
+        // Also add custom model portraits to modelImages map for preview
+        setModelImages(prev => {
+          const updated = { ...prev };
+          models.forEach(m => {
+            const imgUrl = m.portrait_url || m.reference_images?.[0];
+            if (imgUrl) updated[m.id] = imgUrl;
+          });
+          return updated;
+        });
+      }
+    };
     loadPortraits();
+    loadCustomModels();
   }, []);
 
   /* ── Load category-specific preset images from DB ── */
@@ -1382,8 +1407,14 @@ const Studio = () => {
     );
   }
 
-  // Resolve selected model for viewport preview
-  const selectedModelData = PLACEHOLDER_MODELS.find(m => m.id === modelConfig.selectedModel);
+  // Resolve selected model for viewport preview (check both built-in and custom)
+  const selectedModelData = PLACEHOLDER_MODELS.find(m => m.id === modelConfig.selectedModel)
+    || (customModels.find(m => m.id === modelConfig.selectedModel)
+      ? (() => {
+          const cm = customModels.find(m => m.id === modelConfig.selectedModel)!;
+          return { id: cm.id, name: cm.name, attrs: `${cm.gender === 'female' ? 'F' : 'M'} · ${cm.ethnicity || 'Custom'} · ${cm.bodyType}`, color: 'hsl(355 82% 56% / 0.2)', gender: cm.gender, ethnicity: cm.ethnicity, bodyType: cm.bodyType, skinTone: cm.skinTone, ageRange: cm.ageRange, facialFeatures: cm.facialFeatures };
+        })()
+      : undefined);
   const selectedPresetData = STYLE_PRESETS.find(p => p.id === selectedPreset);
 
   return (
@@ -1676,6 +1707,7 @@ const Studio = () => {
                     activeTemplates={dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES}
                     loadingTemplates={loadingTemplates}
                     onRegenerateTemplates={fetchDynamicTemplates}
+                    customModels={customModels}
                   />
                 )}
                 {activeStep === 3 && (
@@ -3333,7 +3365,7 @@ function Step1Viewport({ productImages, productInfo, setProductInfo, analyzingPr
 }
 
 /* ── Step 2 Viewport ── */
-function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelData, selectedTemplate, setSelectedTemplate, templateCategory, modelImages, generatingPortraits, portraitProgress, portraitTotal, onGeneratePortraits, activeTemplates, loadingTemplates, onRegenerateTemplates }: {
+function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelData, selectedTemplate, setSelectedTemplate, templateCategory, modelImages, generatingPortraits, portraitProgress, portraitTotal, onGeneratePortraits, activeTemplates, loadingTemplates, onRegenerateTemplates, customModels }: {
   shootType: 'product' | 'model' | null;
   modelConfig: ModelConfig;
   setModelConfig: React.Dispatch<React.SetStateAction<ModelConfig>>;
@@ -3349,6 +3381,7 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
   activeTemplates: ProductTemplate[];
   loadingTemplates: boolean;
   onRegenerateTemplates: () => void;
+  customModels: Array<{ id: string; name: string; gender: string; ethnicity: string; bodyType: string; portrait_url: string | null; reference_images: string[] }>;
 }) {
   const filteredTemplates = templateCategory === 'All'
     ? activeTemplates
@@ -3479,6 +3512,45 @@ function Step2Viewport({ shootType, modelConfig, setModelConfig, selectedModelDa
         </div>
       )}
       <ScrollArea className="flex-1 bg-background relative z-10">
+        {/* Custom Models Section */}
+        {customModels.length > 0 && (
+          <>
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground/60 mb-2">My Models</p>
+            <div className="grid grid-cols-5 gap-3 mb-4">
+              {customModels.map((cm) => {
+                const isSelected = modelConfig.selectedModel === cm.id;
+                const imgUrl = cm.portrait_url || cm.reference_images?.[0];
+                return (
+                  <button
+                    key={cm.id}
+                    onClick={() => setModelConfig(prev => ({ ...prev, selectedModel: prev.selectedModel === cm.id ? null : cm.id, uploadedModelUrl: null }))}
+                    className={`rounded-xl overflow-hidden border transition-all text-left ${
+                      isSelected ? 'ring-2 ring-primary ring-offset-2' : 'hover:border-primary/50 hover:shadow-md'
+                    }`}
+                  >
+                    <div className="aspect-[3/4] relative bg-muted">
+                      {imgUrl ? (
+                        <img src={imgUrl} alt={cm.name} className="w-full h-full object-cover" loading="lazy" />
+                      ) : null}
+                      {isSelected && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-primary/20">
+                          <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                            <Check className="h-4 w-4 text-primary-foreground" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-2">
+                      <p className="text-xs font-medium truncate">{cm.name}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{cm.gender === 'female' ? 'F' : 'M'} · {cm.ethnicity || 'Custom'} · {cm.bodyType}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground/60 mb-2">Library</p>
+          </>
+        )}
         <div className="grid grid-cols-5 gap-3 pb-4">
           {PLACEHOLDER_MODELS.map((m) => {
             const isSelected = modelConfig.selectedModel === m.id;

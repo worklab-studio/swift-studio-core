@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import Assets from "./pages/Assets";
 import Studio from "./pages/Studio";
+import Models from "./pages/Models";
 import Billing from "./pages/Billing";
 import Integrations from "./pages/Integrations";
 import Settings from "./pages/Settings";
@@ -34,6 +35,7 @@ const App = () => (
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="projects" element={<Projects />} />
               <Route path="assets" element={<Assets />} />
+              <Route path="models" element={<Models />} />
               <Route path="projects/:id" element={<Studio />} />
               <Route path="billing" element={<Billing />} />
               <Route path="integrations" element={<Integrations />} />

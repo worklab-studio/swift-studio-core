@@ -1,4 +1,4 @@
-import { LayoutDashboard, Plus, FolderOpen, Settings } from 'lucide-react';
+import { LayoutDashboard, Plus, FolderOpen, Users, Settings } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useNewProjectDialog } from '@/contexts/NewProjectContext';
 
@@ -29,6 +29,15 @@ export const MobileBottomNav = () => {
       >
         <FolderOpen className="h-5 w-5" />
         <span>Projects</span>
+      </NavLink>
+      <NavLink
+        to="/app/models"
+        end
+        className="flex flex-col items-center gap-1 text-xs text-muted-foreground"
+        activeClassName="text-primary"
+      >
+        <Users className="h-5 w-5" />
+        <span>Models</span>
       </NavLink>
       <NavLink
         to="/app/settings"
