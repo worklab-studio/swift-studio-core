@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import Assets from "./pages/Assets";
 import Studio from "./pages/Studio";
+import Models from "./pages/Models";
 import Billing from "./pages/Billing";
 import Integrations from "./pages/Integrations";
 import Settings from "./pages/Settings";
