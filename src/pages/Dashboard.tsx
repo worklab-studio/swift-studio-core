@@ -85,6 +85,7 @@ const Dashboard = () => {
         { count: projectCount },
         { count: imageCount },
         { count: videoCount },
+        { count: modelCount },
       ] = await Promise.all([
         supabase
           .from('projects')
