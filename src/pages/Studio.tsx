@@ -64,6 +64,8 @@ interface ModelConfig {
   selectedModel: string | null;
   uploadedModelUrl: string | null;
   modelReferenceUrls?: string[];
+  supportReferenceUrls?: string[];
+  identityLockSummary?: string;
   hasRealModelReferences?: boolean;
   gender: string;
   ethnicity: string;
