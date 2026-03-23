@@ -2470,10 +2470,9 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full h-8 text-xs justify-between font-normal">
-                    <span className="truncate">{(() => {
+                    {(() => {
                       const bg = modelConfig.background;
-                      if (!bg) return 'Select background';
-                      // Find display label
+                      if (!bg) return <span className="truncate">Select background</span>;
                       const genericMap: Record<string, string> = {
                         'white-sweep': 'White sweep', 'gray-seamless': 'Gray seamless', 'dark-studio': 'Dark studio',
                         'colored-gel': 'Colored gel', 'pastel-gradient': 'Pastel gradient', 'warm-beige': 'Warm beige',
@@ -2483,15 +2482,34 @@ function Step2Config({ shootType, setShootType, modelConfig, setModelConfig, mod
                         'fog-mist': 'Fog / mist', 'neon-glow': 'Neon glow', 'dark-moody': 'Dark moody',
                         'ethereal-light': 'Ethereal light', 'custom': 'Custom prompt',
                       };
-                      if (genericMap[bg]) return genericMap[bg];
-                      if (bg.startsWith('ai-model-bg-')) {
+                      let displayLabel = bg;
+                      let fullLabel = bg;
+                      if (genericMap[bg]) { displayLabel = genericMap[bg]; fullLabel = genericMap[bg]; }
+                      else if (bg.startsWith('ai-model-bg-')) {
                         const idx = parseInt(bg.replace('ai-model-bg-', ''));
                         const label = productInfo?.suggestedModelShootBackgrounds?.[idx];
-                        return label ? (label.length > 40 ? label.substring(0, 40) + '…' : label) : bg;
+                        fullLabel = label || bg;
+                        displayLabel = label ? (label.length > 40 ? label.substring(0, 40) + '…' : label) : bg;
+                      } else if (bg.startsWith('beauty-bg-') || bg.startsWith('fmcg-bg-')) {
+                        displayLabel = bg.split('-').slice(2).join(' ');
+                        fullLabel = displayLabel;
                       }
-                      if (bg.startsWith('beauty-bg-') || bg.startsWith('fmcg-bg-')) return bg.split('-').slice(2).join(' ');
-                      return bg;
-                    })()}</span>
+                      if (fullLabel.length > 40) {
+                        return (
+                          <TooltipProvider delayDuration={200}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="truncate">{displayLabel}</span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[300px] text-xs whitespace-normal">
+                                {fullLabel}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        );
+                      }
+                      return <span className="truncate">{displayLabel}</span>;
+                    })()}
                     <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
