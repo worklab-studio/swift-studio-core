@@ -3800,6 +3800,17 @@ function Step3Viewport({ selectedPreset, selectedPresetData, referenceImage, pro
                 <p className="text-sm font-semibold">{selectedModelData ? selectedModelData.name : 'Custom Model'}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{selectedModelData ? selectedModelData.attrs : 'Uploaded image'}</p>
                 {selectedModelData && <p className="text-xs text-muted-foreground mt-0.5">Age: {selectedModelData.ageRange}</p>}
+                {(() => {
+                  const cm = modelConfig.selectedModel ? customModels.find(m => m.id === modelConfig.selectedModel) : null;
+                  const isBuiltIn = modelConfig.selectedModel && PLACEHOLDER_MODELS.some(m => m.id === modelConfig.selectedModel);
+                  if (cm && (!cm.reference_images || cm.reference_images.length === 0)) {
+                    return <p className="text-[10px] text-amber-500 mt-1">⚠ Synthetic portrait only — upload reference photos for better face accuracy</p>;
+                  }
+                  if (isBuiltIn) {
+                    return <p className="text-[10px] text-amber-500 mt-1">⚠ AI-generated portrait — face will be approximate</p>;
+                  }
+                  return null;
+                })()}
               </div>
             </div>
           </div>
