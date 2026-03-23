@@ -1,27 +1,36 @@
 
 
-# Add 2 New KPI Cards to Dashboard
+# Fix: Storage Upload RLS for Brand Ambassador Photos
 
-## Changes — `src/pages/Dashboard.tsx`
+## Root Cause
+The `originals` storage bucket has no RLS policy allowing authenticated users to upload files. The upload to `originals/models/{userId}/...` returns 403 "new row violates row-level security policy".
 
-### 1. Add data fetching
-- Add `custom_models` count query (head query with `eq('user_id', user.id)`)
-- Store in `stats` alongside existing `projects`, `images`, `videos`
-- Use `profile.credits_remaining` from existing `useAuth()` hook
+The error shown in the toast ("Failed to create model / new row violates row-level security policy") is actually from the storage upload step (line 302 in Models.tsx), not the `custom_models` table insert.
 
-### 2. Expand KPI grid from 3 to 5 cards
-- Change grid from `grid-cols-1 sm:grid-cols-3` to `grid-cols-2 sm:grid-cols-3 lg:grid-cols-5`
-- Add **Credits Remaining** card:
-  - Icon: `Gem` in a colored circle
-  - Show `profile.credits_remaining` value
-  - Add a small Progress bar underneath, colored green (>50%), amber (20-50%), or red (<20%) based on percentage of plan limit
-- Add **Custom Models** card:
-  - Icon: `Users` 
-  - Show count from `custom_models` table
+## Fix — Database Migration
 
-### 3. Make cards more compact
-- Reduce padding from `p-6` to `p-4` on all 5 KPI cards so they fit cleanly in one row at desktop width
+Add storage policies on the `storage.objects` table for the `originals` bucket:
+
+```sql
+-- Allow authenticated users to upload to their own folder in originals
+CREATE POLICY "Users can upload to originals"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'originals' AND (storage.foldername(name))[1] = 'models' AND (storage.foldername(name))[2] = auth.uid()::text);
+
+-- Allow authenticated users to read their own uploads
+CREATE POLICY "Users can read own originals"
+ON storage.objects FOR SELECT
+TO authenticated
+USING (bucket_id = 'originals' AND (storage.foldername(name))[1] = 'models' AND (storage.foldername(name))[2] = auth.uid()::text);
+
+-- Allow public read since bucket is public
+CREATE POLICY "Public read originals"
+ON storage.objects FOR SELECT
+TO anon
+USING (bucket_id = 'originals');
+```
 
 ## Files Modified
-- `src/pages/Dashboard.tsx` — add query, add 2 cards, adjust grid
+- Database migration only — no code changes needed
 
