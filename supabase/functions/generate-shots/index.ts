@@ -894,6 +894,10 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
       if (primaryRef) {
         messageContent.push({ type: "image_url", image_url: { url: primaryRef } });
       }
+      // Inject model reference photo for face consistency
+      if (shotType === "model_shot" && modelConfig?.modelReferenceUrl) {
+        messageContent.push({ type: "image_url", image_url: { url: modelConfig.modelReferenceUrl } });
+      }
       // Add secondary reference for cross-checking fidelity — skip for apparel flat lays to avoid composite output
       const isApparelFlatLay = isApparel && label === "flat_lay";
       if (allProductImages && allProductImages.length > 1 && primaryRef && !isApparelFlatLay) {

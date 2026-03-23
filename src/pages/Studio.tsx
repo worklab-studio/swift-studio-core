@@ -1119,7 +1119,10 @@ const Studio = () => {
           body: {
           projectId: project.id, preset: selectedPreset || 'template', shotCount: effectiveShotCount, additionalContext,
           category: project.category, shotType: shootType === 'model' ? 'model_shot' : 'product_showcase',
-          modelConfig: shootType === 'model' ? modelConfig : null,
+          modelConfig: shootType === 'model' ? {
+            ...modelConfig,
+            modelReferenceUrl: modelConfig.uploadedModelUrl || (modelConfig.selectedModel ? modelImages[modelConfig.selectedModel] : undefined),
+          } : null,
           stylePrompt: effectiveStylePrompt,
           productImageUrl,
           productImages: productImages.length > 1 ? productImages : undefined,
