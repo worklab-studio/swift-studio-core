@@ -1,22 +1,48 @@
 
 
-# Fix: Input Fields Losing Focus on Every Keystroke
+# Fix: Storage Upload RLS Policy Name Ambiguity
 
 ## Root Cause
-In `src/pages/Models.tsx`, the `ModelFormFields` component is defined **inside** the `Models` component body (line 357). Every time any state changes (including typing a character), React re-renders `Models`, which creates a **new function reference** for `ModelFormFields`. React sees it as a completely different component and unmounts/remounts it — destroying focus.
+The migration `20260323111116` dropped and recreated the INSERT/DELETE policies using `split_part(name, '/', 1)` instead of `split_part(storage.objects.name, '/', 1)`. The previous working migration (`20260308140153`) explicitly qualified the reference as `storage.objects.name` to avoid ambiguity with `projects.name` in the EXISTS subquery. The unqualified `name` resolves to the wrong column, breaking project-based uploads.
 
-## Fix — `src/pages/Models.tsx`
+## Fix — Database Migration
 
-Convert `ModelFormFields` from an inline component to **inline JSX** (or a stable component outside the parent). The simplest fix: replace `<ModelFormFields />` usage with the JSX directly, or extract it outside the component and pass `newModel`/`setNewModel` as props.
+Re-create both policies with fully qualified `storage.objects.name`:
 
-**Approach**: Extract `ModelFormFields` to a component defined **outside** the `Models` function, passing `newModel` and `setNewModel` as props.
+```sql
+DROP POLICY IF EXISTS "Users can upload to their project folders" ON storage.objects;
 
-1. Move the `ModelFormFields` definition (lines 357-409) to **after** the `Models` component (outside its scope), around line 670 with the other sub-components
-2. Add props: `{ newModel, setNewModel }` with proper types
-3. Update both call sites (lines 575 and 642) to pass the props: `<ModelFormFields newModel={newModel} setNewModel={setNewModel} />`
+CREATE POLICY "Users can upload to their project folders"
+ON storage.objects FOR INSERT TO authenticated
+WITH CHECK (
+  bucket_id = 'originals' AND (
+    split_part(storage.objects.name, '/', 1) = auth.uid()::text
+    OR EXISTS (
+      SELECT 1 FROM public.projects p
+      WHERE p.id::text = split_part(storage.objects.name, '/', 1)
+      AND p.user_id = auth.uid()
+    )
+    OR (split_part(storage.objects.name, '/', 1) = 'models' AND split_part(storage.objects.name, '/', 2) = auth.uid()::text)
+  )
+);
 
-This ensures React sees the same component reference across re-renders, preserving input focus.
+DROP POLICY IF EXISTS "Users can delete from their project folders" ON storage.objects;
+
+CREATE POLICY "Users can delete from their project folders"
+ON storage.objects FOR DELETE TO authenticated
+USING (
+  bucket_id = 'originals' AND (
+    split_part(storage.objects.name, '/', 1) = auth.uid()::text
+    OR EXISTS (
+      SELECT 1 FROM public.projects p
+      WHERE p.id::text = split_part(storage.objects.name, '/', 1)
+      AND p.user_id = auth.uid()
+    )
+    OR (split_part(storage.objects.name, '/', 1) = 'models' AND split_part(storage.objects.name, '/', 2) = auth.uid()::text)
+  )
+);
+```
 
 ## Files Modified
-- `src/pages/Models.tsx` — move `ModelFormFields` outside the parent component
+- Database migration only — no code changes needed
 
