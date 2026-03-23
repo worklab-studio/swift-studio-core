@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.analyze-model-photo]
 verify_jwt = false
+
+[functions.generate-support-refs]
+verify_jwt = false

@@ -47,7 +47,19 @@ serve(async (req) => {
               },
               {
                 type: "text",
-                text: "Analyze this photo of a person and detect their physical attributes for a fashion model profile. Call the extract_model_attributes function with the detected values.",
+                text: `Analyze this photo of a person in extreme detail for identity-locked AI image generation. You must capture enough detail that another AI could reproduce this EXACT person — not a lookalike.
+
+Focus on:
+1. FACE: exact face shape (oval/round/square/heart/oblong/diamond), eye shape & set (deep-set/wide-set/close-set, almond/round/hooded/monolid), eye color, nose shape (button/aquiline/straight/broad/narrow bridge), lip shape (full/thin/bow-shaped/wide), jawline (sharp/rounded/square/pointed), cheekbone prominence, eyebrow shape (arched/straight/thick/thin), forehead height
+2. HAIR: color, texture (straight/wavy/curly/coily/kinky), length, style, parting, volume
+3. SKIN: exact tone description, any notable marks/freckles/dimples
+4. BODY: frame/build, shoulder width relative to frame, approximate proportions visible
+5. AGE: precise estimated range
+6. VISIBILITY: what is visible in this photo — face-only, head-shoulders, waist-up, or full-body
+
+Generate a compact "identity lock summary" — a single paragraph (80-120 words) that an image generator can use as a text anchor to reproduce this exact person. Be specific, not generic.
+
+Call the extract_model_attributes function with all detected values.`,
               },
             ],
           },
@@ -57,7 +69,7 @@ serve(async (req) => {
             type: "function",
             function: {
               name: "extract_model_attributes",
-              description: "Extract physical attributes of a person from a photo for a fashion model profile.",
+              description: "Extract detailed physical attributes and identity profile of a person from a photo.",
               parameters: {
                 type: "object",
                 properties: {
@@ -68,7 +80,7 @@ serve(async (req) => {
                   },
                   ethnicity: {
                     type: "string",
-                    description: "Perceived ethnicity or ethnic background, e.g. South Asian, East Asian, Black African, Caucasian, Latina, Middle Eastern, Mixed, Southeast Asian",
+                    description: "Perceived ethnicity or ethnic background",
                   },
                   bodyType: {
                     type: "string",
@@ -77,7 +89,7 @@ serve(async (req) => {
                   },
                   skinTone: {
                     type: "string",
-                    description: "Descriptive skin tone, e.g. warm brown, fair porcelain, olive tan, deep ebony, golden honey",
+                    description: "Descriptive skin tone",
                   },
                   ageRange: {
                     type: "string",
@@ -85,14 +97,44 @@ serve(async (req) => {
                   },
                   facialFeatures: {
                     type: "string",
-                    description: "Brief description of notable facial features, e.g. high cheekbones, almond eyes, full lips, strong jawline",
+                    description: "Brief description of notable facial features",
                   },
                   suggestedName: {
                     type: "string",
                     description: "A suggested first name that fits the person's apparent background",
                   },
+                  identityProfile: {
+                    type: "object",
+                    description: "Detailed identity profile for face-locking",
+                    properties: {
+                      faceShape: { type: "string", description: "Face shape: oval, round, square, heart, oblong, diamond" },
+                      eyeShape: { type: "string", description: "Eye shape and set: e.g. deep-set almond, wide-set round, hooded monolid" },
+                      eyeColor: { type: "string", description: "Eye color" },
+                      noseShape: { type: "string", description: "Nose shape: button, aquiline, straight, broad, narrow bridge" },
+                      lipShape: { type: "string", description: "Lip shape: full, thin, bow-shaped, wide, asymmetric" },
+                      jawline: { type: "string", description: "Jawline: sharp angular, rounded soft, square, pointed" },
+                      cheekbones: { type: "string", description: "Cheekbone prominence: high prominent, subtle, flat, sculpted" },
+                      eyebrowShape: { type: "string", description: "Eyebrow shape: arched, straight, thick bushy, thin, angular" },
+                      foreheadHeight: { type: "string", description: "Forehead: high, average, low" },
+                      hairColor: { type: "string", description: "Hair color" },
+                      hairTexture: { type: "string", description: "Hair texture: straight, wavy, curly, coily, kinky" },
+                      hairLength: { type: "string", description: "Hair length: short, medium, long, very long" },
+                      hairStyle: { type: "string", description: "Current hairstyle description" },
+                      shoulderFrame: { type: "string", description: "Shoulder width: narrow, average, broad" },
+                      distinguishingMarks: { type: "string", description: "Any moles, freckles, dimples, scars, or other distinguishing features" },
+                    },
+                  },
+                  bodyVisibility: {
+                    type: "string",
+                    enum: ["face-only", "head-shoulders", "waist-up", "full-body"],
+                    description: "What is visible in the photo",
+                  },
+                  identityLockSummary: {
+                    type: "string",
+                    description: "A compact 80-120 word paragraph describing this exact person's appearance for an AI image generator to reproduce them precisely. Be extremely specific about face structure, coloring, and distinctive features.",
+                  },
                 },
-                required: ["gender", "ethnicity", "bodyType", "skinTone", "ageRange", "facialFeatures", "suggestedName"],
+                required: ["gender", "ethnicity", "bodyType", "skinTone", "ageRange", "facialFeatures", "suggestedName", "identityProfile", "bodyVisibility", "identityLockSummary"],
                 additionalProperties: false,
               },
             },
