@@ -168,7 +168,7 @@ const Dashboard = () => {
         const creditsMax = profile?.plan === 'pro' ? 500 : profile?.plan === 'starter' ? 100 : 10;
         const creditsRemaining = profile?.credits_remaining ?? 0;
         const creditsPct = Math.round((creditsRemaining / creditsMax) * 100);
-        const creditColor = creditsPct > 50 ? 'bg-green-500' : creditsPct > 20 ? 'bg-amber-500' : 'bg-destructive';
+        const creditColor = creditsPct > 50 ? '#22c55e' : creditsPct > 20 ? '#f59e0b' : '#ef4444';
         return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         {[
