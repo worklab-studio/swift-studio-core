@@ -1397,8 +1397,14 @@ const Studio = () => {
     );
   }
 
-  // Resolve selected model for viewport preview
-  const selectedModelData = PLACEHOLDER_MODELS.find(m => m.id === modelConfig.selectedModel);
+  // Resolve selected model for viewport preview (check both built-in and custom)
+  const selectedModelData = PLACEHOLDER_MODELS.find(m => m.id === modelConfig.selectedModel)
+    || (customModels.find(m => m.id === modelConfig.selectedModel)
+      ? (() => {
+          const cm = customModels.find(m => m.id === modelConfig.selectedModel)!;
+          return { id: cm.id, name: cm.name, attrs: `${cm.gender === 'female' ? 'F' : 'M'} · ${cm.ethnicity || 'Custom'} · ${cm.bodyType}`, color: 'hsl(355 82% 56% / 0.2)', gender: cm.gender, ethnicity: cm.ethnicity, bodyType: cm.bodyType, skinTone: cm.skinTone, ageRange: cm.ageRange, facialFeatures: cm.facialFeatures };
+        })()
+      : undefined);
   const selectedPresetData = STYLE_PRESETS.find(p => p.id === selectedPreset);
 
   return (
