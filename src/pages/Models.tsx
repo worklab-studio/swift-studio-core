@@ -343,8 +343,9 @@ const Models = () => {
       resetCreateState();
       toast({ title: 'Model created', description: `${newModel.name} has been added. Generating identity references in background...` });
 
-      // Fire-and-forget: generate support reference images in background
+      // Generate support reference images with visible progress
       if (insertedData && newModel.identityLockSummary && portraitUrl) {
+        setGeneratingRefModelId(insertedData.id);
         supabase.functions.invoke('generate-support-refs', {
           body: {
             modelId: insertedData.id,
@@ -353,14 +354,15 @@ const Models = () => {
           },
         }).then(({ data: refData }) => {
           if (refData?.count > 0) {
-            // Refresh models to pick up support refs
             supabase.from('custom_models').select('*').order('created_at', { ascending: false })
               .then(({ data: updated }) => {
                 if (updated) setCustomModels(updated as unknown as CustomModel[]);
               });
             toast({ title: 'Identity references ready', description: `Generated ${refData.count} support angles for stronger face-locking.` });
           }
-        }).catch(() => { /* silent */ });
+        }).catch(() => { /* silent */ }).finally(() => {
+          setGeneratingRefModelId(null);
+        });
       }
     } catch (err: any) {
       toast({ title: 'Failed to create model', description: err.message, variant: 'destructive' });
