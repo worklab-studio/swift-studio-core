@@ -504,12 +504,22 @@ const Studio = () => {
     const loadCustomModels = async () => {
       const { data } = await supabase.from('custom_models').select('*').order('created_at', { ascending: false });
       if (data) {
-        setCustomModels(data.map((d: any) => ({
+        const models = data.map((d: any) => ({
           id: d.id, name: d.name, gender: d.gender, ethnicity: d.ethnicity,
           bodyType: d.body_type, skinTone: d.skin_tone, ageRange: d.age_range,
           facialFeatures: d.facial_features, portrait_url: d.portrait_url,
           reference_images: d.reference_images || [],
-        })));
+        }));
+        setCustomModels(models);
+        // Also add custom model portraits to modelImages map for preview
+        setModelImages(prev => {
+          const updated = { ...prev };
+          models.forEach(m => {
+            const imgUrl = m.portrait_url || m.reference_images?.[0];
+            if (imgUrl) updated[m.id] = imgUrl;
+          });
+          return updated;
+        });
       }
     };
     loadPortraits();
