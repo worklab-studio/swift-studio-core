@@ -831,12 +831,13 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
         // ── MODEL SHOTS: hero, detail, lifestyle, alternate, editorial ──
         const modelDesc = `The product is worn by a ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""} model with ${modelConfig.bodyType || "average"} build.`;
         const outfitDirective = productInfo?.selectedOutfit ? ` OUTFIT: The model is wearing: ${productInfo.selectedOutfit}.` : "";
+        const modelRefDirective = modelConfig.modelReferenceUrl ? `\nMODEL REFERENCE: A reference photo of the EXACT model is provided. The generated image MUST feature this EXACT person with the same face, hair, skin tone, and features. Do NOT alter the model's appearance in any way. Match the facial structure, hairstyle, and complexion precisely.` : "";
 
         return `APPAREL MODEL SHOOT — ${label.toUpperCase()} SHOT.
 ${apparelViewDirective ? `${apparelViewDirective}\n` : ""}POSE: ${poseDirective}
 THIS SPECIFIC POSE MUST BE EXACTLY AS DESCRIBED ABOVE. Do not default to a generic front-facing stance.
 ${backgroundDirective}
-${modelDesc}${garmentInfo}${outfitDirective}
+${modelDesc}${garmentInfo}${outfitDirective}${modelRefDirective}
 ${FIDELITY_BLOCK}
 GARMENT FIDELITY: The model must wear ONLY the exact garment from the reference image. Do NOT add, invent, or layer any additional clothing items (no jackets, coats, scarves, vests, accessories, hats) that are not in the reference photo. The product garment must be clearly visible and completely unobstructed.
 CONSISTENCY: Use the EXACT SAME model across all shots — same face, same hair, same skin tone, same body type. Only the pose and camera angle change between shots.
@@ -854,8 +855,9 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
       }
 
       // ── Non-apparel, non-beauty model shots ──
+      const modelRefDirective2 = shotType === "model_shot" && modelConfig?.modelReferenceUrl ? ` MODEL REFERENCE: A reference photo of the EXACT model is provided. The generated image MUST feature this EXACT person with the same face, hair, skin tone, and features. Do NOT alter the model's appearance.` : "";
       const modelDesc = shotType === "model_shot" && modelConfig
-        ? `The product is worn/held by a ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""} model with ${modelConfig.bodyType || "average"} build. Background: ${modelConfig.backgroundPrompt || modelConfig.background || "studio"}.`
+        ? `The product is worn/held by a ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""} model with ${modelConfig.bodyType || "average"} build. Background: ${modelConfig.backgroundPrompt || modelConfig.background || "studio"}.${modelRefDirective2}`
         : "Product-only shot, no human model.";
 
       // Generic posing and outfit for model shoots
@@ -891,6 +893,10 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
       
       if (primaryRef) {
         messageContent.push({ type: "image_url", image_url: { url: primaryRef } });
+      }
+      // Inject model reference photo for face consistency
+      if (shotType === "model_shot" && modelConfig?.modelReferenceUrl) {
+        messageContent.push({ type: "image_url", image_url: { url: modelConfig.modelReferenceUrl } });
       }
       // Add secondary reference for cross-checking fidelity — skip for apparel flat lays to avoid composite output
       const isApparelFlatLay = isApparel && label === "flat_lay";
