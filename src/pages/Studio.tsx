@@ -1120,10 +1120,31 @@ const Studio = () => {
           body: {
           projectId: project.id, preset: selectedPreset || 'template', shotCount: effectiveShotCount, additionalContext,
           category: project.category, shotType: shootType === 'model' ? 'model_shot' : 'product_showcase',
-          modelConfig: shootType === 'model' ? {
-            ...modelConfig,
-            modelReferenceUrl: modelConfig.uploadedModelUrl || (modelConfig.selectedModel ? modelImages[modelConfig.selectedModel] : undefined),
-          } : null,
+          modelConfig: shootType === 'model' ? (() => {
+            // Build model reference URLs array with priority
+            let modelReferenceUrls: string[] = [];
+            let hasRealModelReferences = false;
+            const selectedId = modelConfig.selectedModel;
+            const customModel = selectedId ? customModels.find(m => m.id === selectedId) : null;
+            if (customModel) {
+              if (customModel.reference_images && customModel.reference_images.length > 0) {
+                modelReferenceUrls = customModel.reference_images.slice(0, 3);
+                hasRealModelReferences = true;
+              } else if (customModel.portrait_url) {
+                modelReferenceUrls = [customModel.portrait_url];
+              }
+            } else if (modelConfig.uploadedModelUrl) {
+              modelReferenceUrls = [modelConfig.uploadedModelUrl];
+              hasRealModelReferences = true;
+            } else if (selectedId && modelImages[selectedId]) {
+              modelReferenceUrls = [modelImages[selectedId]];
+            }
+            return {
+              ...modelConfig,
+              modelReferenceUrls,
+              hasRealModelReferences,
+            };
+          })() : null,
           stylePrompt: effectiveStylePrompt,
           productImageUrl,
           productImages: productImages.length > 1 ? productImages : undefined,
