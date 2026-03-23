@@ -63,7 +63,8 @@ interface Asset {
 interface ModelConfig {
   selectedModel: string | null;
   uploadedModelUrl: string | null;
-  modelReferenceUrl?: string;
+  modelReferenceUrls?: string[];
+  hasRealModelReferences?: boolean;
   gender: string;
   ethnicity: string;
   bodyType: string;
