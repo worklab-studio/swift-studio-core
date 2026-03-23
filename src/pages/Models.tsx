@@ -123,6 +123,10 @@ const Models = () => {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Generation progress & detail view
+  const [generatingRefModelId, setGeneratingRefModelId] = useState<string | null>(null);
+  const [selectedModel, setSelectedModel] = useState<CustomModel | null>(null);
+
   // Load portraits
   useEffect(() => {
     const load = async () => {
