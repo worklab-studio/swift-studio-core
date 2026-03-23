@@ -858,7 +858,7 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
       }
 
       // ── Non-apparel, non-beauty model shots ──
-      const modelRefDirective2 = shotType === "model_shot" && modelConfig?.modelReferenceUrl ? ` MODEL REFERENCE: A reference photo of the EXACT model is provided. The generated image MUST feature this EXACT person with the same face, hair, skin tone, and features. Do NOT alter the model's appearance.` : "";
+      const modelRefDirective2 = shotType === "model_shot" && modelConfig?.modelReferenceUrls?.length > 0 ? ` MODEL IDENTITY LOCK: Reference photo(s) of the EXACT model are provided. The generated image MUST depict this EXACT same person — same face shape, eyes, nose, lips, jawline, hairline, skin tone, and age appearance. Do NOT use a lookalike, do NOT beautify, age-shift, race-shift, or replace the person.` : "";
       const modelDesc = shotType === "model_shot" && modelConfig
         ? `The product is worn/held by a ${modelConfig.gender || ""} ${modelConfig.ethnicity || ""} model with ${modelConfig.bodyType || "average"} build. Background: ${modelConfig.backgroundPrompt || modelConfig.background || "studio"}.${modelRefDirective2}`
         : "Product-only shot, no human model.";
