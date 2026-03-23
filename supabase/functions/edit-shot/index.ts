@@ -36,7 +36,7 @@ serve(async (req) => {
     }
     const userId = user.id;
 
-    const { assetId, editPrompt, modelReferenceUrls } = await req.json();
+    const { assetId, editPrompt, modelReferenceUrls, supportReferenceUrls, identityLockSummary } = await req.json();
 
     if (!assetId || !editPrompt) {
       return new Response(JSON.stringify({ error: "Missing assetId or editPrompt" }), {
@@ -86,19 +86,34 @@ serve(async (req) => {
 
     // Add model reference photos first for identity lock
     const refUrls = Array.isArray(modelReferenceUrls) ? modelReferenceUrls.slice(0, 3) : [];
-    if (refUrls.length > 0) {
-      messageContent.push({
-        type: "text",
-        text: "MODEL REFERENCE PHOTOS — The following image(s) show the EXACT person who MUST remain in the edited image. Preserve their face shape, eyes, nose, lips, jawline, hairline, skin tone, and age. Do NOT replace or alter this person.",
-      });
-      for (const refUrl of refUrls) {
-        messageContent.push({ type: "image_url", image_url: { url: refUrl } });
+    const supUrls = Array.isArray(supportReferenceUrls) ? supportReferenceUrls.slice(0, 3) : [];
+    const hasIdentityRefs = refUrls.length > 0 || supUrls.length > 0;
+    
+    if (hasIdentityRefs) {
+      const lockText = identityLockSummary
+        ? `MODEL IDENTITY LOCK — The following image(s) show the EXACT person who MUST remain in the edited image. IDENTITY PROFILE: ${identityLockSummary}. Preserve their EXACT face shape, eyes, nose, lips, jawline, hairline, skin tone, hair color/texture, and age. Do NOT replace or alter this person.`
+        : "MODEL REFERENCE PHOTOS — The following image(s) show the EXACT person who MUST remain in the edited image. Preserve their face shape, eyes, nose, lips, jawline, hairline, skin tone, and age. Do NOT replace or alter this person.";
+      
+      messageContent.push({ type: "text", text: lockText });
+      
+      if (refUrls.length > 0) {
+        messageContent.push({ type: "text", text: "PRIMARY IDENTITY PHOTO(S):" });
+        for (const refUrl of refUrls) {
+          messageContent.push({ type: "image_url", image_url: { url: refUrl } });
+        }
+      }
+      
+      if (supUrls.length > 0) {
+        messageContent.push({ type: "text", text: "SUPPORT ANGLE REFERENCES:" });
+        for (const supUrl of supUrls) {
+          messageContent.push({ type: "image_url", image_url: { url: supUrl } });
+        }
       }
     }
 
     messageContent.push({
       type: "text",
-      text: `Edit this product photography image: ${editPrompt}. Keep the product intact and recognizable.${refUrls.length > 0 ? " Keep the model's face and identity EXACTLY the same — do not change the person." : ""} Professional commercial photography quality. No text, no watermarks.`,
+      text: `Edit this product photography image: ${editPrompt}. Keep the product intact and recognizable.${hasIdentityRefs ? " Keep the model's face and identity EXACTLY the same — do not change the person." : ""} Professional commercial photography quality. No text, no watermarks.`,
     });
     messageContent.push({
       type: "image_url",

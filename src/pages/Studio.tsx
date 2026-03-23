@@ -64,6 +64,8 @@ interface ModelConfig {
   selectedModel: string | null;
   uploadedModelUrl: string | null;
   modelReferenceUrls?: string[];
+  supportReferenceUrls?: string[];
+  identityLockSummary?: string;
   hasRealModelReferences?: boolean;
   gender: string;
   ethnicity: string;
@@ -1123,6 +1125,8 @@ const Studio = () => {
           modelConfig: shootType === 'model' ? (() => {
             // Build model reference URLs array with priority
             let modelReferenceUrls: string[] = [];
+            let supportReferenceUrls: string[] = [];
+            let identityLockSummary = '';
             let hasRealModelReferences = false;
             const selectedId = modelConfig.selectedModel;
             const customModel = selectedId ? customModels.find(m => m.id === selectedId) : null;
@@ -1133,6 +1137,14 @@ const Studio = () => {
               } else if (customModel.portrait_url) {
                 modelReferenceUrls = [customModel.portrait_url];
               }
+              // Add support reference images (hidden angles)
+              if ((customModel as any).support_reference_images?.length > 0) {
+                supportReferenceUrls = (customModel as any).support_reference_images;
+              }
+              // Add identity lock summary
+              if ((customModel as any).identity_profile?.identityLockSummary) {
+                identityLockSummary = (customModel as any).identity_profile.identityLockSummary;
+              }
             } else if (modelConfig.uploadedModelUrl) {
               modelReferenceUrls = [modelConfig.uploadedModelUrl];
               hasRealModelReferences = true;
@@ -1142,6 +1154,8 @@ const Studio = () => {
             return {
               ...modelConfig,
               modelReferenceUrls,
+              supportReferenceUrls,
+              identityLockSummary,
               hasRealModelReferences,
             };
           })() : null,
@@ -1229,6 +1243,8 @@ const Studio = () => {
     try {
       // Build model reference URLs for face consistency during edits
       let modelReferenceUrls: string[] = [];
+      let supportReferenceUrls: string[] = [];
+      let identityLockSummary = '';
       if (shootType === 'model' && modelConfig.selectedModel) {
         const customModel = customModels.find(m => m.id === modelConfig.selectedModel);
         if (customModel) {
@@ -1236,6 +1252,12 @@ const Studio = () => {
             modelReferenceUrls = customModel.reference_images.slice(0, 3);
           } else if (customModel.portrait_url) {
             modelReferenceUrls = [customModel.portrait_url];
+          }
+          if ((customModel as any).support_reference_images?.length > 0) {
+            supportReferenceUrls = (customModel as any).support_reference_images;
+          }
+          if ((customModel as any).identity_profile?.identityLockSummary) {
+            identityLockSummary = (customModel as any).identity_profile.identityLockSummary;
           }
         } else if (modelConfig.uploadedModelUrl) {
           modelReferenceUrls = [modelConfig.uploadedModelUrl];
@@ -1245,7 +1267,13 @@ const Studio = () => {
       }
 
       const { data, error } = await supabase.functions.invoke('edit-shot', {
-        body: { assetId: shot.id, editPrompt: shot.editPrompt, modelReferenceUrls: modelReferenceUrls.length > 0 ? modelReferenceUrls : undefined },
+        body: {
+          assetId: shot.id,
+          editPrompt: shot.editPrompt,
+          modelReferenceUrls: modelReferenceUrls.length > 0 ? modelReferenceUrls : undefined,
+          supportReferenceUrls: supportReferenceUrls.length > 0 ? supportReferenceUrls : undefined,
+          identityLockSummary: identityLockSummary || undefined,
+        },
       });
       if (error || !data?.asset) {
         toast({ title: 'Edit failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
@@ -3806,10 +3834,13 @@ function Step3Viewport({ selectedPreset, selectedPresetData, referenceImage, pro
                   const cm = modelConfig.selectedModel ? customModels.find(m => m.id === modelConfig.selectedModel) : null;
                   const isBuiltIn = modelConfig.selectedModel && PLACEHOLDER_MODELS.some(m => m.id === modelConfig.selectedModel);
                   if (cm && (!cm.reference_images || cm.reference_images.length === 0)) {
-                    return <p className="text-[10px] text-amber-500 mt-1">⚠ Synthetic portrait only — upload reference photos for better face accuracy</p>;
+                    return <p className="text-[10px] text-warning mt-1">⚠ Synthetic portrait only — upload reference photos for better face accuracy</p>;
                   }
                   if (isBuiltIn) {
-                    return <p className="text-[10px] text-amber-500 mt-1">⚠ AI-generated portrait — face will be approximate</p>;
+                    return <p className="text-[10px] text-warning mt-1">⚠ AI-generated portrait — face will be approximate</p>;
+                  }
+                  if (cm && cm.reference_images?.length > 0 && (cm as any).body_visibility === 'face-only') {
+                    return <p className="text-[10px] text-muted-foreground mt-1">💡 Face lock is strong. Add a waist-up or full-body photo for even better body accuracy.</p>;
                   }
                   return null;
                 })()}
