@@ -36,7 +36,7 @@ serve(async (req) => {
     }
     const userId = user.id;
 
-    const { assetId, editPrompt, modelReferenceUrls } = await req.json();
+    const { assetId, editPrompt, modelReferenceUrls, supportReferenceUrls, identityLockSummary } = await req.json();
 
     if (!assetId || !editPrompt) {
       return new Response(JSON.stringify({ error: "Missing assetId or editPrompt" }), {
