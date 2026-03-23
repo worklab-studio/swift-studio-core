@@ -221,6 +221,9 @@ const Models = () => {
         skinTone: data.skinTone || '',
         ageRange: data.ageRange || '',
         facialFeatures: data.facialFeatures || '',
+        identityProfile: data.identityProfile || null,
+        bodyVisibility: data.bodyVisibility || '',
+        identityLockSummary: data.identityLockSummary || '',
       });
 
       setCreateMode('ambassador-review');
