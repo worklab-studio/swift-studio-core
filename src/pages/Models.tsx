@@ -123,6 +123,10 @@ const Models = () => {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Generation progress & detail view
+  const [generatingRefModelId, setGeneratingRefModelId] = useState<string | null>(null);
+  const [selectedModel, setSelectedModel] = useState<CustomModel | null>(null);
+
   // Load portraits
   useEffect(() => {
     const load = async () => {
@@ -339,8 +343,9 @@ const Models = () => {
       resetCreateState();
       toast({ title: 'Model created', description: `${newModel.name} has been added. Generating identity references in background...` });
 
-      // Fire-and-forget: generate support reference images in background
+      // Generate support reference images with visible progress
       if (insertedData && newModel.identityLockSummary && portraitUrl) {
+        setGeneratingRefModelId(insertedData.id);
         supabase.functions.invoke('generate-support-refs', {
           body: {
             modelId: insertedData.id,
@@ -349,14 +354,15 @@ const Models = () => {
           },
         }).then(({ data: refData }) => {
           if (refData?.count > 0) {
-            // Refresh models to pick up support refs
             supabase.from('custom_models').select('*').order('created_at', { ascending: false })
               .then(({ data: updated }) => {
                 if (updated) setCustomModels(updated as unknown as CustomModel[]);
               });
             toast({ title: 'Identity references ready', description: `Generated ${refData.count} support angles for stronger face-locking.` });
           }
-        }).catch(() => { /* silent */ });
+        }).catch(() => { /* silent */ }).finally(() => {
+          setGeneratingRefModelId(null);
+        });
       }
     } catch (err: any) {
       toast({ title: 'Failed to create model', description: err.message, variant: 'destructive' });
@@ -492,7 +498,13 @@ const Models = () => {
               )}
 
               {customModels.map(m => (
-                <CustomModelCard key={m.id} model={m} onDelete={() => setDeleteTarget(m.id)} />
+                <CustomModelCard
+                  key={m.id}
+                  model={m}
+                  onDelete={() => setDeleteTarget(m.id)}
+                  isGenerating={generatingRefModelId === m.id}
+                  onClick={() => setSelectedModel(m)}
+                />
               ))}
 
               {customModels.length === 0 && (
@@ -641,6 +653,80 @@ const Models = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Model Detail Dialog */}
+      <Dialog open={!!selectedModel} onOpenChange={open => !open && setSelectedModel(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          {selectedModel && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{selectedModel.name}</DialogTitle>
+                <DialogDescription>Model details and reference images</DialogDescription>
+              </DialogHeader>
+
+              {/* Main portrait */}
+              <div className="flex justify-center">
+                <div className="w-48 h-64 rounded-xl overflow-hidden bg-muted">
+                  {(selectedModel.portrait_url || selectedModel.reference_images?.[0]) ? (
+                    <img
+                      src={selectedModel.portrait_url || selectedModel.reference_images[0]}
+                      alt={selectedModel.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <Users className="h-10 w-10 text-muted-foreground/40" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Attributes */}
+              <div className="flex flex-wrap gap-1.5">
+                <Badge variant="secondary">{selectedModel.gender}</Badge>
+                {selectedModel.ethnicity && <Badge variant="outline">{selectedModel.ethnicity}</Badge>}
+                <Badge variant="outline">{selectedModel.body_type}</Badge>
+                {selectedModel.age_range && <Badge variant="outline">{selectedModel.age_range}</Badge>}
+                {selectedModel.skin_tone && <Badge variant="outline">{selectedModel.skin_tone}</Badge>}
+              </div>
+              {selectedModel.facial_features && (
+                <p className="text-xs text-muted-foreground">{selectedModel.facial_features}</p>
+              )}
+
+              {/* Uploaded References */}
+              {selectedModel.reference_images?.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">Uploaded References</h4>
+                  <div className="grid grid-cols-4 gap-2">
+                    {selectedModel.reference_images.map((url, idx) => (
+                      <img key={idx} src={url} alt={`Reference ${idx + 1}`} className="rounded-lg aspect-square object-cover bg-muted border" />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* AI-Generated Angles */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">AI-Generated Angles</h4>
+                {generatingRefModelId === selectedModel.id ? (
+                  <div className="flex items-center gap-2 py-4 justify-center text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Generating support angles...
+                  </div>
+                ) : selectedModel.support_reference_images?.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {selectedModel.support_reference_images.map((url, idx) => (
+                      <img key={idx} src={url} alt={`AI Angle ${idx + 1}`} className="rounded-lg aspect-square object-cover bg-muted border" />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground py-2">No AI-generated angles yet.</p>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -728,8 +814,8 @@ const ModelCard = ({ model, portraitUrl }: { model: BuiltInModel; portraitUrl?: 
   </Card>
 );
 
-const CustomModelCard = ({ model, onDelete }: { model: CustomModel; onDelete: () => void }) => (
-  <Card className="group overflow-hidden border hover:shadow-md transition-shadow relative">
+const CustomModelCard = ({ model, onDelete, isGenerating, onClick }: { model: CustomModel; onDelete: () => void; isGenerating?: boolean; onClick?: () => void }) => (
+  <Card className="group overflow-hidden border hover:shadow-md transition-shadow relative cursor-pointer" onClick={onClick}>
     <button
       onClick={e => { e.stopPropagation(); onDelete(); }}
       className="absolute top-2 right-2 z-10 rounded-full bg-background/80 p-1.5 opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground transition-all"
@@ -744,6 +830,12 @@ const CustomModelCard = ({ model, onDelete }: { model: CustomModel; onDelete: ()
       ) : (
         <div className="flex h-full items-center justify-center">
           <Users className="h-8 w-8 text-muted-foreground/40" />
+        </div>
+      )}
+      {isGenerating && (
+        <div className="absolute inset-x-0 bottom-0 bg-background/90 backdrop-blur-sm px-2 py-1.5 flex items-center gap-1.5">
+          <Loader2 className="h-3 w-3 animate-spin text-primary" />
+          <span className="text-[10px] font-medium text-primary">Generating angles...</span>
         </div>
       )}
     </div>
