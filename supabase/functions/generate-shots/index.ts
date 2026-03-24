@@ -877,7 +877,7 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
         : "";
       const scaleDirective = shotType === "model_shot" ? ` ${getScaleRule(productInfo)}` : "";
 
-      return `${shotTypeDesc[label] || label}. ${baseStyle}. Category: ${category}. ${modelDesc}${beautyPosing}${outfitDirective}${scaleDirective} ${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}. ${ratioInstruction} Professional commercial photography, high resolution, no text, no watermarks. OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, mosaic, contact sheet, or multiple images combined. ONE image, ONE pose, ONE composition.`;
+      return `${shotTypeDesc[label] || label}. ${baseStyle}. Category: ${category}. ${modelDesc}${beautyPosing}${outfitDirective}${scaleDirective} ${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}. ${ratioInstruction} ${QUALITY_BLOCK} Show visible surface texture — material grain, fabric weave, print detail, packaging finish. No text, no watermarks. OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, mosaic, contact sheet, or multiple images combined. ONE image, ONE pose, ONE composition.`;
     });
 
 
