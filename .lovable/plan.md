@@ -1,21 +1,20 @@
 
 
-# Switch All Image Generation to Nano Banana 2
+# True 4K Image Generation Pipeline
 
 ## What
-Replace `google/gemini-3-pro-image-preview` with `google/gemini-3.1-flash-image-preview` across all image generation edge functions. This model produces pro-level quality but is faster. The existing 4K quality/texture prompt directives remain in place.
+Added a real 4K upscale step using Google Vertex AI's `imagen-4.0-generate-preview` upscaler after every image generation and edit. Images are now generated at 1024px by Nano Banana 2, then upscaled 4× to ~4096px before upload.
 
-## Changes
+## Changes Made
 
-### 5 files — single model string replacement in each:
+### `supabase/functions/generate-shots/index.ts`
+- Added Vertex AI auth helpers (JWT, OAuth) — same pattern as `generate-video`
+- Added `upscaleImageTo4K()` function that calls Imagen upscaler with `x4` factor
+- Every generated shot is upscaled before upload; if upscale fails, the shot returns null (no silent 1024 fallback)
 
-1. **`supabase/functions/generate-shots/index.ts`** (line ~961)
-2. **`supabase/functions/edit-shot/index.ts`** (line ~131)
-3. **`supabase/functions/generate-model-portraits/index.ts`** (line ~75)
-4. **`supabase/functions/generate-preset-images/index.ts`** (line ~64)
-5. **`supabase/functions/generate-support-refs/index.ts`** (line ~107)
+### `supabase/functions/edit-shot/index.ts`
+- Added same upscale helpers and `upscaleImageTo4K()` function
+- Edited shots are upscaled before storage upload
 
-Each: `google/gemini-3-pro-image-preview` → `google/gemini-3.1-flash-image-preview`
-
-No other changes needed — quality/texture prompt blocks already target 4K detail.
-
+### `src/pages/Studio.tsx`
+- Updated `GENERATION_STAGES` to include "Upscaling to 4K..." and "Finalizing high-res output..." stages
