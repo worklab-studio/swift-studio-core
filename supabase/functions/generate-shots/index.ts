@@ -1133,9 +1133,19 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
       }
 
       const aiData = await aiResponse.json();
-      const imageData = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+      let imageData = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
       if (!imageData) {
         console.error(`No image in response for ${label}`);
+        return null;
+      }
+
+      // Upscale to 4K
+      try {
+        console.log(`Upscaling ${label} to 4K...`);
+        imageData = await upscaleImageTo4K(imageData);
+        console.log(`${label} upscaled successfully`);
+      } catch (upscaleErr) {
+        console.error(`Upscale failed for ${label}, returning null:`, upscaleErr);
         return null;
       }
 
