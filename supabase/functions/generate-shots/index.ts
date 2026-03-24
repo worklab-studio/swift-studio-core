@@ -958,7 +958,7 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-3.1-flash-image-preview",
+            model: "google/gemini-3-pro-image-preview",
             messages: [{ role: "user", content }],
             modalities: ["image", "text"],
           }),
