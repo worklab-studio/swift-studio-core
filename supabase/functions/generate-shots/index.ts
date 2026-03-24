@@ -165,39 +165,43 @@ const MYSTIC_KEYWORDS = /moss|forest|fog|ethereal|temple|volcanic|aurora|enchant
 const ARTISTIC_KEYWORDS = /rose petal|crushed ice|antique mirror|candlelight|dark slate|moody|dramatic|spotlight|velvet|silk|raw stone|marble noir|obsidian/i;
 
 /* ── Step 1: Product Description Extraction ── */
-async function describeProduct(productImageUrl: string, apiKey: string): Promise<string> {
+async function toVertexPart(imageUrlOrDataUri: string): Promise<any> {
+  if (imageUrlOrDataUri.startsWith("data:")) {
+    const match = imageUrlOrDataUri.match(/^data:(image\/[\w+.-]+);base64,(.+)$/);
+    if (match) return { inlineData: { mimeType: match[1], data: match[2] } };
+  }
+  const res = await fetch(imageUrlOrDataUri);
+  if (!res.ok) throw new Error(`Failed to fetch image: ${res.status}`);
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  const ct = res.headers.get("content-type") || "image/jpeg";
+  return { inlineData: { mimeType: ct.split(";")[0], data: btoa(binary) } };
+}
+
+async function describeProduct(productImageUrl: string, token: string, gcpProjectId: string): Promise<string> {
   try {
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const imagePart = await toVertexPart(productImageUrl);
+    const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent`;
+    const resp = await fetch(url, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "system",
-            content: "You are a product packaging analyst. Describe products precisely for an AI image generator. Never mention people, faces, or models — only describe the physical product container/packaging. Be exhaustive: packaging shape, approximate dimensions, ALL colors with exact placement, material finish (matte/glossy/metallic/frosted), every piece of text/branding visible, logo design and placement, cap/lid/closure style, graphics, patterns, gradients. Keep it factual and visual. Max 200 words."
-          },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: "Describe this product in precise visual detail for an AI image generator." },
-              { type: "image_url", image_url: { url: productImageUrl } }
-            ]
-          }
-        ],
+        contents: [{ role: "user", parts: [
+          { text: "Describe this product in precise visual detail for an AI image generator." },
+          imagePart,
+        ] }],
+        systemInstruction: { parts: [{ text: "You are a product packaging analyst. Describe products precisely for an AI image generator. Never mention people, faces, or models — only describe the physical product container/packaging. Be exhaustive: packaging shape, approximate dimensions, ALL colors with exact placement, material finish (matte/glossy/metallic/frosted), every piece of text/branding visible, logo design and placement, cap/lid/closure style, graphics, patterns, gradients. Keep it factual and visual. Max 200 words." }] },
       }),
     });
 
     if (!resp.ok) {
-      console.error("describeProduct failed:", resp.status);
+      console.error("describeProduct failed:", resp.status, await resp.text());
       return "";
     }
 
     const data = await resp.json();
-    return data.choices?.[0]?.message?.content || "";
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
   } catch (e) {
     console.error("describeProduct error:", e);
     return "";
@@ -759,13 +763,14 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+    const saJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_KEY");
+    if (!saJson) {
       return new Response(JSON.stringify({ error: "AI not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const { token: vertexToken, projectId: gcpProjectId } = await getVertexAccessToken(saJson);
 
     // Service client for storage uploads
     const serviceClient = createClient(
@@ -780,7 +785,7 @@ serve(async (req) => {
 
     if (isProductShootWithTemplate && showcaseType && productImageUrl) {
       console.log(`Showcase mode: ${showcaseType} — extracting product description...`);
-      productDescription = await describeProduct(productImageUrl, LOVABLE_API_KEY);
+      productDescription = await describeProduct(productImageUrl, vertexToken, gcpProjectId);
       console.log(`Product description extracted: ${productDescription.substring(0, 100)}...`);
     }
 
@@ -1086,21 +1091,31 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
       }
 
       const callAI = async (overridePrompt?: string) => {
-        const refImages = primaryRef ? [{ type: "image_url", image_url: { url: primaryRef } }] : [];
-        const content = overridePrompt
-          ? [{ type: "text", text: overridePrompt }, ...refImages]
+        // Convert messageContent to Vertex AI parts
+        const vertexParts: any[] = [];
+        const srcContent = overridePrompt
+          ? [{ type: "text", text: overridePrompt }, ...(primaryRef ? [{ type: "image_url", image_url: { url: primaryRef } }] : [])]
           : messageContent;
 
-        const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        for (const item of srcContent) {
+          if (item.type === "text") {
+            vertexParts.push({ text: item.text });
+          } else if (item.type === "image_url") {
+            try {
+              vertexParts.push(await toVertexPart(item.image_url.url));
+            } catch (e) {
+              console.warn("Failed to convert image for Vertex:", e);
+            }
+          }
+        }
+
+        const vertexUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent`;
+        const resp = await fetch(vertexUrl, {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
+          headers: { Authorization: `Bearer ${vertexToken}`, "Content-Type": "application/json" },
           body: JSON.stringify({
-            model: "google/gemini-3.1-flash-image-preview",
-            messages: [{ role: "user", content }],
-            modalities: ["image", "text"],
+            contents: [{ role: "user", parts: vertexParts }],
+            generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
           }),
         });
         return resp;
@@ -1112,10 +1127,6 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
         console.log(`Rate limited for ${label}, waiting 10s and retrying...`);
         await new Promise((r) => setTimeout(r, 10000));
         aiResponse = await callAI();
-      }
-
-      if (aiResponse.status === 402) {
-        throw new Error("INSUFFICIENT_AI_CREDITS");
       }
 
       // Content safety fallback for showcase modes
@@ -1133,7 +1144,8 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
       }
 
       const aiData = await aiResponse.json();
-      let imageData = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+      const imgPart = aiData.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+      let imageData = imgPart ? `data:${imgPart.inlineData.mimeType || "image/png"};base64,${imgPart.inlineData.data}` : null;
       if (!imageData) {
         console.error(`No image in response for ${label}`);
         return null;
