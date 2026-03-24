@@ -165,39 +165,43 @@ const MYSTIC_KEYWORDS = /moss|forest|fog|ethereal|temple|volcanic|aurora|enchant
 const ARTISTIC_KEYWORDS = /rose petal|crushed ice|antique mirror|candlelight|dark slate|moody|dramatic|spotlight|velvet|silk|raw stone|marble noir|obsidian/i;
 
 /* ── Step 1: Product Description Extraction ── */
-async function describeProduct(productImageUrl: string, apiKey: string): Promise<string> {
+async function toVertexPart(imageUrlOrDataUri: string): Promise<any> {
+  if (imageUrlOrDataUri.startsWith("data:")) {
+    const match = imageUrlOrDataUri.match(/^data:(image\/[\w+.-]+);base64,(.+)$/);
+    if (match) return { inlineData: { mimeType: match[1], data: match[2] } };
+  }
+  const res = await fetch(imageUrlOrDataUri);
+  if (!res.ok) throw new Error(`Failed to fetch image: ${res.status}`);
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  const ct = res.headers.get("content-type") || "image/jpeg";
+  return { inlineData: { mimeType: ct.split(";")[0], data: btoa(binary) } };
+}
+
+async function describeProduct(productImageUrl: string, token: string, gcpProjectId: string): Promise<string> {
   try {
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const imagePart = await toVertexPart(productImageUrl);
+    const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent`;
+    const resp = await fetch(url, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "system",
-            content: "You are a product packaging analyst. Describe products precisely for an AI image generator. Never mention people, faces, or models — only describe the physical product container/packaging. Be exhaustive: packaging shape, approximate dimensions, ALL colors with exact placement, material finish (matte/glossy/metallic/frosted), every piece of text/branding visible, logo design and placement, cap/lid/closure style, graphics, patterns, gradients. Keep it factual and visual. Max 200 words."
-          },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: "Describe this product in precise visual detail for an AI image generator." },
-              { type: "image_url", image_url: { url: productImageUrl } }
-            ]
-          }
-        ],
+        contents: [{ role: "user", parts: [
+          { text: "Describe this product in precise visual detail for an AI image generator." },
+          imagePart,
+        ] }],
+        systemInstruction: { parts: [{ text: "You are a product packaging analyst. Describe products precisely for an AI image generator. Never mention people, faces, or models — only describe the physical product container/packaging. Be exhaustive: packaging shape, approximate dimensions, ALL colors with exact placement, material finish (matte/glossy/metallic/frosted), every piece of text/branding visible, logo design and placement, cap/lid/closure style, graphics, patterns, gradients. Keep it factual and visual. Max 200 words." }] },
       }),
     });
 
     if (!resp.ok) {
-      console.error("describeProduct failed:", resp.status);
+      console.error("describeProduct failed:", resp.status, await resp.text());
       return "";
     }
 
     const data = await resp.json();
-    return data.choices?.[0]?.message?.content || "";
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
   } catch (e) {
     console.error("describeProduct error:", e);
     return "";
