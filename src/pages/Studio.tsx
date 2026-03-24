@@ -3136,7 +3136,7 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
 }
 
 /* ── Step 5 Config (Left — Export Panel) ── */
-function Step5Config({ shots, exportFormat, setExportFormat, selectedShots, setSelectedShots, generatedVideo, onRegenerateAll, aspectRatio }: {
+function Step5Config({ shots, exportFormat, setExportFormat, selectedShots, setSelectedShots, generatedVideo, onRegenerateAll, onRegenerateSelected, aspectRatio }: {
   shots: GeneratedShot[];
   exportFormat: string;
   setExportFormat: React.Dispatch<React.SetStateAction<string>>;
@@ -3144,6 +3144,7 @@ function Step5Config({ shots, exportFormat, setExportFormat, selectedShots, setS
   setSelectedShots: React.Dispatch<React.SetStateAction<Set<string>>>;
   generatedVideo: GeneratedVideo | null;
   onRegenerateAll: () => void;
+  onRegenerateSelected: (ids: string[]) => void;
   aspectRatio: string;
 }) {
   const toggleShot = (id: string) => {
