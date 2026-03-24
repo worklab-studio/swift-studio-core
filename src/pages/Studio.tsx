@@ -3190,11 +3190,21 @@ function Step5Config({ shots, exportFormat, setExportFormat, selectedShots, setS
       )}
 
 
-      {shots.length > 1 && (
-        <Button variant="outline" className="w-full" size="sm" onClick={onRegenerateAll}>
-          <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Regenerate all
-        </Button>
-      )}
+      {shots.length > 1 && (() => {
+        const isPartial = selectedShots.size > 0 && selectedShots.size < shots.length;
+        return (
+          <Button variant="outline" className="w-full" size="sm" onClick={() => {
+            if (isPartial) {
+              onRegenerateSelected(Array.from(selectedShots));
+            } else {
+              onRegenerateAll();
+            }
+          }}>
+            <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+            {isPartial ? `Regenerate selected (${selectedShots.size})` : 'Regenerate all'}
+          </Button>
+        );
+      })()}
 
       {generatedVideo && (
         <>
