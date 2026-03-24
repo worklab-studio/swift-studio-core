@@ -7,7 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// ─── Vertex AI upscale helpers ───
+// ─── Vertex AI helpers ───
 function base64url(data: Uint8Array): string {
   let binary = "";
   for (const byte of data) binary += String.fromCharCode(byte);
@@ -50,60 +50,61 @@ async function getVertexAccessToken(serviceAccountJson: string): Promise<{ token
   return { token: access_token, projectId: sa.project_id };
 }
 
-async function upscaleImageTo4K(base64ImageData: string): Promise<string> {
-  const saJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_KEY");
-  if (!saJson) {
-    console.warn("No GOOGLE_SERVICE_ACCOUNT_KEY, skipping upscale");
-    return base64ImageData;
+async function toVertexPart(imageUrlOrDataUri: string): Promise<any> {
+  if (imageUrlOrDataUri.startsWith("data:")) {
+    const match = imageUrlOrDataUri.match(/^data:(image\/[\w+.-]+);base64,(.+)$/);
+    if (match) return { inlineData: { mimeType: match[1], data: match[2] } };
   }
-  try {
-    const { token, projectId } = await getVertexAccessToken(saJson);
-    const location = "us-central1";
-    const rawBase64 = base64ImageData.replace(/^data:image\/\w+;base64,/, "");
+  const res = await fetch(imageUrlOrDataUri);
+  if (!res.ok) throw new Error(`Failed to fetch image: ${res.status}`);
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  const ct = res.headers.get("content-type") || "image/jpeg";
+  return { inlineData: { mimeType: ct.split(";")[0], data: btoa(binary) } };
+}
 
-    const tryUpscale = async (endpoint: string) => {
-      const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${endpoint}`;
-      return fetch(url, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          instances: [{ image: { bytesBase64Encoded: rawBase64 }, prompt: "high quality 4K upscale" }],
-          parameters: { sampleCount: 1, mode: "upscale", upscaleConfig: { upscaleFactor: "x4" } },
-        }),
+async function upscaleImageTo4K(base64ImageData: string, token: string, gcpProjectId: string): Promise<string> {
+  const rawBase64 = base64ImageData.replace(/^data:image\/\w+;base64,/, "");
+  const location = "us-central1";
+
+  const tryUpscale = async (endpoint: string) => {
+    const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/${location}/publishers/google/models/${endpoint}`;
+    return fetch(url, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        instances: [{ image: { bytesBase64Encoded: rawBase64 }, prompt: "high quality 4K upscale" }],
+        parameters: { sampleCount: 1, mode: "upscale", upscaleConfig: { upscaleFactor: "x4" } },
+      }),
+    });
+  };
+
+  let res = await tryUpscale("imagen-4.0-upscale-preview:predict");
+  if (!res.ok) res = await tryUpscale("imagen-4.0-upscale-preview:predictLongRunning");
+  if (!res.ok) throw new Error(`Upscale failed: ${res.status}`);
+
+  const data = await res.json();
+  if (data.name && !data.predictions) {
+    for (let i = 0; i < 30; i++) {
+      await new Promise(r => setTimeout(r, 5000));
+      const pollRes = await fetch(`https://${location}-aiplatform.googleapis.com/v1/${data.name}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-    };
-
-    let res = await tryUpscale("imagen-4.0-upscale-preview:predict");
-    if (!res.ok) {
-      res = await tryUpscale("imagen-4.0-upscale-preview:predictLongRunning");
-    }
-    if (!res.ok) throw new Error(`Upscale failed: ${res.status}`);
-
-    const data = await res.json();
-    if (data.name && !data.predictions) {
-      for (let i = 0; i < 30; i++) {
-        await new Promise(r => setTimeout(r, 5000));
-        const pollRes = await fetch(`https://${location}-aiplatform.googleapis.com/v1/${data.name}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!pollRes.ok) continue;
-        const pollData = await pollRes.json();
-        if (pollData.done) {
-          const b64 = pollData.response?.predictions?.[0]?.bytesBase64Encoded;
-          if (b64) return `data:image/png;base64,${b64}`;
-          throw new Error("No image in completed operation");
-        }
+      if (!pollRes.ok) continue;
+      const pollData = await pollRes.json();
+      if (pollData.done) {
+        const b64 = pollData.response?.predictions?.[0]?.bytesBase64Encoded;
+        if (b64) return `data:image/png;base64,${b64}`;
+        throw new Error("No image in completed operation");
       }
-      throw new Error("Upscale timed out");
     }
-
-    const b64 = data.predictions?.[0]?.bytesBase64Encoded;
-    if (b64) return `data:image/png;base64,${b64}`;
-    throw new Error("No upscaled image in response");
-  } catch (e) {
-    console.error("Upscale error:", e);
-    throw e;
+    throw new Error("Upscale timed out");
   }
+
+  const b64 = data.predictions?.[0]?.bytesBase64Encoded;
+  if (b64) return `data:image/png;base64,${b64}`;
+  throw new Error("No upscaled image in response");
 }
 
 serve(async (req) => {
@@ -112,151 +113,103 @@ serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+    const saJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_KEY");
+    if (!saJson) {
       return new Response(JSON.stringify({ error: "AI not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const { image, projectId, category } = await req.json();
     if (!image) {
       return new Response(JSON.stringify({ error: "No image provided" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const apparelPrompt = `This is a product photo. Remove ONLY the background. Replace it with pure white (#FFFFFF). Do NOT alter the product in ANY way — preserve its EXACT size, shape, length, proportions, colors, patterns, fabric texture, and every detail pixel-for-pixel. Do NOT stretch, shrink, crop, extend, or recreate the garment. The product must remain IDENTICAL to the input — only the background changes to white. No text, no watermarks.`;
+    const { token, projectId: gcpProjectId } = await getVertexAccessToken(saJson);
 
+    const apparelPrompt = `This is a product photo. Remove ONLY the background. Replace it with pure white (#FFFFFF). Do NOT alter the product in ANY way — preserve its EXACT size, shape, length, proportions, colors, patterns, fabric texture, and every detail pixel-for-pixel. Do NOT stretch, shrink, crop, extend, or recreate the garment. The product must remain IDENTICAL to the input — only the background changes to white. No text, no watermarks.`;
     const genericPrompt = `Remove ONLY the background from this product photo. Replace with pure white (#FFFFFF). Do NOT alter, resize, reshape, or recreate the product. Keep the EXACT same product with identical proportions, colors, details, and dimensions. Only the background changes. No text, no watermarks.`;
 
-    const aiPayload = {
-      model: "google/gemini-3.1-flash-image-preview",
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: category?.toLowerCase() === "apparel" ? apparelPrompt : genericPrompt,
-            },
-            {
-              type: "image_url",
-              image_url: { url: image },
-            },
-          ],
-        },
-      ],
-      modalities: ["image", "text"],
-    };
+    const imagePart = await toVertexPart(image);
+    const promptText = category?.toLowerCase() === "apparel" ? apparelPrompt : genericPrompt;
+
+    const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent`;
 
     let aiResponse: Response | null = null;
     const maxRetries = 3;
     for (let attempt = 0; attempt < maxRetries; attempt++) {
-      aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      aiResponse = await fetch(url, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(aiPayload),
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: promptText }, imagePart] }],
+          generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+        }),
       });
-
       if (aiResponse.status !== 429) break;
-
       if (attempt < maxRetries - 1) {
-        const wait = (attempt + 1) * 3000;
-        console.log(`Rate limited, retrying in ${wait}ms (attempt ${attempt + 1}/${maxRetries})`);
-        await new Promise((r) => setTimeout(r, wait));
+        await new Promise((r) => setTimeout(r, (attempt + 1) * 3000));
       }
     }
 
     if (!aiResponse!.ok) {
       const errText = await aiResponse!.text();
-      console.error("AI error:", aiResponse!.status, errText);
-
+      console.error("Vertex AI error:", aiResponse!.status, errText);
       if (aiResponse!.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded, please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (aiResponse!.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
       return new Response(JSON.stringify({ error: "Background removal failed" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const aiData = await aiResponse!.json();
-    let imageData = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-
-    if (!imageData) {
+    const resultImagePart = aiData.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+    if (!resultImagePart) {
       return new Response(JSON.stringify({ error: "No image in AI response" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    let imageData = `data:${resultImagePart.inlineData.mimeType || "image/png"};base64,${resultImagePart.inlineData.data}`;
 
     // Upscale to 4K
     try {
       console.log("Upscaling bg-removed image to 4K...");
-      imageData = await upscaleImageTo4K(imageData);
+      imageData = await upscaleImageTo4K(imageData, token, gcpProjectId);
       console.log("Background removal upscaled successfully");
     } catch (upscaleErr) {
       console.error("Upscale failed for bg removal:", upscaleErr);
       return new Response(JSON.stringify({ error: "Failed to upscale background-removed image to 4K" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Upload to storage if projectId provided
     if (projectId) {
-      const serviceClient = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-      );
-
+      const serviceClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
       const base64Match = imageData.match(/^data:image\/(\w+);base64,(.+)$/);
       if (base64Match) {
         const ext = base64Match[1] === "jpeg" ? "jpg" : base64Match[1];
         const binaryData = Uint8Array.from(atob(base64Match[2]), (c) => c.charCodeAt(0));
         const filePath = `${projectId}/bg-removed-${Date.now()}.${ext}`;
-
         const { error: uploadErr } = await serviceClient.storage
-          .from("originals")
-          .upload(filePath, binaryData, {
-            contentType: `image/${base64Match[1]}`,
-            upsert: true,
-          });
-
+          .from("originals").upload(filePath, binaryData, { contentType: `image/${base64Match[1]}`, upsert: true });
         if (!uploadErr) {
-          const { data: publicUrlData } = serviceClient.storage
-            .from("originals")
-            .getPublicUrl(filePath);
-
+          const { data: publicUrlData } = serviceClient.storage.from("originals").getPublicUrl(filePath);
           return new Response(JSON.stringify({ url: publicUrlData.publicUrl }), {
-            status: 200,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
         console.error("Upload error:", uploadErr);
       }
     }
 
-    // Fallback: return base64 directly
     return new Response(JSON.stringify({ url: imageData }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("remove-background error:", e);
