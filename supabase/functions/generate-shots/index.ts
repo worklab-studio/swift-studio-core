@@ -86,7 +86,7 @@ async function upscaleImageTo4K(base64ImageData: string): Promise<string> {
       // Try polling-based approach if it's a long-running operation
       if (upscaleRes.status === 404 || errText.includes("not found")) {
         // Fallback: try predict endpoint (non-long-running)
-        const fallbackUrl = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/imagen-4.0-generate-preview:predict`;
+        const fallbackUrl = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/imagen-4.0-upscale-preview:predictLongRunning`;
         const fallbackRes = await fetch(fallbackUrl, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
