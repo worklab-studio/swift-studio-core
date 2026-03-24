@@ -7,6 +7,63 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// ─── Vertex AI auth helpers ───
+function base64url(data: Uint8Array): string {
+  let binary = "";
+  for (const byte of data) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function pemToArrayBuffer(pem: string): ArrayBuffer {
+  const b64 = pem.replace(/-----BEGIN .*-----/, "").replace(/-----END .*-----/, "").replace(/\s/g, "");
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
+async function getVertexAccessToken(serviceAccountJson: string): Promise<{ token: string; projectId: string }> {
+  let cleaned = serviceAccountJson.trim();
+  if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+    try { cleaned = JSON.parse(cleaned); } catch (_) {}
+  }
+  const sa = JSON.parse(cleaned);
+  const now = Math.floor(Date.now() / 1000);
+  const header = base64url(new TextEncoder().encode(JSON.stringify({ alg: "RS256", typ: "JWT" })));
+  const payload = base64url(new TextEncoder().encode(JSON.stringify({
+    iss: sa.client_email, sub: sa.client_email,
+    aud: "https://oauth2.googleapis.com/token",
+    scope: "https://www.googleapis.com/auth/cloud-platform",
+    iat: now, exp: now + 3600,
+  })));
+  const signingInput = `${header}.${payload}`;
+  const key = await crypto.subtle.importKey("pkcs8", pemToArrayBuffer(sa.private_key),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
+  const signature = base64url(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(signingInput))));
+  const jwt = `${signingInput}.${signature}`;
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
+  });
+  if (!tokenRes.ok) throw new Error(`Google OAuth failed: ${await tokenRes.text()}`);
+  const { access_token } = await tokenRes.json();
+  return { token: access_token, projectId: sa.project_id };
+}
+
+async function toVertexPart(imageUrlOrDataUri: string): Promise<any> {
+  if (imageUrlOrDataUri.startsWith("data:")) {
+    const match = imageUrlOrDataUri.match(/^data:(image\/[\w+.-]+);base64,(.+)$/);
+    if (match) return { inlineData: { mimeType: match[1], data: match[2] } };
+  }
+  const res = await fetch(imageUrlOrDataUri);
+  if (!res.ok) throw new Error(`Failed to fetch image: ${res.status}`);
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  const ct = res.headers.get("content-type") || "image/jpeg";
+  return { inlineData: { mimeType: ct.split(";")[0], data: btoa(binary) } };
+}
+
 const SUPPORT_ANGLES = [
   {
     id: "front-headshot",
@@ -34,16 +91,14 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+    const saJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_KEY");
+    if (!saJson) {
       return new Response(JSON.stringify({ error: "AI not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -56,21 +111,17 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const { modelId, referenceImageUrl, identityLockSummary } = await req.json();
-
     if (!modelId || !referenceImageUrl || !identityLockSummary) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Verify model belongs to user
     const { data: model, error: modelErr } = await supabase
       .from("custom_models")
       .select("id, user_id")
@@ -80,8 +131,7 @@ serve(async (req) => {
 
     if (modelErr || !model) {
       return new Response(JSON.stringify({ error: "Model not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -90,72 +140,52 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    const { token, projectId } = await getVertexAccessToken(saJson);
+    const refImagePart = await toVertexPart(referenceImageUrl);
     const supportUrls: string[] = [];
 
-    // Generate each support angle sequentially to avoid rate limits
     for (const angle of SUPPORT_ANGLES) {
       try {
         const prompt = angle.prompt(identityLockSummary);
+        const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent`;
 
-        const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        const aiResponse = await fetch(url, {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
           body: JSON.stringify({
-            model: "google/gemini-3.1-flash-image-preview",
-            messages: [
-              {
-                role: "user",
-                content: [
-                  {
-                    type: "text",
-                    text: "IDENTITY REFERENCE — The following photo shows the EXACT person you must reproduce. Study their face shape, eyes, nose, lips, jawline, hairline, skin tone, hair color/texture, and all distinguishing features. The generated image must be this SAME person.",
-                  },
-                  {
-                    type: "image_url",
-                    image_url: { url: referenceImageUrl },
-                  },
-                  {
-                    type: "text",
-                    text: prompt,
-                  },
-                ],
-              },
-            ],
-            modalities: ["image", "text"],
+            contents: [{
+              role: "user",
+              parts: [
+                { text: "IDENTITY REFERENCE — The following photo shows the EXACT person you must reproduce. Study their face shape, eyes, nose, lips, jawline, hairline, skin tone, hair color/texture, and all distinguishing features. The generated image must be this SAME person." },
+                refImagePart,
+                { text: prompt },
+              ],
+            }],
+            generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
           }),
         });
 
         if (!aiResponse.ok) {
           console.error(`Support ref ${angle.id} failed:`, aiResponse.status);
-          // Wait and continue
           await new Promise((r) => setTimeout(r, 3000));
           continue;
         }
 
         const aiData = await aiResponse.json();
-        const imageData = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-        if (!imageData) {
+        const imagePart = aiData.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+        if (!imagePart) {
           console.error(`No image for ${angle.id}`);
           continue;
         }
 
-        // Upload
-        const base64Match = imageData.match(/^data:image\/(\w+);base64,(.+)$/);
-        if (!base64Match) continue;
-
-        const ext = base64Match[1] === "jpeg" ? "jpg" : base64Match[1];
-        const binaryData = Uint8Array.from(atob(base64Match[2]), (c) => c.charCodeAt(0));
+        const mimeType = imagePart.inlineData.mimeType || "image/png";
+        const ext = mimeType.includes("jpeg") ? "jpg" : "png";
+        const binaryData = Uint8Array.from(atob(imagePart.inlineData.data), (c) => c.charCodeAt(0));
         const filePath = `models/${user.id}/support-${modelId}-${angle.id}-${Date.now()}.${ext}`;
 
         const { error: uploadErr } = await serviceClient.storage
           .from("originals")
-          .upload(filePath, binaryData, {
-            contentType: `image/${base64Match[1]}`,
-            upsert: true,
-          });
+          .upload(filePath, binaryData, { contentType: mimeType, upsert: true });
 
         if (uploadErr) {
           console.error(`Upload error for ${angle.id}:`, uploadErr);
@@ -168,8 +198,6 @@ serve(async (req) => {
 
         supportUrls.push(publicUrlData.publicUrl);
         console.log(`Generated support ref: ${angle.id}`);
-
-        // Pause between generations
         await new Promise((r) => setTimeout(r, 2000));
       } catch (e) {
         console.error(`Support ref ${angle.id} error:`, e);
@@ -177,7 +205,6 @@ serve(async (req) => {
       }
     }
 
-    // Save support refs to model
     if (supportUrls.length > 0) {
       await serviceClient
         .from("custom_models")
@@ -186,8 +213,7 @@ serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ supportUrls, count: supportUrls.length }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("generate-support-refs error:", e);

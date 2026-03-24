@@ -6,15 +6,72 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// ─── Vertex AI auth helpers ───
+function base64url(data: Uint8Array): string {
+  let binary = "";
+  for (const byte of data) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function pemToArrayBuffer(pem: string): ArrayBuffer {
+  const b64 = pem.replace(/-----BEGIN .*-----/, "").replace(/-----END .*-----/, "").replace(/\s/g, "");
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
+async function getVertexAccessToken(serviceAccountJson: string): Promise<{ token: string; projectId: string }> {
+  let cleaned = serviceAccountJson.trim();
+  if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+    try { cleaned = JSON.parse(cleaned); } catch (_) {}
+  }
+  const sa = JSON.parse(cleaned);
+  const now = Math.floor(Date.now() / 1000);
+  const header = base64url(new TextEncoder().encode(JSON.stringify({ alg: "RS256", typ: "JWT" })));
+  const payload = base64url(new TextEncoder().encode(JSON.stringify({
+    iss: sa.client_email, sub: sa.client_email,
+    aud: "https://oauth2.googleapis.com/token",
+    scope: "https://www.googleapis.com/auth/cloud-platform",
+    iat: now, exp: now + 3600,
+  })));
+  const signingInput = `${header}.${payload}`;
+  const key = await crypto.subtle.importKey("pkcs8", pemToArrayBuffer(sa.private_key),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
+  const signature = base64url(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(signingInput))));
+  const jwt = `${signingInput}.${signature}`;
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
+  });
+  if (!tokenRes.ok) throw new Error(`Google OAuth failed: ${await tokenRes.text()}`);
+  const { access_token } = await tokenRes.json();
+  return { token: access_token, projectId: sa.project_id };
+}
+
+async function toVertexPart(imageUrlOrDataUri: string): Promise<any> {
+  if (imageUrlOrDataUri.startsWith("data:")) {
+    const match = imageUrlOrDataUri.match(/^data:(image\/[\w+.-]+);base64,(.+)$/);
+    if (match) return { inlineData: { mimeType: match[1], data: match[2] } };
+  }
+  const res = await fetch(imageUrlOrDataUri);
+  if (!res.ok) throw new Error(`Failed to fetch image: ${res.status}`);
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  const ct = res.headers.get("content-type") || "image/jpeg";
+  return { inlineData: { mimeType: ct.split(";")[0], data: btoa(binary) } };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "API key not configured" }), {
+    const saJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_KEY");
+    if (!saJson) {
+      return new Response(JSON.stringify({ error: "Google service account not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -28,18 +85,9 @@ serve(async (req) => {
       });
     }
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          {
-            role: "system",
-            content: `You are a product photography and fashion expert. Analyze the product in the image and return structured information.
+    const { token, projectId } = await getVertexAccessToken(saJson);
+
+    const systemText = `You are a product photography and fashion expert. Analyze the product in the image and return structured information.
 
 Special instructions for Apparel & Fashion products:
 - Detect the specific garment type precisely (e.g., "slim-fit formal shirt", "embroidered kurta", "A-line midi dress", "distressed denim jacket").
@@ -72,158 +120,96 @@ Model & Background detection (for ALL products):
 - If no real model is detected, set modelNote to "No model detected, add in upcoming steps."
 - If a real model IS detected on an apparel item, set modelNote to "Model detected — ghost mannequin extraction available."
 - For non-apparel with a real model, set modelNote to "Model detected in image."
-- Detect whether the product is on a clean white/studio background. If not, set hasWhiteBackground to false.`,
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "image_url",
-                image_url: { url: image },
-              },
-              {
-                type: "text",
-                text: "Analyze this product image comprehensively. Identify category, colors, material, suggest a product name, write a brief description, detect garment type if apparel, suggest outfit pairing if apparel, detect beauty application area and size if skincare/beauty, detect FMCG size/packaging/sub-type if FMCG, detect if a human model is present, check if background is white/studio, and generate tailored model shoot and showcase background suggestions.",
-              },
-            ],
-          },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "return_product_info",
-              description: "Return structured product analysis with category-specific detection, model detection, background check, and AI-suggested backgrounds",
-              parameters: {
-                type: "object",
-                properties: {
-                  category: {
-                    type: "string",
-                    enum: ["apparel_fashion", "jewellery", "bags_luggage", "beauty_personal_care", "fmcg", "footwear"],
-                    description: "Product category. Must be one of: apparel_fashion, jewellery, bags_luggage, beauty_personal_care, fmcg, footwear",
-                  },
-                  colors: {
-                    type: "array",
-                    items: { type: "string" },
-                    description: "Detected colors in the product",
-                  },
-                  material: {
-                    type: "string",
-                    description: "Primary material (e.g., Leather, Canvas, Metal, Plastic, Fabric, Cotton, Silk, Glass)",
-                  },
-                  suggestedShots: {
-                    type: "array",
-                    items: { type: "string" },
-                    description: "Recommended photography shot types",
-                  },
-                  description: {
-                    type: "string",
-                    description: "Brief product description (1-2 sentences)",
-                  },
-                  productName: {
-                    type: "string",
-                    description: "Suggested product name",
-                  },
-                  garmentType: {
-                    type: ["string", "null"],
-                    description: "Specific garment type if apparel. Null for non-apparel.",
-                  },
-                  outfitSuggestion: {
-                    type: ["string", "null"],
-                    description: "Complete complementary outfit pairing for apparel. Null for non-apparel.",
-                  },
-                  beautyApplication: {
-                    type: ["string", "null"],
-                    description: "Application area for skincare/beauty: face, hair, lips, eyes, body, nails, or fragrance. Null for non-beauty.",
-                  },
-                  beautySize: {
-                    type: ["string", "null"],
-                    description: "Product size for beauty: mini, standard, large, extra-large. Null for non-beauty.",
-                  },
-                  suggestedOutfits: {
-                    type: "array",
-                    items: { type: "string" },
-                    description: "REQUIRED for Skincare/Beauty/Personal Care: 4-5 complete outfit descriptions for model shoots tailored to the product's color palette, vibe, and application area. Each should be a full outfit description like 'White silk slip dress with delicate gold jewelry, hair down'. For non-beauty/non-skincare products, return an empty array [].",
-                  },
-                  fmcgSize: {
-                    type: ["string", "null"],
-                    description: "Product size for FMCG: small, medium, large, extra-large. Null for non-FMCG.",
-                  },
-                  fmcgPackaging: {
-                    type: ["string", "null"],
-                    description: "Packaging type for FMCG: bottle, can, pouch, sachet, box, jar, tube, carton, bag. Null for non-FMCG.",
-                  },
-                  fmcgSubType: {
-                    type: ["string", "null"],
-                    description: "Sub-type for FMCG: food, beverage, spice, sauce, snack, cleaning, personal care, health supplement. Null for non-FMCG.",
-                  },
-                  suggestedModelShootBackgrounds: {
-                    type: "array",
-                    items: { type: "string" },
-                    description: "5-7 lifestyle background descriptions tailored to this product for model shoots",
-                  },
-                  suggestedShowcaseBackgrounds: {
-                    type: "array",
-                    items: { type: "string" },
-                    description: "5-7 showcase/product-only background descriptions tailored to this product",
-                  },
-                  hasModel: {
-                    type: "boolean",
-                    description: "Whether a human model is detected in the image",
-                  },
-                  hasWhiteBackground: {
-                    type: "boolean",
-                    description: "Whether the product is on a clean white or studio background",
-                  },
-                  modelNote: {
-                    type: ["string", "null"],
-                    description: "Note about model detection status and available actions",
-                  },
+- Detect whether the product is on a clean white/studio background. If not, set hasWhiteBackground to false.`;
+
+    const imagePart = await toVertexPart(image);
+
+    const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent`;
+
+    const aiResponse = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [{
+          role: "user",
+          parts: [
+            imagePart,
+            { text: "Analyze this product image comprehensively. Identify category, colors, material, suggest a product name, write a brief description, detect garment type if apparel, suggest outfit pairing if apparel, detect beauty application area and size if skincare/beauty, detect FMCG size/packaging/sub-type if FMCG, detect if a human model is present, check if background is white/studio, and generate tailored model shoot and showcase background suggestions." },
+          ],
+        }],
+        systemInstruction: { parts: [{ text: systemText }] },
+        tools: [{
+          functionDeclarations: [{
+            name: "return_product_info",
+            description: "Return structured product analysis with category-specific detection, model detection, background check, and AI-suggested backgrounds",
+            parameters: {
+              type: "object",
+              properties: {
+                category: {
+                  type: "string",
+                  enum: ["apparel_fashion", "jewellery", "bags_luggage", "beauty_personal_care", "fmcg", "footwear"],
+                  description: "Product category",
                 },
-                required: ["category", "colors", "material", "suggestedShots", "description", "productName", "garmentType", "outfitSuggestion", "beautyApplication", "beautySize", "suggestedOutfits", "fmcgSize", "fmcgPackaging", "fmcgSubType", "suggestedModelShootBackgrounds", "suggestedShowcaseBackgrounds", "hasModel", "hasWhiteBackground", "modelNote"],
-                additionalProperties: false,
+                colors: { type: "array", items: { type: "string" }, description: "Detected colors" },
+                material: { type: "string", description: "Primary material" },
+                suggestedShots: { type: "array", items: { type: "string" }, description: "Recommended shot types" },
+                description: { type: "string", description: "Brief product description" },
+                productName: { type: "string", description: "Suggested product name" },
+                garmentType: { type: "string", nullable: true, description: "Specific garment type if apparel" },
+                outfitSuggestion: { type: "string", nullable: true, description: "Outfit pairing for apparel" },
+                beautyApplication: { type: "string", nullable: true, description: "Application area for beauty" },
+                beautySize: { type: "string", nullable: true, description: "Size for beauty products" },
+                suggestedOutfits: { type: "array", items: { type: "string" }, description: "Outfit suggestions for beauty model shoots" },
+                fmcgSize: { type: "string", nullable: true, description: "Size for FMCG" },
+                fmcgPackaging: { type: "string", nullable: true, description: "Packaging type for FMCG" },
+                fmcgSubType: { type: "string", nullable: true, description: "Sub-type for FMCG" },
+                suggestedModelShootBackgrounds: { type: "array", items: { type: "string" }, description: "Lifestyle background descriptions" },
+                suggestedShowcaseBackgrounds: { type: "array", items: { type: "string" }, description: "Showcase background descriptions" },
+                hasModel: { type: "boolean", description: "Whether a human model is detected" },
+                hasWhiteBackground: { type: "boolean", description: "Whether background is white/studio" },
+                modelNote: { type: "string", nullable: true, description: "Model detection note" },
               },
+              required: ["category", "colors", "material", "suggestedShots", "description", "productName", "garmentType", "outfitSuggestion", "beautyApplication", "beautySize", "suggestedOutfits", "fmcgSize", "fmcgPackaging", "fmcgSubType", "suggestedModelShootBackgrounds", "suggestedShowcaseBackgrounds", "hasModel", "hasWhiteBackground", "modelNote"],
             },
+          }],
+        }],
+        toolConfig: {
+          functionCallingConfig: {
+            mode: "ANY",
+            allowedFunctionNames: ["return_product_info"],
           },
-        ],
-        tool_choice: { type: "function", function: { name: "return_product_info" } },
+        },
       }),
     });
 
     if (!aiResponse.ok) {
       const errText = await aiResponse.text();
-      console.error("AI gateway error:", aiResponse.status, errText);
+      console.error("Vertex AI error:", aiResponse.status, errText);
 
       if (aiResponse.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded, please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
       return new Response(JSON.stringify({ error: "AI analysis failed" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const aiData = await aiResponse.json();
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+    const functionCall = aiData.candidates?.[0]?.content?.parts?.find((p: any) => p.functionCall)?.functionCall;
 
-    if (!toolCall) {
+    if (!functionCall) {
       return new Response(JSON.stringify({ error: "No analysis result" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const productInfo = JSON.parse(toolCall.function.arguments);
+    const productInfo = functionCall.args;
 
     // Ensure suggestedOutfits is always an array for beauty/skincare
     if (['Skincare', 'Beauty', 'Personal Care'].includes(productInfo.category)) {
@@ -238,8 +224,7 @@ Model & Background detection (for ALL products):
     }
 
     return new Response(JSON.stringify(productInfo), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("analyze-product error:", e);
