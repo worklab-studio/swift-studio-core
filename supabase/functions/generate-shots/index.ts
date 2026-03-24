@@ -65,7 +65,7 @@ async function upscaleImageTo4K(base64ImageData: string): Promise<string> {
   try {
     const { token, projectId } = await getVertexAccessToken(saJson);
     const location = "us-central1";
-    const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/imagen-4.0-generate-preview:predictLongRunning`;
+    const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/imagen-4.0-upscale-preview:predict`;
 
     // Strip data URL prefix to get raw base64
     const rawBase64 = base64ImageData.replace(/^data:image\/\w+;base64,/, "");
@@ -86,7 +86,7 @@ async function upscaleImageTo4K(base64ImageData: string): Promise<string> {
       // Try polling-based approach if it's a long-running operation
       if (upscaleRes.status === 404 || errText.includes("not found")) {
         // Fallback: try predict endpoint (non-long-running)
-        const fallbackUrl = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/imagen-4.0-generate-preview:predict`;
+        const fallbackUrl = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/imagen-4.0-upscale-preview:predictLongRunning`;
         const fallbackRes = await fetch(fallbackUrl, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
@@ -1145,8 +1145,8 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
         imageData = await upscaleImageTo4K(imageData);
         console.log(`${label} upscaled successfully`);
       } catch (upscaleErr) {
-        console.error(`Upscale failed for ${label}, returning null:`, upscaleErr);
-        return null;
+        console.error(`Upscale failed for ${label}, using original resolution:`, upscaleErr);
+        // Continue with original 1024 image rather than losing the shot entirely
       }
 
       const url = await uploadBase64Image(serviceClient, imageData, projectId, label);

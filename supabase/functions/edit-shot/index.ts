@@ -73,9 +73,9 @@ async function upscaleImageTo4K(base64ImageData: string): Promise<string> {
       });
     };
 
-    let res = await tryUpscale("imagen-4.0-generate-preview:predictLongRunning");
+    let res = await tryUpscale("imagen-4.0-upscale-preview:predict");
     if (!res.ok) {
-      res = await tryUpscale("imagen-4.0-generate-preview:predict");
+      res = await tryUpscale("imagen-4.0-upscale-preview:predictLongRunning");
     }
     if (!res.ok) throw new Error(`Upscale failed: ${res.status}`);
 
