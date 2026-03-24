@@ -382,82 +382,60 @@ Include a short reason (1 sentence) explaining why this prompt suits the product
       messages.push({ role: "user", content: userPrompt });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+    const saJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_KEY");
+    if (!saJson) {
       return new Response(
-        JSON.stringify({ error: "AI gateway not configured" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        JSON.stringify({ error: "AI not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const aiResponse = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages,
-          tools: [
-            {
-              type: "function",
-              function: {
-                name: "return_video_prompts",
-                description:
-                  "Return exactly 5 cinematic video prompts for the product.",
-                parameters: {
-                  type: "object",
+    const { token, projectId: gcpProjectId } = await getVertexAccessToken(saJson);
+
+    // Build Vertex AI parts
+    const userParts: any[] = [];
+    if (productImageUrl && !productImageUrl.startsWith("blob:")) {
+      try {
+        userParts.push(await toVertexPart(productImageUrl));
+      } catch (e) {
+        console.warn("Failed to convert product image:", e);
+      }
+    }
+    userParts.push({ text: userPrompt });
+
+    const vertexUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent`;
+
+    const aiResponse = await fetch(vertexUrl, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: userParts }],
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        tools: [{ functionDeclarations: [{
+          name: "return_video_prompts",
+          description: "Return exactly 5 cinematic video prompts for the product.",
+          parameters: {
+            type: "OBJECT",
+            properties: {
+              prompts: {
+                type: "ARRAY",
+                items: {
+                  type: "OBJECT",
                   properties: {
-                    prompts: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          style: {
-                            type: "string",
-                            enum: [
-                              "E-commerce",
-                              "Editorial",
-                              "Cinematic",
-                              "Lifestyle",
-                              "Luxury",
-                            ],
-                          },
-                          text: {
-                            type: "string",
-                            description:
-                              "25-45 word cinematic video direction prompt",
-                          },
-                          reason: {
-                            type: "string",
-                            description:
-                              "1-sentence reason why this prompt suits the product",
-                          },
-                        },
-                        required: ["style", "text", "reason"],
-                        additionalProperties: false,
-                      },
-                    },
+                    style: { type: "STRING", enum: ["E-commerce", "Editorial", "Cinematic", "Lifestyle", "Luxury"] },
+                    text: { type: "STRING", description: "25-45 word cinematic video direction prompt" },
+                    reason: { type: "STRING", description: "1-sentence reason why this prompt suits the product" },
                   },
-                  required: ["prompts"],
-                  additionalProperties: false,
+                  required: ["style", "text", "reason"],
                 },
               },
             },
-          ],
-          tool_choice: {
-            type: "function",
-            function: { name: "return_video_prompts" },
+            required: ["prompts"],
           },
-        }),
-      }
-    );
+        }] }],
+        toolConfig: { functionCallingConfig: { mode: "ANY", allowedFunctionNames: ["return_video_prompts"] } },
+      }),
+    });
 
     if (!aiResponse.ok) {
       const status = aiResponse.status;
@@ -467,14 +445,8 @@ Include a short reason (1 sentence) explaining why this prompt suits the product
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please add funds." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
       const errText = await aiResponse.text();
-      console.error("AI gateway error:", status, errText);
+      console.error("Vertex AI error:", status, errText);
       return new Response(
         JSON.stringify({ error: "AI prompt generation failed" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -482,15 +454,16 @@ Include a short reason (1 sentence) explaining why this prompt suits the product
     }
 
     const aiData = await aiResponse.json();
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) {
+    const fcPart = aiData.candidates?.[0]?.content?.parts?.find((p: any) => p.functionCall);
+    if (!fcPart) {
+      console.error("No functionCall in Vertex response:", JSON.stringify(aiData).substring(0, 500));
       return new Response(
         JSON.stringify({ error: "AI did not return structured prompts" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const parsed = JSON.parse(toolCall.function.arguments);
+    const parsed = fcPart.functionCall.args;
 
     return new Response(
       JSON.stringify({
