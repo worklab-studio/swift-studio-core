@@ -113,7 +113,7 @@ serve(async (req) => {
 
     messageContent.push({
       type: "text",
-      text: `Edit this product photography image: ${editPrompt}. Keep the product intact and recognizable.${hasIdentityRefs ? " Keep the model's face and identity EXACTLY the same — do not change the person." : ""} Professional commercial photography quality. No text, no watermarks.`,
+      text: `Edit this product photography image: ${editPrompt}. Keep the product intact and recognizable.${hasIdentityRefs ? " Keep the model's face and identity EXACTLY the same — do not change the person." : ""} IMAGE QUALITY: Ultra-high-resolution 4K photograph with tack-sharp surface textures — material grain, fabric weave, packaging finish must all be clearly visible. Show visible surface texture — the viewer should feel the product through the screen. Professional commercial photography quality. No text, no watermarks.`,
     });
     messageContent.push({
       type: "image_url",
@@ -128,7 +128,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-pro-image-preview",
+        model: "google/gemini-3.1-flash-image-preview",
         messages: [
           {
             role: "user",

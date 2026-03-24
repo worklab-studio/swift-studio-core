@@ -15,8 +15,9 @@ const SHOT_LABELS_SINGLE = ["hero"];
 const SHOT_LABELS_BEAUTY_CAMPAIGN = ["hero", "model_with_product", "detail_closeup", "model_applying", "alternate_angle", "model_closeup"];
 const SHOT_LABELS_BEAUTY_CAMPAIGN_ADD = ["model_with_product", "detail_closeup", "model_applying", "alternate_angle", "model_closeup"];
 
-/* ── Fidelity & Editing Blocks ── */
-const FIDELITY_BLOCK = "PRODUCT FIDELITY: Product branding MUST be razor-sharp. Preserve EVERY letter, logo, symbol, color, shape, texture EXACTLY as in the reference image. Zero distortion, zero invention.";
+/* ── Quality, Fidelity & Editing Blocks ── */
+const QUALITY_BLOCK = "IMAGE QUALITY: Ultra-high-resolution 4K photograph. Every surface texture, material grain, fabric weave, and product detail must be tack-sharp and clearly visible. Shoot at the highest possible resolution with maximum detail retention.";
+const FIDELITY_BLOCK = "PRODUCT FIDELITY: Product branding MUST be razor-sharp. Preserve EVERY letter, logo, symbol, color, shape, texture EXACTLY as in the reference image. Zero distortion, zero invention. SURFACE DETAIL: Render the product's physical texture with photographic accuracy — every pore, weave, grain, sheen, matte finish, glossy reflection, embossing, and material transition must be clearly visible at full zoom.";
 const EDITING_INSTRUCTION = "EDITING DIRECTIVE: Treat the product as an IMMUTABLE, FIXED pixel element. DO NOT redraw, regenerate, or alter the product in any way. Only modify the environment, lighting, and surroundings around it.";
 
 /* ── Mystic background keywords ── */
@@ -124,6 +125,7 @@ Feel: Magical, aspirational — like discovering a sacred beauty product in an u
 FINAL REMINDER: ABSOLUTELY ZERO humans, hands, fingers, skin, or body parts anywhere in the image.
 ${FIDELITY_BLOCK}
 ${EDITING_INSTRUCTION}
+${QUALITY_BLOCK}
 Image aspect ratio MUST be 4:5 portrait.`;
   }
 
@@ -142,6 +144,7 @@ Feel: High-end department store display — clean elegance, aspirational luxury,
 FINAL REMINDER: ABSOLUTELY ZERO humans, hands, fingers, skin, or body parts anywhere in the image.
 ${FIDELITY_BLOCK}
 ${EDITING_INSTRUCTION}
+${QUALITY_BLOCK}
 Image aspect ratio MUST be 4:5 portrait.`;
 }
 
@@ -208,6 +211,7 @@ Feel: High-art jewellery editorial — moody, dramatic, museum-worthy, the piece
 FINAL REMINDER: ABSOLUTELY ZERO humans, hands, fingers, skin, or body parts anywhere in the image.
 ${FIDELITY_BLOCK}
 ${EDITING_INSTRUCTION}
+${QUALITY_BLOCK}
 Image aspect ratio MUST be 4:5 portrait.`;
   }
 
@@ -225,6 +229,7 @@ Feel: Luxury jewellery house campaign — refined, aspirational, immaculate pres
 FINAL REMINDER: ABSOLUTELY ZERO humans, hands, fingers, skin, or body parts anywhere in the image.
 ${FIDELITY_BLOCK}
 ${EDITING_INSTRUCTION}
+${QUALITY_BLOCK}
 Image aspect ratio MUST be 4:5 portrait.`;
 }
 
@@ -444,7 +449,7 @@ SKINCARE PHOTOGRAPHY STYLE: Dewy, luminous skin with soft beauty lighting. Edito
 OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, mosaic, contact sheet, or multiple images combined. ONE image, ONE model, ONE pose, ONE composition.
 Style: ${baseStyle}. Category: ${category}.
 ${additionalContext ? `Additional direction: ${additionalContext}` : ""}
-${ratioInstruction} Professional beauty campaign photography, high resolution, no text, no watermarks.
+${ratioInstruction} ${QUALITY_BLOCK} No text, no watermarks.
 ${FIDELITY_BLOCK}`;
 }
 
@@ -524,6 +529,7 @@ Feel: Premium FMCG brand campaign — clean, appetizing, trustworthy.
 FINAL REMINDER: ABSOLUTELY ZERO humans, hands, fingers, skin, or body parts anywhere in the image.
 ${FIDELITY_BLOCK}
 ${EDITING_INSTRUCTION}
+${QUALITY_BLOCK}
 Image aspect ratio MUST be 4:5 portrait.`;
 }
 
@@ -827,7 +833,7 @@ ${FIDELITY_BLOCK}
 GARMENT FIDELITY: Preserve the EXACT garment from the reference image — same color, shape, texture, branding, print, stitching. Do NOT alter the garment in any way.
 RULES: Absolutely NO human model, NO body parts, NO torso, NO mannequin, NO person wearing the garment. This is a product-only flat lay photograph. The garment is laid flat, not worn. Aesthetic props (plants, accessories, magazines, coffee) may surround the garment but must NOT cover it.${garmentInfo}
 Style: ${baseStyle}. Category: ${category}.${additionalContext ? ` Additional direction: ${additionalContext}` : ""}
-${ratioInstruction} Professional product photography, high resolution, no text, no watermarks.
+${ratioInstruction} ${QUALITY_BLOCK} No text, no watermarks.
 OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, mosaic, contact sheet, or multiple images combined. ONE image, ONE composition.`;
         }
 
@@ -847,7 +853,7 @@ CONSISTENCY: Use the EXACT SAME model across all shots — same face, same hair,
 ANTI-COMPOSITE: The output must contain exactly ONE subject. No split-screen, no inset panels, no picture-in-picture, no diptych, no triptych, no duplicate model or garment in the same frame. A single continuous photograph with one model in one pose.
 Style: ${baseStyle}. Category: ${category}.
 ${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}
-${ratioInstruction} Professional commercial ecommerce photography, high resolution, no text, no watermarks.
+${ratioInstruction} ${QUALITY_BLOCK} No text, no watermarks.
 OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, mosaic, contact sheet, or multiple images combined. ONE image, ONE model, ONE pose, ONE composition.`;
       }
 
@@ -872,7 +878,7 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
         : "";
       const scaleDirective = shotType === "model_shot" ? ` ${getScaleRule(productInfo)}` : "";
 
-      return `${shotTypeDesc[label] || label}. ${baseStyle}. Category: ${category}. ${modelDesc}${beautyPosing}${outfitDirective}${scaleDirective} ${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}. ${ratioInstruction} Professional commercial photography, high resolution, no text, no watermarks. OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, mosaic, contact sheet, or multiple images combined. ONE image, ONE pose, ONE composition.`;
+      return `${shotTypeDesc[label] || label}. ${baseStyle}. Category: ${category}. ${modelDesc}${beautyPosing}${outfitDirective}${scaleDirective} ${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}. ${ratioInstruction} ${QUALITY_BLOCK} Show visible surface texture — material grain, fabric weave, print detail, packaging finish. No text, no watermarks. OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, mosaic, contact sheet, or multiple images combined. ONE image, ONE pose, ONE composition.`;
     });
 
 
@@ -952,7 +958,7 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-3-pro-image-preview",
+            model: "google/gemini-3.1-flash-image-preview",
             messages: [{ role: "user", content }],
             modalities: ["image", "text"],
           }),
