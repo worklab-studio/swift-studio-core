@@ -351,10 +351,12 @@ const STEPS = [
 ];
 
 const GENERATION_STAGES = [
-  { threshold: 20, label: 'Preparing your product...' },
-  { threshold: 50, label: 'Building the scene...' },
-  { threshold: 80, label: 'Rendering your shots...' },
-  { threshold: 100, label: 'Finishing up...' },
+  { threshold: 15, label: 'Preparing your product...' },
+  { threshold: 35, label: 'Building the scene...' },
+  { threshold: 55, label: 'Rendering your shots...' },
+  { threshold: 75, label: 'Upscaling to 4K...' },
+  { threshold: 90, label: 'Finalizing high-res output...' },
+  { threshold: 100, label: 'Almost there...' },
 ];
 
 const EXPORT_FORMATS = [
