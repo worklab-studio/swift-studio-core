@@ -785,7 +785,7 @@ serve(async (req) => {
 
     if (isProductShootWithTemplate && showcaseType && productImageUrl) {
       console.log(`Showcase mode: ${showcaseType} — extracting product description...`);
-      productDescription = await describeProduct(productImageUrl, LOVABLE_API_KEY);
+      productDescription = await describeProduct(productImageUrl, vertexToken, gcpProjectId);
       console.log(`Product description extracted: ${productDescription.substring(0, 100)}...`);
     }
 
