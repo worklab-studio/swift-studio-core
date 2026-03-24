@@ -1145,8 +1145,8 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
         imageData = await upscaleImageTo4K(imageData);
         console.log(`${label} upscaled successfully`);
       } catch (upscaleErr) {
-        console.error(`Upscale failed for ${label}, returning null:`, upscaleErr);
-        return null;
+        console.error(`Upscale failed for ${label}, using original resolution:`, upscaleErr);
+        // Continue with original 1024 image rather than losing the shot entirely
       }
 
       const url = await uploadBase64Image(serviceClient, imageData, projectId, label);
