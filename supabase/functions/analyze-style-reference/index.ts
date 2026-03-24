@@ -6,42 +6,87 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// ─── Vertex AI auth helpers ───
+function base64url(data: Uint8Array): string {
+  let binary = "";
+  for (const byte of data) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function pemToArrayBuffer(pem: string): ArrayBuffer {
+  const b64 = pem.replace(/-----BEGIN .*-----/, "").replace(/-----END .*-----/, "").replace(/\s/g, "");
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
+async function getVertexAccessToken(serviceAccountJson: string): Promise<{ token: string; projectId: string }> {
+  let cleaned = serviceAccountJson.trim();
+  if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+    try { cleaned = JSON.parse(cleaned); } catch (_) {}
+  }
+  const sa = JSON.parse(cleaned);
+  const now = Math.floor(Date.now() / 1000);
+  const header = base64url(new TextEncoder().encode(JSON.stringify({ alg: "RS256", typ: "JWT" })));
+  const payload = base64url(new TextEncoder().encode(JSON.stringify({
+    iss: sa.client_email, sub: sa.client_email,
+    aud: "https://oauth2.googleapis.com/token",
+    scope: "https://www.googleapis.com/auth/cloud-platform",
+    iat: now, exp: now + 3600,
+  })));
+  const signingInput = `${header}.${payload}`;
+  const key = await crypto.subtle.importKey("pkcs8", pemToArrayBuffer(sa.private_key),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
+  const signature = base64url(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(signingInput))));
+  const jwt = `${signingInput}.${signature}`;
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
+  });
+  if (!tokenRes.ok) throw new Error(`Google OAuth failed: ${await tokenRes.text()}`);
+  const { access_token } = await tokenRes.json();
+  return { token: access_token, projectId: sa.project_id };
+}
+
+async function toVertexPart(imageUrlOrDataUri: string): Promise<any> {
+  if (imageUrlOrDataUri.startsWith("data:")) {
+    const match = imageUrlOrDataUri.match(/^data:(image\/[\w+.-]+);base64,(.+)$/);
+    if (match) return { inlineData: { mimeType: match[1], data: match[2] } };
+  }
+  const res = await fetch(imageUrlOrDataUri);
+  if (!res.ok) throw new Error(`Failed to fetch image: ${res.status}`);
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  const ct = res.headers.get("content-type") || "image/jpeg";
+  return { inlineData: { mimeType: ct.split(";")[0], data: btoa(binary) } };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "API key not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const saJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_KEY");
+    if (!saJson) {
+      return new Response(JSON.stringify({ error: "Google service account not configured" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const { image, shootType, productCategory } = await req.json();
     if (!image) {
       return new Response(JSON.stringify({ error: "No image provided" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    const { token, projectId } = await getVertexAccessToken(saJson);
     const isModelShoot = shootType === "model" || shootType === "model_shot";
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          {
-            role: "system",
-            content: `You are an expert photography director and art director. Analyze the reference image and extract the visual style, pose direction, camera angle, lighting setup, composition approach, color palette, and mood. Return structured data that can be used to recreate a similar look for ${isModelShoot ? "a model wearing/holding" : "a product showcase of"} a ${productCategory || "fashion/lifestyle"} product.
+    const systemText = `You are an expert photography director and art director. Analyze the reference image and extract the visual style, pose direction, camera angle, lighting setup, composition approach, color palette, and mood. Return structured data that can be used to recreate a similar look for ${isModelShoot ? "a model wearing/holding" : "a product showcase of"} a ${productCategory || "fashion/lifestyle"} product.
 
 For model shoots, focus on:
 - Pose: body position, hand placement, gaze direction, stance, posture
@@ -53,78 +98,52 @@ For product shoots, focus on:
 - Pose: product orientation, angle of display, hero positioning
 - Angle: camera height relative to product, tilt, perspective distortion
 - Lighting: highlight placement, shadow direction, specular vs diffuse
-- Composition: centering, prop arrangement, background depth`,
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "image_url",
-                image_url: { url: image },
+- Composition: centering, prop arrangement, background depth`;
+
+    const imagePart = await toVertexPart(image);
+    const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent`;
+
+    const aiResponse = await fetch(url, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{
+          role: "user",
+          parts: [
+            imagePart,
+            { text: `Analyze this reference image for a ${isModelShoot ? "model" : "product"} photoshoot. Extract the complete visual style settings.` },
+          ],
+        }],
+        systemInstruction: { parts: [{ text: systemText }] },
+        tools: [{
+          functionDeclarations: [{
+            name: "return_style_analysis",
+            description: "Return structured style analysis from a reference image",
+            parameters: {
+              type: "object",
+              properties: {
+                styleName: { type: "string", description: "Short descriptive name for this style" },
+                pose: { type: "string", description: "Detailed pose description" },
+                angle: { type: "string", description: "Camera angle and perspective" },
+                lighting: { type: "string", description: "Complete lighting setup" },
+                composition: { type: "string", description: "Composition and framing approach" },
+                colorPalette: { type: "array", items: { type: "string" }, description: "Dominant colors (3-5)" },
+                mood: { type: "string", description: "Overall mood and atmosphere" },
+                fullPrompt: { type: "string", description: "Complete photography prompt to recreate this style" },
               },
-              {
-                type: "text",
-                text: `Analyze this reference image for a ${isModelShoot ? "model" : "product"} photoshoot. Extract the complete visual style settings.`,
-              },
-            ],
-          },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "return_style_analysis",
-              description: "Return structured style analysis from a reference image",
-              parameters: {
-                type: "object",
-                properties: {
-                  styleName: {
-                    type: "string",
-                    description: "A short descriptive name for this style (e.g., 'Moody Editorial', 'Bright Minimalist', 'High Fashion Dramatic')",
-                  },
-                  pose: {
-                    type: "string",
-                    description: "Detailed pose description for model or product placement (2-3 sentences)",
-                  },
-                  angle: {
-                    type: "string",
-                    description: "Camera angle and perspective description (e.g., 'Slightly low angle, 3/4 turn, medium shot at f/2.8')",
-                  },
-                  lighting: {
-                    type: "string",
-                    description: "Complete lighting setup description (e.g., 'Soft key light from upper left, minimal fill, strong rim light from behind')",
-                  },
-                  composition: {
-                    type: "string",
-                    description: "Composition and framing approach (e.g., 'Rule of thirds, subject in left third, generous negative space right')",
-                  },
-                  colorPalette: {
-                    type: "array",
-                    items: { type: "string" },
-                    description: "Dominant colors in the image (3-5 colors)",
-                  },
-                  mood: {
-                    type: "string",
-                    description: "Overall mood and atmosphere (e.g., 'Sophisticated and moody with high contrast')",
-                  },
-                  fullPrompt: {
-                    type: "string",
-                    description: "A complete, detailed photography prompt (3-5 sentences) that would recreate this exact visual style for a product shoot",
-                  },
-                },
-                required: ["styleName", "pose", "angle", "lighting", "composition", "colorPalette", "mood", "fullPrompt"],
-                additionalProperties: false,
-              },
+              required: ["styleName", "pose", "angle", "lighting", "composition", "colorPalette", "mood", "fullPrompt"],
             },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "return_style_analysis" } },
+          }],
+        }],
+        toolConfig: {
+          functionCallingConfig: { mode: "ANY", allowedFunctionNames: ["return_style_analysis"] },
+        },
       }),
     });
 
     if (!aiResponse.ok) {
       const errText = await aiResponse.text();
-      console.error("AI gateway error:", aiResponse.status, errText);
+      console.error("Vertex AI error:", aiResponse.status, errText);
       if (aiResponse.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded, please try again later." }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -136,19 +155,16 @@ For product shoots, focus on:
     }
 
     const aiData = await aiResponse.json();
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+    const functionCall = aiData.candidates?.[0]?.content?.parts?.find((p: any) => p.functionCall)?.functionCall;
 
-    if (!toolCall) {
+    if (!functionCall) {
       return new Response(JSON.stringify({ error: "No analysis result" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const styleInfo = JSON.parse(toolCall.function.arguments);
-
-    return new Response(JSON.stringify(styleInfo), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(JSON.stringify(functionCall.args), {
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("analyze-style-reference error:", e);
