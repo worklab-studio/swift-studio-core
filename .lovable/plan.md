@@ -1,31 +1,21 @@
 
 
-# Add "Regenerate Selected" Option in Step 5
+# Switch All Image Generation to Nano Banana 2
 
 ## What
-Replace the current "Regenerate all" button with smart regeneration that respects the user's shot selection. If some shots are selected, regenerate only those. If all are selected (or none deselected), regenerate all.
+Replace `google/gemini-3-pro-image-preview` with `google/gemini-3.1-flash-image-preview` across all image generation edge functions. This model produces pro-level quality but is faster. The existing 4K quality/texture prompt directives remain in place.
 
-## Changes — `src/pages/Studio.tsx`
+## Changes
 
-### 1. Add a `handleRegenerateSelected` handler (near line 1300)
-- Accept an array of shot IDs to regenerate
-- Call `generate-shots` with a `shotCount` matching the selected count and pass the same config (preset, template, model, etc.)
-- On success, replace only the matching shots in `generatedShots` state (by index or by replacing the old IDs)
-- Delete the old assets from the `assets` table before inserting new ones
+### 5 files — single model string replacement in each:
 
-### 2. Update `Step5Config` component (line 3008)
-- Pass `onRegenerateSelected` callback alongside `onRegenerateAll`
-- Change the button logic:
-  - If `selectedShots.size === shots.length` or `selectedShots.size === 0`: show "Regenerate all" (current behavior)
-  - Otherwise: show "Regenerate selected ({count})" which calls `onRegenerateSelected` with the selected IDs
-- Add a confirmation toast like the existing one
+1. **`supabase/functions/generate-shots/index.ts`** (line ~961)
+2. **`supabase/functions/edit-shot/index.ts`** (line ~131)
+3. **`supabase/functions/generate-model-portraits/index.ts`** (line ~75)
+4. **`supabase/functions/generate-preset-images/index.ts`** (line ~64)
+5. **`supabase/functions/generate-support-refs/index.ts`** (line ~107)
 
-### 3. Wire up in the parent
-- Create `handleRegenerateSelected(ids: string[])` that:
-  - Deletes the selected assets
-  - Calls `handleGenerate` in a mode that generates only `ids.length` shots
-  - Merges the new shots back into `generatedShots`, replacing the old ones by position
+Each: `google/gemini-3-pro-image-preview` → `google/gemini-3.1-flash-image-preview`
 
-## Files Modified
-- `src/pages/Studio.tsx`
+No other changes needed — quality/texture prompt blocks already target 4K detail.
 
