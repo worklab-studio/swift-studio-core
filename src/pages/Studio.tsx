@@ -1305,6 +1305,136 @@ const Studio = () => {
     });
   };
 
+  const handleRegenerateSelected = (selectedIds: string[]) => {
+    const count = selectedIds.length;
+    toast({
+      title: `Regenerate ${count} selected shot${count > 1 ? 's' : ''}?`,
+      description: `This will replace ${count} shot${count > 1 ? 's' : ''} and cost ${count} credit${count > 1 ? 's' : ''}.`,
+      action: <Button size="sm" onClick={async () => {
+        // Delete old assets
+        for (const id of selectedIds) {
+          await supabase.from('assets').delete().eq('id', id);
+        }
+        // Track indices to replace
+        const replaceIndices = selectedIds.map(id => generatedShots.findIndex(s => s.id === id)).filter(i => i >= 0);
+        // Remove old shots from state temporarily and generate new ones
+        const oldShots = [...generatedShots];
+        // Mark selected as regenerating
+        setGeneratedShots(prev => prev.map(s => selectedIds.includes(s.id) ? { ...s, isRegenerating: true } : s));
+        
+        try {
+          if (!project) return;
+          const isProductWithTemplate = shootType === 'product' && selectedTemplate;
+          const activeTemplates = dynamicTemplates.length > 0 ? dynamicTemplates : PRODUCT_SHOOT_TEMPLATES;
+          const tpl = isProductWithTemplate ? activeTemplates.find(t => t.id === selectedTemplate) : null;
+          const productImageUrl = productImages[0] || assets[0]?.url || null;
+          let effectiveStylePrompt = stylePrompt || undefined;
+          if (isProductWithTemplate && tpl) {
+            let templatePrompt = tpl.description;
+            if (tpl.id === 'pt-plain-bg') {
+              templatePrompt += `. CRITICAL: The background MUST be a pure solid ${plainBgColor} color. No texture, no gradient, no patterns, no props — completely clean flat ${plainBgColor} backdrop.`;
+            }
+            effectiveStylePrompt = templatePrompt;
+          }
+
+          let modelPayload = null;
+          if (shootType === 'model') {
+            let modelReferenceUrls: string[] = [];
+            let supportReferenceUrls: string[] = [];
+            let identityLockSummary = '';
+            let hasRealModelReferences = false;
+            const selectedModelId = modelConfig.selectedModel;
+            const customModel = selectedModelId ? customModels.find(m => m.id === selectedModelId) : null;
+            if (customModel) {
+              if (customModel.reference_images && customModel.reference_images.length > 0) {
+                modelReferenceUrls = customModel.reference_images.slice(0, 3);
+                hasRealModelReferences = true;
+              } else if (customModel.portrait_url) {
+                modelReferenceUrls = [customModel.portrait_url];
+              }
+              if ((customModel as any).support_reference_images?.length > 0) {
+                supportReferenceUrls = (customModel as any).support_reference_images;
+              }
+              if ((customModel as any).identity_profile?.identityLockSummary) {
+                identityLockSummary = (customModel as any).identity_profile.identityLockSummary;
+              }
+            } else if (modelConfig.uploadedModelUrl) {
+              modelReferenceUrls = [modelConfig.uploadedModelUrl];
+              hasRealModelReferences = true;
+            } else if (selectedModelId && modelImages[selectedModelId]) {
+              modelReferenceUrls = [modelImages[selectedModelId]];
+            }
+            modelPayload = { ...modelConfig, modelReferenceUrls, supportReferenceUrls, identityLockSummary, hasRealModelReferences };
+          }
+
+          const { data, error } = await supabase.functions.invoke('generate-shots', {
+            body: {
+              projectId: project.id, preset: selectedPreset || 'template', shotCount: count, additionalContext,
+              category: project.category, shotType: shootType === 'model' ? 'model_shot' : 'product_showcase',
+              modelConfig: modelPayload,
+              stylePrompt: effectiveStylePrompt,
+              productImageUrl,
+              productImages: productImages.length > 1 ? productImages : undefined,
+              imageViews: Object.keys(imageViews).length > 0 ? imageViews : undefined,
+              aspectRatio,
+              keepOriginalModel: modelChoice === 'keep',
+              productLabel: productInfo?.productName || productName || 'Untitled',
+              sceneTemplate: isProductWithTemplate ? { id: tpl!.id, description: tpl!.description, name: tpl!.name } : undefined,
+              presetId: selectedPreset || undefined,
+              productInfo: productInfo ? {
+                colors: productInfo.colors, material: productInfo.material, description: productInfo.description,
+                productName: productInfo.productName, garmentType: productInfo.garmentType,
+                beautyApplication: beautyApplication || productInfo.beautyApplication || undefined,
+                beautySize: productSize || productInfo.beautySize || undefined,
+                fmcgSize: productSize || productInfo.fmcgSize || undefined,
+                fmcgPackaging: productInfo.fmcgPackaging || undefined,
+                fmcgSubType: productInfo.fmcgSubType || undefined,
+                selectedOutfit: selectedOutfit || undefined,
+              } : undefined,
+            },
+          });
+
+          if (error || !data?.assets) {
+            toast({ title: 'Regeneration failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
+            setGeneratedShots(oldShots);
+            return;
+          }
+
+          const newShots: GeneratedShot[] = data.assets.map((a: any) => ({
+            id: a.id, url: a.url, shotLabel: a.shot_label || 'hero', promptUsed: a.prompt_used || '',
+            isEditing: false, editPrompt: '', isRegenerating: false, previousUrl: null, showUndo: false,
+          }));
+
+          // Replace old shots at original indices
+          setGeneratedShots(prev => {
+            const updated = prev.filter(s => !selectedIds.includes(s.id));
+            // Insert new shots at the correct positions
+            const result = [...updated];
+            replaceIndices.sort((a, b) => a - b).forEach((idx, i) => {
+              if (i < newShots.length) {
+                result.splice(Math.min(idx, result.length), 0, newShots[i]);
+              }
+            });
+            // Add any remaining new shots at end
+            for (let i = replaceIndices.length; i < newShots.length; i++) {
+              result.push(newShots[i]);
+            }
+            return result;
+          });
+          setSelectedExportShots(prev => {
+            const n = new Set(prev);
+            selectedIds.forEach(id => n.delete(id));
+            newShots.forEach(s => n.add(s.id));
+            return n;
+          });
+        } catch {
+          toast({ title: 'Regeneration failed', description: 'Network error', variant: 'destructive' });
+          setGeneratedShots(oldShots);
+        }
+      }}>Confirm</Button>,
+    });
+  };
+
   const convertImageToFormat = async (imageUrl: string, format: string): Promise<Blob> => {
     const response = await fetch(imageUrl);
     const blob = await response.blob();
@@ -1632,6 +1762,7 @@ const Studio = () => {
                     setSelectedShots={setSelectedExportShots}
                     generatedVideo={generatedVideo}
                     onRegenerateAll={handleRegenerateAll}
+                    onRegenerateSelected={handleRegenerateSelected}
                     aspectRatio={aspectRatio}
                   />
                 )}
@@ -3005,7 +3136,7 @@ function Step3Config({ selectedPreset, setSelectedPreset, referenceImage, setRef
 }
 
 /* ── Step 5 Config (Left — Export Panel) ── */
-function Step5Config({ shots, exportFormat, setExportFormat, selectedShots, setSelectedShots, generatedVideo, onRegenerateAll, aspectRatio }: {
+function Step5Config({ shots, exportFormat, setExportFormat, selectedShots, setSelectedShots, generatedVideo, onRegenerateAll, onRegenerateSelected, aspectRatio }: {
   shots: GeneratedShot[];
   exportFormat: string;
   setExportFormat: React.Dispatch<React.SetStateAction<string>>;
@@ -3013,6 +3144,7 @@ function Step5Config({ shots, exportFormat, setExportFormat, selectedShots, setS
   setSelectedShots: React.Dispatch<React.SetStateAction<Set<string>>>;
   generatedVideo: GeneratedVideo | null;
   onRegenerateAll: () => void;
+  onRegenerateSelected: (ids: string[]) => void;
   aspectRatio: string;
 }) {
   const toggleShot = (id: string) => {
@@ -3058,11 +3190,21 @@ function Step5Config({ shots, exportFormat, setExportFormat, selectedShots, setS
       )}
 
 
-      {shots.length > 1 && (
-        <Button variant="outline" className="w-full" size="sm" onClick={onRegenerateAll}>
-          <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Regenerate all
-        </Button>
-      )}
+      {shots.length > 1 && (() => {
+        const isPartial = selectedShots.size > 0 && selectedShots.size < shots.length;
+        return (
+          <Button variant="outline" className="w-full" size="sm" onClick={() => {
+            if (isPartial) {
+              onRegenerateSelected(Array.from(selectedShots));
+            } else {
+              onRegenerateAll();
+            }
+          }}>
+            <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+            {isPartial ? `Regenerate selected (${selectedShots.size})` : 'Regenerate all'}
+          </Button>
+        );
+      })()}
 
       {generatedVideo && (
         <>
