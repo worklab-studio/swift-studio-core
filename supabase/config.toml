@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.generate-support-refs]
 verify_jwt = false
+
+[functions.upscale-image]
+verify_jwt = false
