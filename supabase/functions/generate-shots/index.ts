@@ -828,7 +828,7 @@ ${FIDELITY_BLOCK}
 GARMENT FIDELITY: Preserve the EXACT garment from the reference image — same color, shape, texture, branding, print, stitching. Do NOT alter the garment in any way.
 RULES: Absolutely NO human model, NO body parts, NO torso, NO mannequin, NO person wearing the garment. This is a product-only flat lay photograph. The garment is laid flat, not worn. Aesthetic props (plants, accessories, magazines, coffee) may surround the garment but must NOT cover it.${garmentInfo}
 Style: ${baseStyle}. Category: ${category}.${additionalContext ? ` Additional direction: ${additionalContext}` : ""}
-${ratioInstruction} Professional product photography, high resolution, no text, no watermarks.
+${ratioInstruction} ${QUALITY_BLOCK} No text, no watermarks.
 OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, mosaic, contact sheet, or multiple images combined. ONE image, ONE composition.`;
         }
 
