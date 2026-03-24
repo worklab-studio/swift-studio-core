@@ -848,7 +848,7 @@ CONSISTENCY: Use the EXACT SAME model across all shots — same face, same hair,
 ANTI-COMPOSITE: The output must contain exactly ONE subject. No split-screen, no inset panels, no picture-in-picture, no diptych, no triptych, no duplicate model or garment in the same frame. A single continuous photograph with one model in one pose.
 Style: ${baseStyle}. Category: ${category}.
 ${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}
-${ratioInstruction} Professional commercial ecommerce photography, high resolution, no text, no watermarks.
+${ratioInstruction} ${QUALITY_BLOCK} No text, no watermarks.
 OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, mosaic, contact sheet, or multiple images combined. ONE image, ONE model, ONE pose, ONE composition.`;
       }
 
