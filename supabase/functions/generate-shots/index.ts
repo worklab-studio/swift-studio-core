@@ -445,7 +445,7 @@ SKINCARE PHOTOGRAPHY STYLE: Dewy, luminous skin with soft beauty lighting. Edito
 OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, mosaic, contact sheet, or multiple images combined. ONE image, ONE model, ONE pose, ONE composition.
 Style: ${baseStyle}. Category: ${category}.
 ${additionalContext ? `Additional direction: ${additionalContext}` : ""}
-${ratioInstruction} Professional beauty campaign photography, high resolution, no text, no watermarks.
+${ratioInstruction} ${QUALITY_BLOCK} No text, no watermarks.
 ${FIDELITY_BLOCK}`;
 }
 
