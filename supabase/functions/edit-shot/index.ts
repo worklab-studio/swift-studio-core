@@ -261,11 +261,24 @@ serve(async (req) => {
     }
 
     const aiData = await aiResponse.json();
-    const imageData = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    let imageData = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
     if (!imageData) {
       console.error("No image in AI edit response");
       return new Response(JSON.stringify({ error: "No image generated" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Upscale to 4K
+    try {
+      console.log("Upscaling edited shot to 4K...");
+      imageData = await upscaleImageTo4K(imageData);
+      console.log("Edit upscaled successfully");
+    } catch (upscaleErr) {
+      console.error("Upscale failed for edit:", upscaleErr);
+      return new Response(JSON.stringify({ error: "Failed to upscale edited image to 4K" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
