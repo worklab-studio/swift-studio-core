@@ -1196,9 +1196,9 @@ const Studio = () => {
         }
         return;
       }
-      setGenerationProgress(100);
-      setGenerationStage('Done!');
-      await new Promise(r => setTimeout(r, 600));
+      setGenerationProgress(95);
+      setGenerationStage('Preparing shots...');
+      await new Promise(r => setTimeout(r, 400));
 
       const newShots: GeneratedShot[] = data.assets.map((a: any) => ({
         id: a.id, url: a.url, shotLabel: a.shot_label || 'hero', promptUsed: a.prompt_used || '',
@@ -1209,16 +1209,39 @@ const Studio = () => {
         setGeneratedShots(allShots);
         setSelectedExportShots(new Set(allShots.map(s => s.id)));
         setIsAddingMore(false);
-        // Stay on step 5, just update the shots
       } else {
         setGeneratedShots(newShots);
         setSelectedExportShots(new Set(newShots.map(s => s.id)));
         completeStep(4, `${newShots.length} shot${newShots.length > 1 ? 's' : ''}`, 5);
       }
       setShowExportPanel(true);
-      // Refresh product labels for toolbar dropdown
       const pLabel = productInfo?.productName || productName || 'Untitled';
       setProjectProducts(prev => prev.includes(pLabel) ? prev : [...prev, pLabel]);
+
+      // ── Post-generation 4K upscale loop ──
+      const shotsToUpscale = mode === 'campaign_add' ? newShots : newShots;
+      for (let i = 0; i < shotsToUpscale.length; i++) {
+        const shot = shotsToUpscale[i];
+        setGenerationStage(`Upscaling to 4K... (${i + 1}/${shotsToUpscale.length})`);
+        setGenerationProgress(Math.round(((i) / shotsToUpscale.length) * 100));
+        try {
+          const { data: upscaleData, error: upscaleError } = await supabase.functions.invoke('upscale-image', {
+            body: { imageUrl: shot.url, assetId: shot.id },
+          });
+          if (upscaleError || !upscaleData?.url) {
+            console.warn(`Upscale failed for shot ${shot.id}:`, upscaleError || upscaleData?.error);
+            toast({ title: `Upscale warning`, description: `Shot ${i + 1} kept at original resolution`, variant: 'destructive' });
+            continue;
+          }
+          // Update the shot URL in state with the 4K version
+          setGeneratedShots(prev => prev.map(s => s.id === shot.id ? { ...s, url: upscaleData.url } : s));
+        } catch (err) {
+          console.warn(`Upscale network error for shot ${shot.id}:`, err);
+          toast({ title: `Upscale warning`, description: `Shot ${i + 1} kept at original resolution`, variant: 'destructive' });
+        }
+      }
+      setGenerationProgress(100);
+      setGenerationStage('Done!');
     } catch {
       clearInterval(progressInterval);
       setIsAddingMore(false);
