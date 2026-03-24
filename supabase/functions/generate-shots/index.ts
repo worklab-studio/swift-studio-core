@@ -1091,21 +1091,31 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
       }
 
       const callAI = async (overridePrompt?: string) => {
-        const refImages = primaryRef ? [{ type: "image_url", image_url: { url: primaryRef } }] : [];
-        const content = overridePrompt
-          ? [{ type: "text", text: overridePrompt }, ...refImages]
+        // Convert messageContent to Vertex AI parts
+        const vertexParts: any[] = [];
+        const srcContent = overridePrompt
+          ? [{ type: "text", text: overridePrompt }, ...(primaryRef ? [{ type: "image_url", image_url: { url: primaryRef } }] : [])]
           : messageContent;
 
-        const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        for (const item of srcContent) {
+          if (item.type === "text") {
+            vertexParts.push({ text: item.text });
+          } else if (item.type === "image_url") {
+            try {
+              vertexParts.push(await toVertexPart(item.image_url.url));
+            } catch (e) {
+              console.warn("Failed to convert image for Vertex:", e);
+            }
+          }
+        }
+
+        const vertexUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent`;
+        const resp = await fetch(vertexUrl, {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
+          headers: { Authorization: `Bearer ${vertexToken}`, "Content-Type": "application/json" },
           body: JSON.stringify({
-            model: "google/gemini-3.1-flash-image-preview",
-            messages: [{ role: "user", content }],
-            modalities: ["image", "text"],
+            contents: [{ role: "user", parts: vertexParts }],
+            generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
           }),
         });
         return resp;
@@ -1117,10 +1127,6 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
         console.log(`Rate limited for ${label}, waiting 10s and retrying...`);
         await new Promise((r) => setTimeout(r, 10000));
         aiResponse = await callAI();
-      }
-
-      if (aiResponse.status === 402) {
-        throw new Error("INSUFFICIENT_AI_CREDITS");
       }
 
       // Content safety fallback for showcase modes
@@ -1138,7 +1144,8 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
       }
 
       const aiData = await aiResponse.json();
-      let imageData = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+      const imgPart = aiData.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+      let imageData = imgPart ? `data:${imgPart.inlineData.mimeType || "image/png"};base64,${imgPart.inlineData.data}` : null;
       if (!imageData) {
         console.error(`No image in response for ${label}`);
         return null;
