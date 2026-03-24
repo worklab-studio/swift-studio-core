@@ -1,41 +1,51 @@
 
 
-# Fix Remove Background: Preserve Exact Product + Add Upscaling
+# Create Separate Upscale Edge Function + Frontend Integration
 
-## Problems
-1. The current prompt tells the AI to "generate" an image of the product on white background — this is image generation, not true background removal. The AI recreates the product, which changes proportions (e.g. a short kurta becomes long).
-2. No upscaling step — output is 1024x1024 like the generation pipeline was before the fix.
-3. Uses `google/gemini-3.1-flash-image-preview` which is fine, but the prompt needs to be an **edit instruction**, not a "create from scratch" instruction.
+## Problem
+Upscaling 6 images inside `generate-shots` exceeds the edge function's compute/memory limits (546 WORKER_LIMIT). Each image involves decoding/encoding large base64 strings.
 
-## Fix
+## Solution
+Create a dedicated `upscale-image` edge function that handles ONE image at a time. After generation completes, the frontend calls this function for each generated shot individually.
 
-### 1. Rewrite prompts to be strict edit-only instructions (`supabase/functions/remove-background/index.ts`)
+## Changes
 
-**Apparel prompt** — change from "extract the garment and show it laid flat" to:
+### 1. New edge function: `supabase/functions/upscale-image/index.ts`
+- Accepts: `{ imageUrl: string, assetId: string }` — the public URL of a generated image and its asset ID
+- Downloads the image from storage URL, converts to base64
+- Calls Vertex AI `imagen-4.0-upscale-preview` with x4 upscale (reuses the existing auth helpers)
+- Uploads the upscaled image back to storage, replacing the original path
+- Updates the `assets` table row with the new URL
+- Returns: `{ url: string, assetId: string }`
+- If upscale fails, returns error but does NOT break — the original 1024px image remains
+
+### 2. Add to `supabase/config.toml`
+- `[functions.upscale-image]` with `verify_jwt = false`
+
+### 3. Update `src/pages/Studio.tsx` — call upscale after generation
+- After `generate-shots` returns assets, start a post-generation upscale loop
+- For each asset, call `supabase.functions.invoke('upscale-image', { body: { imageUrl, assetId } })`
+- Process one at a time (sequential) to avoid compute limits
+- Show progress: "Upscaling to 4K... (2/6)"
+- As each image completes, update the shot's URL in `generatedShots` state so the user sees the 4K version replace the 1024 version in real-time
+- If an individual upscale fails, keep the 1024px version and show a warning toast
+
+### 4. Update generation stages in Studio
+- Add new stages after "Done!": "Upscaling to 4K... (1/6)", etc.
+- Keep the progress bar active during upscaling phase
+
+## Flow
+```text
+generate-shots (1024px) → returns 6 assets
+     ↓
+frontend loops through each asset:
+  → upscale-image(asset1) → update UI with 4K
+  → upscale-image(asset2) → update UI with 4K
+  → ...
 ```
-"This is a product photo. Remove ONLY the background. Replace it with pure white (#FFFFFF). 
-Do NOT alter the product in ANY way — preserve its EXACT size, shape, length, proportions, 
-colors, patterns, fabric texture, and every detail pixel-for-pixel. Do NOT stretch, shrink, 
-crop, extend, or recreate the garment. The product must remain IDENTICAL to the input — 
-only the background changes to white. No text, no watermarks."
-```
 
-**Non-apparel prompt** — same principle:
-```
-"Remove ONLY the background from this product photo. Replace with pure white (#FFFFFF). 
-Do NOT alter, resize, reshape, or recreate the product. Keep the EXACT same product with 
-identical proportions, colors, details, and dimensions. Only the background changes. 
-No text, no watermarks."
-```
-
-This prevents the AI from "reimagining" the product and changing its size/shape.
-
-### 2. Add 4K upscale step (same pattern as generate-shots)
-
-- Add the same `upscaleImageTo4K()` helper and Google auth functions already used in `generate-shots` and `edit-shot`.
-- After AI returns the bg-removed image, upscale it via Vertex AI Imagen before uploading to storage.
-- If upscale fails, return a clear error (no silent 1024 fallback).
-
-## Files Modified
-- `supabase/functions/remove-background/index.ts` — rewrite prompts + add upscale pipeline
+## Files
+- **New**: `supabase/functions/upscale-image/index.ts`
+- **Edit**: `supabase/config.toml` — add function config
+- **Edit**: `src/pages/Studio.tsx` — add post-generation upscale loop + progress UI
 
