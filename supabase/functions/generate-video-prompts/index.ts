@@ -364,23 +364,7 @@ Include a short reason (1 sentence) explaining why this prompt suits the product
       ? `Here is the product/model image. Analyze it and write 5 video prompts that feel like a continuation of this exact scene.`
       : `Write 5 cinematic video prompts for this ${productName || category} product.`;
 
-    // Build messages
-    const messages: any[] = [{ role: "system", content: systemPrompt }];
 
-    if (productImageUrl && !productImageUrl.startsWith("blob:")) {
-      messages.push({
-        role: "user",
-        content: [
-          {
-            type: "image_url",
-            image_url: { url: productImageUrl },
-          },
-          { type: "text", text: userPrompt },
-        ],
-      });
-    } else {
-      messages.push({ role: "user", content: userPrompt });
-    }
 
     const saJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_KEY");
     if (!saJson) {
