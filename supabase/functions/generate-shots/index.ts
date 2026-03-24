@@ -144,6 +144,7 @@ Feel: High-end department store display — clean elegance, aspirational luxury,
 FINAL REMINDER: ABSOLUTELY ZERO humans, hands, fingers, skin, or body parts anywhere in the image.
 ${FIDELITY_BLOCK}
 ${EDITING_INSTRUCTION}
+${QUALITY_BLOCK}
 Image aspect ratio MUST be 4:5 portrait.`;
 }
 
