@@ -763,13 +763,14 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+    const saJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_KEY");
+    if (!saJson) {
       return new Response(JSON.stringify({ error: "AI not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const { token: vertexToken, projectId: gcpProjectId } = await getVertexAccessToken(saJson);
 
     // Service client for storage uploads
     const serviceClient = createClient(
