@@ -11,6 +11,146 @@ const SHOT_LABELS_CAMPAIGN = ["hero", "detail", "lifestyle", "alternate", "edito
 const SHOT_LABELS_CAMPAIGN_ADD = ["detail", "lifestyle", "alternate", "editorial", "flat_lay"];
 const SHOT_LABELS_SINGLE = ["hero"];
 
+// ─── Vertex AI upscale helpers ───
+
+function base64url(data: Uint8Array): string {
+  let binary = "";
+  for (const byte of data) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function pemToArrayBuffer(pem: string): ArrayBuffer {
+  const b64 = pem.replace(/-----BEGIN .*-----/, "").replace(/-----END .*-----/, "").replace(/\s/g, "");
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
+async function getVertexAccessToken(serviceAccountJson: string): Promise<{ token: string; projectId: string }> {
+  let cleaned = serviceAccountJson.trim();
+  if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+    try { cleaned = JSON.parse(cleaned); } catch (_) {}
+  }
+  const sa = JSON.parse(cleaned);
+  const now = Math.floor(Date.now() / 1000);
+  const header = base64url(new TextEncoder().encode(JSON.stringify({ alg: "RS256", typ: "JWT" })));
+  const payload = base64url(new TextEncoder().encode(JSON.stringify({
+    iss: sa.client_email, sub: sa.client_email,
+    aud: "https://oauth2.googleapis.com/token",
+    scope: "https://www.googleapis.com/auth/cloud-platform",
+    iat: now, exp: now + 3600,
+  })));
+  const signingInput = `${header}.${payload}`;
+  const key = await crypto.subtle.importKey("pkcs8", pemToArrayBuffer(sa.private_key),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
+  const signature = base64url(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(signingInput))));
+  const jwt = `${signingInput}.${signature}`;
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
+  });
+  if (!tokenRes.ok) throw new Error(`Google OAuth failed: ${await tokenRes.text()}`);
+  const { access_token } = await tokenRes.json();
+  return { token: access_token, projectId: sa.project_id };
+}
+
+async function upscaleImageTo4K(base64ImageData: string): Promise<string> {
+  const saJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_KEY");
+  if (!saJson) {
+    console.warn("No GOOGLE_SERVICE_ACCOUNT_KEY, skipping upscale");
+    return base64ImageData;
+  }
+
+  try {
+    const { token, projectId } = await getVertexAccessToken(saJson);
+    const location = "us-central1";
+    const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/imagen-4.0-generate-preview:predictLongRunning`;
+
+    // Strip data URL prefix to get raw base64
+    const rawBase64 = base64ImageData.replace(/^data:image\/\w+;base64,/, "");
+
+    const upscaleRes = await fetch(url, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        instances: [{ image: { bytesBase64Encoded: rawBase64 }, prompt: "high quality 4K upscale" }],
+        parameters: { sampleCount: 1, mode: "upscale", upscaleConfig: { upscaleFactor: "x4" } },
+      }),
+    });
+
+    if (!upscaleRes.ok) {
+      const errText = await upscaleRes.text();
+      console.error("Upscale API error:", upscaleRes.status, errText);
+      
+      // Try polling-based approach if it's a long-running operation
+      if (upscaleRes.status === 404 || errText.includes("not found")) {
+        // Fallback: try predict endpoint (non-long-running)
+        const fallbackUrl = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/imagen-4.0-generate-preview:predict`;
+        const fallbackRes = await fetch(fallbackUrl, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            instances: [{ image: { bytesBase64Encoded: rawBase64 }, prompt: "high quality 4K upscale" }],
+            parameters: { sampleCount: 1, mode: "upscale", upscaleConfig: { upscaleFactor: "x4" } },
+          }),
+        });
+
+        if (!fallbackRes.ok) {
+          console.error("Upscale fallback also failed:", fallbackRes.status, await fallbackRes.text());
+          throw new Error("Upscale failed");
+        }
+
+        const fallbackData = await fallbackRes.json();
+        const upscaledB64 = fallbackData.predictions?.[0]?.bytesBase64Encoded;
+        if (upscaledB64) {
+          console.log("Upscaled via fallback predict endpoint");
+          return `data:image/png;base64,${upscaledB64}`;
+        }
+        throw new Error("No upscaled image in fallback response");
+      }
+
+      throw new Error(`Upscale failed: ${upscaleRes.status}`);
+    }
+
+    const data = await upscaleRes.json();
+    
+    // Handle long-running operation response
+    if (data.name && !data.predictions) {
+      // Poll for completion
+      const opName = data.name;
+      for (let i = 0; i < 30; i++) {
+        await new Promise(r => setTimeout(r, 5000));
+        const pollRes = await fetch(`https://${location}-aiplatform.googleapis.com/v1/${opName}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!pollRes.ok) continue;
+        const pollData = await pollRes.json();
+        if (pollData.done) {
+          const upscaledB64 = pollData.response?.predictions?.[0]?.bytesBase64Encoded;
+          if (upscaledB64) {
+            console.log("Upscaled successfully via long-running op");
+            return `data:image/png;base64,${upscaledB64}`;
+          }
+          throw new Error("No image in completed operation");
+        }
+      }
+      throw new Error("Upscale operation timed out");
+    }
+
+    const upscaledB64 = data.predictions?.[0]?.bytesBase64Encoded;
+    if (upscaledB64) {
+      console.log("Upscaled successfully");
+      return `data:image/png;base64,${upscaledB64}`;
+    }
+
+    throw new Error("No upscaled image in response");
+  } catch (e) {
+    console.error("Upscale error:", e);
+    throw e; // Don't silently fall back to 1024
+  }
+}
+
 // Beauty-specific 6-shot campaign labels
 const SHOT_LABELS_BEAUTY_CAMPAIGN = ["hero", "model_with_product", "detail_closeup", "model_applying", "alternate_angle", "model_closeup"];
 const SHOT_LABELS_BEAUTY_CAMPAIGN_ADD = ["model_with_product", "detail_closeup", "model_applying", "alternate_angle", "model_closeup"];
@@ -993,9 +1133,19 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
       }
 
       const aiData = await aiResponse.json();
-      const imageData = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+      let imageData = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
       if (!imageData) {
         console.error(`No image in response for ${label}`);
+        return null;
+      }
+
+      // Upscale to 4K
+      try {
+        console.log(`Upscaling ${label} to 4K...`);
+        imageData = await upscaleImageTo4K(imageData);
+        console.log(`${label} upscaled successfully`);
+      } catch (upscaleErr) {
+        console.error(`Upscale failed for ${label}, returning null:`, upscaleErr);
         return null;
       }
 
