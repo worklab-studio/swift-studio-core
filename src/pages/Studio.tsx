@@ -1762,6 +1762,7 @@ const Studio = () => {
                     setSelectedShots={setSelectedExportShots}
                     generatedVideo={generatedVideo}
                     onRegenerateAll={handleRegenerateAll}
+                    onRegenerateSelected={handleRegenerateSelected}
                     aspectRatio={aspectRatio}
                   />
                 )}
