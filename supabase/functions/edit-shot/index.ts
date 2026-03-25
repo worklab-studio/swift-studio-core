@@ -183,7 +183,7 @@ serve(async (req) => {
     });
     parts.push(await toVertexPart(currentAsset.url));
 
-    const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent`;
+    const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/gemini-2.0-flash-001:generateContent`;`;
 
     const aiResponse = await fetch(url, {
       method: "POST",

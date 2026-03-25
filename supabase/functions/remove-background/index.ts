@@ -135,7 +135,7 @@ serve(async (req) => {
     const imagePart = await toVertexPart(image);
     const promptText = category?.toLowerCase() === "apparel" ? apparelPrompt : genericPrompt;
 
-    const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent`;
+    const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/gemini-2.0-flash-001:generateContent`;`;
 
     let aiResponse: Response | null = null;
     const maxRetries = 3;
