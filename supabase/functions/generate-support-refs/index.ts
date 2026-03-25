@@ -147,23 +147,40 @@ serve(async (req) => {
     for (const angle of SUPPORT_ANGLES) {
       try {
         const prompt = angle.prompt(identityLockSummary);
-        const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/gemini-3.1-flash-image-preview:generateContent`;
-
-        const aiResponse = await fetch(url, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{
-              role: "user",
-              parts: [
-                { text: "IDENTITY REFERENCE — The following photo shows the EXACT person you must reproduce. Study their face shape, eyes, nose, lips, jawline, hairline, skin tone, hair color/texture, and all distinguishing features. The generated image must be this SAME person." },
-                refImagePart,
-                { text: prompt },
-              ],
-            }],
-            generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
-          }),
-        });
+        const vertexImageModels = [
+          "gemini-2.5-flash-image",
+          "gemini-3.1-flash-image-preview",
+          "gemini-2.0-flash-preview-image-generation",
+        ];
+        let aiResponse: Response | null = null;
+        for (const model of vertexImageModels) {
+          const tryUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${model}:generateContent`;
+          const resp = await fetch(tryUrl, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{
+                role: "user",
+                parts: [
+                  { text: "IDENTITY REFERENCE — The following photo shows the EXACT person you must reproduce. Study their face shape, eyes, nose, lips, jawline, hairline, skin tone, hair color/texture, and all distinguishing features. The generated image must be this SAME person." },
+                  refImagePart,
+                  { text: prompt },
+                ],
+              }],
+              generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+            }),
+          });
+          if (resp.status === 404 || resp.status === 403) {
+            console.warn(`Model ${model} not available (${resp.status}), trying next...`);
+            continue;
+          }
+          aiResponse = resp;
+          break;
+        }
+        if (!aiResponse) {
+          console.error(`All models unavailable for ${angle.id}`);
+          continue;
+        }
 
         if (!aiResponse.ok) {
           console.error(`Support ref ${angle.id} failed:`, aiResponse.status);
