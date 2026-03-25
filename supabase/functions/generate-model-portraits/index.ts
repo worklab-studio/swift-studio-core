@@ -103,7 +103,7 @@ serve(async (req) => {
 
     console.log(`Generating portrait for model ${model.id} (${model.name})`);
 
-    const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/gemini-3.1-flash:generateContent`;
+    const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/gemini-3.1-flash-image-preview:generateContent`;
 
     const aiResponse = await fetch(url, {
       method: "POST",
