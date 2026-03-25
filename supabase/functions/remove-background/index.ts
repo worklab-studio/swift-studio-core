@@ -64,6 +64,69 @@ async function toVertexPart(imageUrlOrDataUri: string): Promise<any> {
   return { inlineData: { mimeType: ct.split(";")[0], data: btoa(binary) } };
 }
 
+const vertexImageModels = [
+  "gemini-2.5-flash-image",
+  "gemini-3.1-flash-image-preview",
+  "gemini-2.0-flash-preview-image-generation",
+];
+
+async function removeBackgroundWithVertex(
+  imagePart: any,
+  promptText: string,
+  token: string,
+  gcpProjectId: string,
+): Promise<string> {
+  const location = "us-central1";
+  let lastError = "Background removal failed";
+  let lastStatus = 500;
+
+  for (const model of vertexImageModels) {
+    const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/${location}/publishers/google/models/${model}:generateContent`;
+    let aiResponse: Response | null = null;
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      aiResponse = await fetch(url, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: promptText }, imagePart] }],
+          generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+        }),
+      });
+
+      if (![429, 500, 503].includes(aiResponse.status)) break;
+      if (attempt < 2) {
+        await new Promise((r) => setTimeout(r, (attempt + 1) * 3000));
+      }
+    }
+
+    if (!aiResponse?.ok) {
+      const errText = await aiResponse?.text()!;
+      lastError = errText || lastError;
+      lastStatus = aiResponse?.status ?? 500;
+      console.error(`Vertex AI error for ${model}:`, lastStatus, errText);
+
+      if (lastStatus === 404 || lastStatus === 403) continue;
+      if (lastStatus === 429) throw new Error("Rate limit exceeded, please try again later.");
+      break;
+    }
+
+    const aiData = await aiResponse.json();
+    const resultImagePart = aiData.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+    if (resultImagePart?.inlineData?.data) {
+      return `data:${resultImagePart.inlineData.mimeType || "image/png"};base64,${resultImagePart.inlineData.data}`;
+    }
+
+    console.error(`No image in AI response for ${model}`);
+  }
+
+  if (lastStatus === 404 || lastStatus === 403) {
+    throw new Error("No supported Vertex image editing model is available for this project");
+  }
+
+  throw new Error(lastError);
+}
+
 async function upscaleImageTo4K(base64ImageData: string, token: string, gcpProjectId: string): Promise<string> {
   const rawBase64 = base64ImageData.replace(/^data:image\/\w+;base64,/, "");
   const location = "us-central1";
@@ -134,48 +197,7 @@ serve(async (req) => {
 
     const imagePart = await toVertexPart(image);
     const promptText = category?.toLowerCase() === "apparel" ? apparelPrompt : genericPrompt;
-
-    const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/gemini-3.1-flash-image-preview:generateContent`;
-
-    let aiResponse: Response | null = null;
-    const maxRetries = 3;
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      aiResponse = await fetch(url, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: promptText }, imagePart] }],
-          generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
-        }),
-      });
-      if (aiResponse.status !== 429) break;
-      if (attempt < maxRetries - 1) {
-        await new Promise((r) => setTimeout(r, (attempt + 1) * 3000));
-      }
-    }
-
-    if (!aiResponse!.ok) {
-      const errText = await aiResponse!.text();
-      console.error("Vertex AI error:", aiResponse!.status, errText);
-      if (aiResponse!.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded, please try again later." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      return new Response(JSON.stringify({ error: "Background removal failed" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const aiData = await aiResponse!.json();
-    const resultImagePart = aiData.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
-    if (!resultImagePart) {
-      return new Response(JSON.stringify({ error: "No image in AI response" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    let imageData = `data:${resultImagePart.inlineData.mimeType || "image/png"};base64,${resultImagePart.inlineData.data}`;
+    let imageData = await removeBackgroundWithVertex(imagePart, promptText, token, gcpProjectId);
 
     // Upscale to 4K
     try {
@@ -184,9 +206,6 @@ serve(async (req) => {
       console.log("Background removal upscaled successfully");
     } catch (upscaleErr) {
       console.error("Upscale failed for bg removal:", upscaleErr);
-      return new Response(JSON.stringify({ error: "Failed to upscale background-removed image to 4K" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
     }
 
     if (projectId) {
