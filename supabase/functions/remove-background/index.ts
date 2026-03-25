@@ -197,16 +197,7 @@ serve(async (req) => {
 
     const imagePart = await toVertexPart(image);
     const promptText = category?.toLowerCase() === "apparel" ? apparelPrompt : genericPrompt;
-    let imageData = await removeBackgroundWithVertex(imagePart, promptText, token, gcpProjectId);
-
-    // Upscale to 4K
-    try {
-      console.log("Upscaling bg-removed image to 4K...");
-      imageData = await upscaleImageTo4K(imageData, token, gcpProjectId);
-      console.log("Background removal upscaled successfully");
-    } catch (upscaleErr) {
-      console.error("Upscale failed for bg removal:", upscaleErr);
-    }
+    const imageData = await removeBackgroundWithVertex(imagePart, promptText, token, gcpProjectId);
 
     if (projectId) {
       const serviceClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
