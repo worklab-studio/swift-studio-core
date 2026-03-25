@@ -1109,7 +1109,7 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
           }
         }
 
-        const vertexUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp:generateContent`;
+        const vertexUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/const vertexUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/gemini-2.0-flash-001:generateContent`;`;
         const resp = await fetch(vertexUrl, {
           method: "POST",
           headers: { Authorization: `Bearer ${vertexToken}`, "Content-Type": "application/json" },
