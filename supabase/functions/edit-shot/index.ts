@@ -191,14 +191,27 @@ serve(async (req) => {
     let aiResponse: Response | null = null;
     for (const model of vertexImageModels) {
       const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/${model}:generateContent`;
-      aiResponse = await fetch(url, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts }],
-        generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
-      }),
-    });
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts }],
+          generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+        }),
+      });
+      if (resp.status === 404 || resp.status === 403) {
+        console.warn(`Model ${model} not available (${resp.status}), trying next...`);
+        continue;
+      }
+      aiResponse = resp;
+      break;
+    }
+
+    if (!aiResponse) {
+      return new Response(JSON.stringify({ error: "All image models unavailable" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (!aiResponse.ok) {
       const errText = await aiResponse.text();
