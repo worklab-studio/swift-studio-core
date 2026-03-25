@@ -1109,16 +1109,28 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
           }
         }
 
-        const vertexUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/gemini-3.1-flash-image-preview:generateContent`;
-        const resp = await fetch(vertexUrl, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${vertexToken}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ role: "user", parts: vertexParts }],
-            generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
-          }),
-        });
-        return resp;
+        const vertexImageModels = [
+          "gemini-2.5-flash-image",
+          "gemini-3.1-flash-image-preview",
+          "gemini-2.0-flash-preview-image-generation",
+        ];
+        for (const model of vertexImageModels) {
+          const vertexUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/${model}:generateContent`;
+          const resp = await fetch(vertexUrl, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${vertexToken}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ role: "user", parts: vertexParts }],
+              generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+            }),
+          });
+          if (resp.status === 404 || resp.status === 403) {
+            console.warn(`Model ${model} not available (${resp.status}), trying next...`);
+            continue;
+          }
+          return resp;
+        }
+        return new Response(JSON.stringify({ error: "All models unavailable" }), { status: 500 });
       };
 
       let aiResponse = await callAI();
