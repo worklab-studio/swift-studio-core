@@ -49,6 +49,33 @@ async function getVertexAccessToken(serviceAccountJson: string): Promise<{ token
   return { token: access_token, projectId: sa.project_id };
 }
 
+function extractUpscaledImagePayload(payload: any): { base64: string; mimeType: string } | null {
+  const prediction = payload?.predictions?.[0] || payload?.response?.predictions?.[0];
+  if (!prediction) return null;
+
+  if (prediction.bytesBase64Encoded) {
+    return {
+      base64: prediction.bytesBase64Encoded,
+      mimeType: prediction.mimeType || "image/jpeg",
+    };
+  }
+
+  if (prediction.image?.bytesBase64Encoded) {
+    return {
+      base64: prediction.image.bytesBase64Encoded,
+      mimeType: prediction.image.mimeType || prediction.mimeType || "image/jpeg",
+    };
+  }
+
+  return null;
+}
+
+function mimeTypeToExtension(mimeType: string): string {
+  if (mimeType.includes("png")) return "png";
+  if (mimeType.includes("webp")) return "webp";
+  return "jpg";
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -79,6 +106,7 @@ serve(async (req) => {
     let binary = "";
     for (const byte of imgBytes) binary += String.fromCharCode(byte);
     const rawBase64 = btoa(binary);
+    binary = "";
 
     // Get Vertex AI token
     const { token, projectId } = await getVertexAccessToken(saJson);
@@ -92,7 +120,12 @@ serve(async (req) => {
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           instances: [{ image: { bytesBase64Encoded: rawBase64 }, prompt: "high quality 4K upscale" }],
-          parameters: { sampleCount: 1, mode: "upscale", upscaleConfig: { upscaleFactor: "x4" } },
+          parameters: {
+            sampleCount: 1,
+            mode: "upscale",
+            outputOptions: { mimeType: "image/jpeg", compressionQuality: 85 },
+            upscaleConfig: { upscaleFactor: "x4", enableFasterUpscaling: true },
+          },
         }),
       });
     };
@@ -109,7 +142,7 @@ serve(async (req) => {
     }
 
     const data = await res.json();
-    let upscaledBase64: string | null = null;
+    let upscaledImage: { base64: string; mimeType: string } | null = null;
 
     // Handle long-running operation polling
     if (data.name && !data.predictions) {
@@ -122,17 +155,17 @@ serve(async (req) => {
         if (!pollRes.ok) continue;
         const pollData = await pollRes.json();
         if (pollData.done) {
-          upscaledBase64 = pollData.response?.predictions?.[0]?.bytesBase64Encoded;
-          if (!upscaledBase64) throw new Error("No image in completed operation");
+          upscaledImage = extractUpscaledImagePayload(pollData);
+          if (!upscaledImage) throw new Error("No image in completed operation");
           break;
         }
       }
-      if (!upscaledBase64) throw new Error("Upscale timed out after 150s");
+      if (!upscaledImage) throw new Error("Upscale timed out after 150s");
     } else {
-      upscaledBase64 = data.predictions?.[0]?.bytesBase64Encoded;
+      upscaledImage = extractUpscaledImagePayload(data);
     }
 
-    if (!upscaledBase64) throw new Error("No upscaled image in response");
+    if (!upscaledImage) throw new Error("No upscaled image in response");
 
     // Upload upscaled image to storage
     const serviceClient = createClient(
@@ -140,24 +173,27 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const upscaledBytes = Uint8Array.from(atob(upscaledBase64), c => c.charCodeAt(0));
+    const upscaledBytes = Uint8Array.from(atob(upscaledImage.base64), c => c.charCodeAt(0));
+    const outputExt = mimeTypeToExtension(upscaledImage.mimeType);
     
-    // Extract the original path from the URL to replace it
+    // Extract project directory from original path and save with matching extension
     const urlObj = new URL(imageUrl);
     const pathMatch = urlObj.pathname.match(/\/originals\/(.+)$/);
     let filePath: string;
     if (pathMatch) {
-      // Replace original file with upscaled version
-      filePath = pathMatch[1];
+      const originalPath = pathMatch[1];
+      const lastSlashIndex = originalPath.lastIndexOf("/");
+      const directory = lastSlashIndex >= 0 ? originalPath.slice(0, lastSlashIndex + 1) : "";
+      filePath = `${directory}upscaled-${assetId}-${Date.now()}.${outputExt}`;
     } else {
       // Fallback: create new path
-      filePath = `upscaled/upscaled-${assetId}-${Date.now()}.png`;
+      filePath = `upscaled/upscaled-${assetId}-${Date.now()}.${outputExt}`;
     }
 
     const { error: uploadErr } = await serviceClient.storage
       .from("originals")
       .upload(filePath, upscaledBytes, {
-        contentType: "image/png",
+        contentType: upscaledImage.mimeType,
         upsert: true,
       });
 
