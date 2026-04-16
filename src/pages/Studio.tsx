@@ -1120,75 +1120,156 @@ const Studio = () => {
         effectiveStylePrompt = templatePrompt;
       }
 
-      const { data, error } = await supabase.functions.invoke('generate-shots', {
-          body: {
-          projectId: project.id, preset: selectedPreset || 'template', shotCount: effectiveShotCount, additionalContext,
-          category: project.category, shotType: shootType === 'model' ? 'model_shot' : 'product_showcase',
-          modelConfig: shootType === 'model' ? (() => {
-            // Build model reference URLs array with priority
-            let modelReferenceUrls: string[] = [];
-            let supportReferenceUrls: string[] = [];
-            let identityLockSummary = '';
-            let hasRealModelReferences = false;
-            const selectedId = modelConfig.selectedModel;
-            const customModel = selectedId ? customModels.find(m => m.id === selectedId) : null;
-            if (customModel) {
-              if (customModel.reference_images && customModel.reference_images.length > 0) {
-                modelReferenceUrls = customModel.reference_images.slice(0, 3);
-                hasRealModelReferences = true;
-              } else if (customModel.portrait_url) {
-                modelReferenceUrls = [customModel.portrait_url];
-              }
-              // Add support reference images (hidden angles)
-              if ((customModel as any).support_reference_images?.length > 0) {
-                supportReferenceUrls = (customModel as any).support_reference_images;
-              }
-              // Add identity lock summary
-              if ((customModel as any).identity_profile?.identityLockSummary) {
-                identityLockSummary = (customModel as any).identity_profile.identityLockSummary;
-              }
-            } else if (modelConfig.uploadedModelUrl) {
-              modelReferenceUrls = [modelConfig.uploadedModelUrl];
-              hasRealModelReferences = true;
-            } else if (selectedId && modelImages[selectedId]) {
-              modelReferenceUrls = [modelImages[selectedId]];
+      // Build shared body payload
+      const buildModelPayload = () => {
+        if (shootType !== 'model') return null;
+        let modelReferenceUrls: string[] = [];
+        let supportReferenceUrls: string[] = [];
+        let identityLockSummary = '';
+        let hasRealModelReferences = false;
+        const selectedId = modelConfig.selectedModel;
+        const customModel = selectedId ? customModels.find(m => m.id === selectedId) : null;
+        if (customModel) {
+          if (customModel.reference_images && customModel.reference_images.length > 0) {
+            modelReferenceUrls = customModel.reference_images.slice(0, 3);
+            hasRealModelReferences = true;
+          } else if (customModel.portrait_url) {
+            modelReferenceUrls = [customModel.portrait_url];
+          }
+          if ((customModel as any).support_reference_images?.length > 0) {
+            supportReferenceUrls = (customModel as any).support_reference_images;
+          }
+          if ((customModel as any).identity_profile?.identityLockSummary) {
+            identityLockSummary = (customModel as any).identity_profile.identityLockSummary;
+          }
+        } else if (modelConfig.uploadedModelUrl) {
+          modelReferenceUrls = [modelConfig.uploadedModelUrl];
+          hasRealModelReferences = true;
+        } else if (selectedId && modelImages[selectedId]) {
+          modelReferenceUrls = [modelImages[selectedId]];
+        }
+        return { ...modelConfig, modelReferenceUrls, supportReferenceUrls, identityLockSummary, hasRealModelReferences };
+      };
+
+      const sharedBody = {
+        projectId: project.id, preset: selectedPreset || 'template', additionalContext,
+        category: project.category, shotType: shootType === 'model' ? 'model_shot' : 'product_showcase',
+        modelConfig: buildModelPayload(),
+        stylePrompt: effectiveStylePrompt,
+        productImageUrl,
+        productImages: productImages.length > 1 ? productImages : undefined,
+        imageViews: Object.keys(imageViews).length > 0 ? imageViews : undefined,
+        aspectRatio,
+        keepOriginalModel: modelChoice === 'keep',
+        productLabel: productInfo?.productName || productName || 'Untitled',
+        sceneTemplate: isProductWithTemplate ? { id: tpl!.id, description: tpl!.description, name: tpl!.name } : undefined,
+        presetId: selectedPreset || undefined,
+        productInfo: productInfo ? {
+          colors: productInfo.colors, material: productInfo.material, description: productInfo.description,
+          productName: productInfo.productName, garmentType: productInfo.garmentType,
+          beautyApplication: beautyApplication || productInfo.beautyApplication || undefined,
+          beautySize: productSize || productInfo.beautySize || undefined,
+          fmcgSize: productSize || productInfo.fmcgSize || undefined,
+          fmcgPackaging: productInfo.fmcgPackaging || undefined,
+          fmcgSubType: productInfo.fmcgSubType || undefined,
+          selectedOutfit: selectedOutfit || undefined,
+        } : undefined,
+      };
+
+      // Determine shot labels for campaign modes
+      const isBeautyModelGen = ['Skincare', 'Beauty', 'beauty_personal_care'].includes(project.category) && shootType === 'model';
+      const campaignLabels = isBeautyModelGen
+        ? ['hero', 'model_with_product', 'detail_closeup', 'model_applying', 'alternate_angle', 'model_closeup']
+        : ['hero', 'detail', 'lifestyle', 'alternate', 'editorial', 'flat_lay'];
+      const campaignAddLabels = isBeautyModelGen
+        ? ['model_with_product', 'detail_closeup', 'model_applying', 'alternate_angle', 'model_closeup']
+        : ['detail', 'lifestyle', 'alternate', 'editorial', 'flat_lay'];
+
+      const isCampaignMode = effectiveShotCount === 'campaign' || effectiveShotCount === 'campaign_add';
+      const labelsToGenerate = effectiveShotCount === 'campaign'
+        ? campaignLabels
+        : effectiveShotCount === 'campaign_add'
+          ? campaignAddLabels
+          : ['hero'];
+
+      const allNewShots: GeneratedShot[] = [];
+      let failCount = 0;
+
+      if (isCampaignMode && labelsToGenerate.length > 1) {
+        // Per-shot calls to avoid 150s edge function timeout
+        for (let i = 0; i < labelsToGenerate.length; i++) {
+          if (generationAbortRef.current) break;
+          const label = labelsToGenerate[i];
+          const progress = Math.round(10 + (i / labelsToGenerate.length) * 80);
+          setGenerationProgress(progress);
+          setGenerationStage(`Generating ${label.replace(/_/g, ' ')} (${i + 1}/${labelsToGenerate.length})...`);
+
+          try {
+            const { data: shotData, error: shotError } = await supabase.functions.invoke('generate-shots', {
+              body: { ...sharedBody, shotCount: 'single', shotLabel: label },
+            });
+
+            if (shotError || !shotData?.assets?.length) {
+              console.warn(`Shot ${label} failed:`, shotError || shotData?.error);
+              failCount++;
+              continue;
             }
-            return {
-              ...modelConfig,
-              modelReferenceUrls,
-              supportReferenceUrls,
-              identityLockSummary,
-              hasRealModelReferences,
+
+            const newShot: GeneratedShot = {
+              id: shotData.assets[0].id, url: shotData.assets[0].url,
+              shotLabel: shotData.assets[0].shot_label || label,
+              promptUsed: shotData.assets[0].prompt_used || '',
+              isEditing: false, editPrompt: '', isRegenerating: false, previousUrl: null, showUndo: false,
             };
-          })() : null,
-          stylePrompt: effectiveStylePrompt,
-          productImageUrl,
-          productImages: productImages.length > 1 ? productImages : undefined,
-          imageViews: Object.keys(imageViews).length > 0 ? imageViews : undefined,
-          aspectRatio,
-          keepOriginalModel: modelChoice === 'keep',
-          productLabel: productInfo?.productName || productName || 'Untitled',
-          sceneTemplate: isProductWithTemplate ? { id: tpl!.id, description: tpl!.description, name: tpl!.name } : undefined,
-          presetId: selectedPreset || undefined,
-          productInfo: productInfo ? {
-            colors: productInfo.colors,
-            material: productInfo.material,
-            description: productInfo.description,
-            productName: productInfo.productName,
-            garmentType: productInfo.garmentType,
-            beautyApplication: beautyApplication || productInfo.beautyApplication || undefined,
-            beautySize: productSize || productInfo.beautySize || undefined,
-            fmcgSize: productSize || productInfo.fmcgSize || undefined,
-            fmcgPackaging: productInfo.fmcgPackaging || undefined,
-            fmcgSubType: productInfo.fmcgSubType || undefined,
-            selectedOutfit: selectedOutfit || undefined,
-          } : undefined,
-        },
-      });
+            allNewShots.push(newShot);
+
+            // Stream results: show each shot as it arrives
+            if (mode === 'campaign_add') {
+              setGeneratedShots(prev => [...prev, newShot]);
+              setSelectedExportShots(prev => new Set([...prev, newShot.id]));
+            } else {
+              setGeneratedShots([...allNewShots]);
+              setSelectedExportShots(new Set(allNewShots.map(s => s.id)));
+              if (i === 0) {
+                completeStep(4, `Generating...`, 5);
+                setShowExportPanel(true);
+              }
+            }
+          } catch (err) {
+            console.warn(`Shot ${label} network error:`, err);
+            failCount++;
+          }
+        }
+      } else {
+        // Single shot mode
+        const { data, error } = await supabase.functions.invoke('generate-shots', {
+          body: { ...sharedBody, shotCount: effectiveShotCount },
+        });
+
+        if (error || !data?.assets) {
+          clearInterval(progressInterval);
+          toast({ title: 'Generation failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
+          setIsAddingMore(false);
+          if (mode !== 'campaign_add') {
+            setActiveStep(3);
+            setCompletedSteps(prev => { const n = new Set(prev); n.delete(3); return n; });
+          }
+          return;
+        }
+
+        for (const a of data.assets) {
+          allNewShots.push({
+            id: a.id, url: a.url, shotLabel: a.shot_label || 'hero', promptUsed: a.prompt_used || '',
+            isEditing: false, editPrompt: '', isRegenerating: false, previousUrl: null, showUndo: false,
+          });
+        }
+      }
+
       clearInterval(progressInterval);
       if (generationAbortRef.current) return;
-      if (error || !data?.assets) {
-        toast({ title: 'Generation failed', description: data?.error || error?.message || 'Unknown error', variant: 'destructive' });
+
+      if (allNewShots.length === 0) {
+        toast({ title: 'Generation failed', description: 'No images were generated', variant: 'destructive' });
         setIsAddingMore(false);
         if (mode !== 'campaign_add') {
           setActiveStep(3);
@@ -1196,23 +1277,19 @@ const Studio = () => {
         }
         return;
       }
+
       setGenerationProgress(95);
       setGenerationStage('Preparing shots...');
       await new Promise(r => setTimeout(r, 400));
 
-      const newShots: GeneratedShot[] = data.assets.map((a: any) => ({
-        id: a.id, url: a.url, shotLabel: a.shot_label || 'hero', promptUsed: a.prompt_used || '',
-        isEditing: false, editPrompt: '', isRegenerating: false, previousUrl: null, showUndo: false,
-      }));
       if (mode === 'campaign_add') {
-        const allShots = [...generatedShots, ...newShots];
-        setGeneratedShots(allShots);
-        setSelectedExportShots(new Set(allShots.map(s => s.id)));
         setIsAddingMore(false);
+      } else if (!isCampaignMode) {
+        setGeneratedShots(allNewShots);
+        setSelectedExportShots(new Set(allNewShots.map(s => s.id)));
+        completeStep(4, `${allNewShots.length} shot${allNewShots.length > 1 ? 's' : ''}`, 5);
       } else {
-        setGeneratedShots(newShots);
-        setSelectedExportShots(new Set(newShots.map(s => s.id)));
-        completeStep(4, `${newShots.length} shot${newShots.length > 1 ? 's' : ''}`, 5);
+        completeStep(4, `${allNewShots.length} shot${allNewShots.length > 1 ? 's' : ''}`, 5);
       }
       setShowExportPanel(true);
       const pLabel = productInfo?.productName || productName || 'Untitled';
@@ -1222,8 +1299,7 @@ const Studio = () => {
       setGenerationStage('Done!');
 
       // ── Silent post-generation 4K upscale loop ──
-      const shotsToUpscale = newShots;
-      for (const shot of shotsToUpscale) {
+      for (const shot of allNewShots) {
         try {
           const { data: upscaleData, error: upscaleError } = await supabase.functions.invoke('upscale-image', {
             body: { imageUrl: shot.url, assetId: shot.id },
