@@ -64,42 +64,6 @@ async function toVertexPart(imageUrlOrDataUri: string): Promise<any> {
   return { inlineData: { mimeType: ct.split(";")[0], data: btoa(binary) } };
 }
 
-async function upscaleImageTo4K(base64ImageData: string, token: string, gcpProjectId: string): Promise<string> {
-  const rawBase64 = base64ImageData.replace(/^data:image\/\w+;base64,/, "");
-  const location = "us-central1";
-  const tryUpscale = async (endpoint: string) => {
-    const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/${location}/publishers/google/models/${endpoint}`;
-    return fetch(url, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        instances: [{ image: { bytesBase64Encoded: rawBase64 }, prompt: "high quality 4K upscale" }],
-        parameters: { sampleCount: 1, mode: "upscale", upscaleConfig: { upscaleFactor: "x4" } },
-      }),
-    });
-  };
-  let res = await tryUpscale("imagen-4.0-upscale-preview:predict");
-  if (!res.ok) res = await tryUpscale("imagen-4.0-upscale-preview:predictLongRunning");
-  if (!res.ok) throw new Error(`Upscale failed: ${res.status}`);
-  const data = await res.json();
-  if (data.name && !data.predictions) {
-    for (let i = 0; i < 30; i++) {
-      await new Promise(r => setTimeout(r, 5000));
-      const pollRes = await fetch(`https://${location}-aiplatform.googleapis.com/v1/${data.name}`, { headers: { Authorization: `Bearer ${token}` } });
-      if (!pollRes.ok) continue;
-      const pollData = await pollRes.json();
-      if (pollData.done) {
-        const b64 = pollData.response?.predictions?.[0]?.bytesBase64Encoded;
-        if (b64) return `data:image/png;base64,${b64}`;
-        throw new Error("No image in completed operation");
-      }
-    }
-    throw new Error("Upscale timed out");
-  }
-  const b64 = data.predictions?.[0]?.bytesBase64Encoded;
-  if (b64) return `data:image/png;base64,${b64}`;
-  throw new Error("No upscaled image in response");
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -235,34 +199,16 @@ serve(async (req) => {
       });
     }
 
-    let imageData = `data:${resultImagePart.inlineData.mimeType || "image/png"};base64,${resultImagePart.inlineData.data}`;
-
-    // Upscale to 4K
-    try {
-      console.log("Upscaling edited shot to 4K...");
-      imageData = await upscaleImageTo4K(imageData, token, gcpProjectId);
-      console.log("Edit upscaled successfully");
-    } catch (upscaleErr) {
-      console.error("Upscale failed for edit:", upscaleErr);
-      return new Response(JSON.stringify({ error: "Failed to upscale edited image to 4K" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const base64Match = imageData.match(/^data:image\/(\w+);base64,(.+)$/);
-    if (!base64Match) {
-      return new Response(JSON.stringify({ error: "Invalid image format" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const mimeType = resultImagePart.inlineData.mimeType || "image/png";
+    const rawB64 = resultImagePart.inlineData.data;
+    const ext2 = mimeType.includes("jpeg") ? "jpg" : "png";
 
     const serviceClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const ext = base64Match[1] === "jpeg" ? "jpg" : base64Match[1];
-    const binaryData = Uint8Array.from(atob(base64Match[2]), (c) => c.charCodeAt(0));
-    const filePath = `${currentAsset.project_id}/edited-${Date.now()}.${ext}`;
+    const binaryData = Uint8Array.from(atob(rawB64), (c) => c.charCodeAt(0));
+    const filePath = `${currentAsset.project_id}/edited-${Date.now()}.${ext2}`;
 
     const { error: uploadErr } = await serviceClient.storage
-      .from("originals").upload(filePath, binaryData, { contentType: `image/${base64Match[1]}`, upsert: true });
+      .from("originals").upload(filePath, binaryData, { contentType: mimeType, upsert: true });
 
     if (uploadErr) {
       console.error("Upload error:", uploadErr);
