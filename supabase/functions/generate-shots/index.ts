@@ -730,9 +730,9 @@ serve(async (req) => {
     }
     const userId = user.id;
 
-    const { projectId, preset, shotCount, additionalContext, category, shotType, modelConfig, stylePrompt, productImageUrl, productImages: allProductImages, imageViews, aspectRatio, keepOriginalModel, productLabel, sceneTemplate, productInfo, presetId } = await req.json();
+    const { projectId, preset, shotCount, additionalContext, category, shotType, modelConfig, stylePrompt, productImageUrl, productImages: allProductImages, imageViews, aspectRatio, keepOriginalModel, productLabel, sceneTemplate, productInfo, presetId, shotLabel: singleShotLabel } = await req.json();
 
-    if (!projectId || !preset || !shotCount) {
+    if (!projectId || !preset || (!shotCount && !singleShotLabel)) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
