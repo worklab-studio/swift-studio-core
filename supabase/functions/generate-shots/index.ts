@@ -179,9 +179,32 @@ async function toVertexPart(imageUrlOrDataUri: string): Promise<any> {
   return { inlineData: { mimeType: ct.split(";")[0], data: btoa(binary) } };
 }
 
-async function describeProduct(productImageUrl: string, token: string, gcpProjectId: string): Promise<string> {
+function createVertexPartLoader() {
+  const cache = new Map<string, Promise<any>>();
+
+  return async (imageUrlOrDataUri: string): Promise<any> => {
+    if (!cache.has(imageUrlOrDataUri)) {
+      cache.set(
+        imageUrlOrDataUri,
+        toVertexPart(imageUrlOrDataUri).catch((error) => {
+          cache.delete(imageUrlOrDataUri);
+          throw error;
+        }),
+      );
+    }
+
+    return await cache.get(imageUrlOrDataUri)!;
+  };
+}
+
+async function describeProduct(
+  productImageUrl: string,
+  token: string,
+  gcpProjectId: string,
+  loadVertexPart: (imageUrlOrDataUri: string) => Promise<any>,
+): Promise<string> {
   try {
-    const imagePart = await toVertexPart(productImageUrl);
+    const imagePart = await loadVertexPart(productImageUrl);
     const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent`;
     const resp = await fetch(url, {
       method: "POST",
@@ -240,6 +263,7 @@ function buildBeautyShowcasePrompt(
   // Size-aware scale (use structured field first, fall back to material detection)
   const scaleRule = getScaleRule(productInfo);
   let sizeDesc = scaleRule || "Standard-sized product.";
+  const material = `${productInfo?.material || ""} ${productInfo?.description || ""}`.toLowerCase();
   if (!scaleRule) {
     if (/mini|travel|sample|deluxe sample/.test(material)) {
       sizeDesc = "This is a MINI/TRAVEL size product — fits in a palm, render at exact small real-world scale. Do NOT enlarge.";
@@ -771,6 +795,7 @@ serve(async (req) => {
       });
     }
     const { token: vertexToken, projectId: gcpProjectId } = await getVertexAccessToken(saJson);
+    const loadVertexPart = createVertexPartLoader();
 
     // Service client for storage uploads
     const serviceClient = createClient(
@@ -785,7 +810,7 @@ serve(async (req) => {
 
     if (isProductShootWithTemplate && showcaseType && productImageUrl) {
       console.log(`Showcase mode: ${showcaseType} — extracting product description...`);
-      productDescription = await describeProduct(productImageUrl, vertexToken, gcpProjectId);
+      productDescription = await describeProduct(productImageUrl, vertexToken, gcpProjectId, loadVertexPart);
       console.log(`Product description extracted: ${productDescription.substring(0, 100)}...`);
     }
 
@@ -1026,6 +1051,21 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
       return `${shotTypeDesc[label] || label}. ${baseStyle}. Category: ${category}. ${modelDesc}${beautyPosing}${outfitDirective}${scaleDirective} ${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}. ${ratioInstruction} ${QUALITY_BLOCK} Show visible surface texture — material grain, fabric weave, print detail, packaging finish. No text, no watermarks. OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, mosaic, contact sheet, or multiple images combined. ONE image, ONE pose, ONE composition.`;
     });
 
+    const referenceUrlsToWarm = Array.from(new Set([
+      productImageUrl,
+      ...(allProductImages || []),
+      ...((shotType === "model_shot" && modelConfig?.modelReferenceUrls) || []),
+      ...((shotType === "model_shot" && modelConfig?.supportReferenceUrls) || []),
+    ].filter((url): url is string => Boolean(url))));
+
+    for (const referenceUrl of referenceUrlsToWarm) {
+      try {
+        await loadVertexPart(referenceUrl);
+      } catch (error) {
+        console.warn("Failed to prewarm reference image for Vertex:", referenceUrl, error);
+      }
+    }
+
 
 
 
@@ -1102,7 +1142,7 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
             vertexParts.push({ text: item.text });
           } else if (item.type === "image_url") {
             try {
-              vertexParts.push(await toVertexPart(item.image_url.url));
+              vertexParts.push(await loadVertexPart(item.image_url.url));
             } catch (e) {
               console.warn("Failed to convert image for Vertex:", e);
             }
@@ -1179,8 +1219,8 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
       return asset || null;
     }
 
-    // Process in batches of 3
-    const batchSize = 3;
+    // Process with conservative batching to stay under worker CPU limits
+    const batchSize = shotType === "model_shot" ? 1 : 2;
     for (let i = 0; i < labels.length; i += batchSize) {
       const batchLabels = labels.slice(i, i + batchSize);
       const batchPrompts = shotPrompts.slice(i, i + batchSize);
