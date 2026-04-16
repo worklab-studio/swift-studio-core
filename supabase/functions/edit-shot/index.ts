@@ -235,26 +235,9 @@ serve(async (req) => {
       });
     }
 
-    let imageData = `data:${resultImagePart.inlineData.mimeType || "image/png"};base64,${resultImagePart.inlineData.data}`;
-
-    // Upscale to 4K
-    try {
-      console.log("Upscaling edited shot to 4K...");
-      imageData = await upscaleImageTo4K(imageData, token, gcpProjectId);
-      console.log("Edit upscaled successfully");
-    } catch (upscaleErr) {
-      console.error("Upscale failed for edit:", upscaleErr);
-      return new Response(JSON.stringify({ error: "Failed to upscale edited image to 4K" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const base64Match = imageData.match(/^data:image\/(\w+);base64,(.+)$/);
-    if (!base64Match) {
-      return new Response(JSON.stringify({ error: "Invalid image format" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const mimeType = resultImagePart.inlineData.mimeType || "image/png";
+    const rawB64 = resultImagePart.inlineData.data;
+    const ext2 = mimeType.includes("jpeg") ? "jpg" : "png";
 
     const serviceClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const ext = base64Match[1] === "jpeg" ? "jpg" : base64Match[1];
