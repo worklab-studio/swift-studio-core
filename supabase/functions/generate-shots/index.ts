@@ -1177,13 +1177,17 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
         return new Response(JSON.stringify({ error: "All models unavailable" }), { status: 500 });
       };
 
-      let aiResponse = await callAI();
-
-      if (aiResponse.status === 429) {
-        console.log(`Rate limited for ${label}, waiting 10s and retrying...`);
-        await new Promise((r) => setTimeout(r, 10000));
+      // Retry with exponential backoff for 429 rate limits
+      let aiResponse: Response | null = null;
+      const maxRetries = 4;
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
         aiResponse = await callAI();
+        if (aiResponse.status !== 429) break;
+        const backoffMs = Math.min(10000 * Math.pow(2, attempt), 60000);
+        console.log(`Rate limited for ${label}, attempt ${attempt + 1}/${maxRetries}, waiting ${backoffMs / 1000}s...`);
+        await new Promise((r) => setTimeout(r, backoffMs));
       }
+      if (!aiResponse) return null;
 
       // Content safety fallback for showcase modes
       if (!aiResponse.ok && isShowcase) {

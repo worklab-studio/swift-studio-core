@@ -1239,6 +1239,11 @@ const Studio = () => {
             console.warn(`Shot ${label} network error:`, err);
             failCount++;
           }
+
+          // Wait between shots to reduce Vertex AI rate limit pressure
+          if (i < labelsToGenerate.length - 1) {
+            await new Promise(r => setTimeout(r, 3000));
+          }
         }
       } else {
         // Single shot mode
