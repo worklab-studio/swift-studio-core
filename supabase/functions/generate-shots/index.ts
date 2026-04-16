@@ -754,17 +754,21 @@ serve(async (req) => {
       });
     }
 
+    // Single-shot mode: client sends one label at a time to avoid 150s timeout
+    const isSingleShotMode = Boolean(singleShotLabel);
     const isCampaign = shotCount === "campaign";
     const isCampaignAdd = shotCount === "campaign_add";
-    const creditCost = isCampaign ? 6 : isCampaignAdd ? 5 : 1;
+    const creditCost = isSingleShotMode ? 1 : isCampaign ? 6 : isCampaignAdd ? 5 : 1;
 
     // Use beauty-specific labels for Skincare/Beauty model shoots
     const isBeautyModel = ["Skincare", "Beauty", "beauty_personal_care"].includes(category) && shotType === "model_shot";
-    const labels = isCampaign
-      ? (isBeautyModel ? SHOT_LABELS_BEAUTY_CAMPAIGN : SHOT_LABELS_CAMPAIGN)
-      : isCampaignAdd
-        ? (isBeautyModel ? SHOT_LABELS_BEAUTY_CAMPAIGN_ADD : SHOT_LABELS_CAMPAIGN_ADD)
-        : SHOT_LABELS_SINGLE;
+    const labels = isSingleShotMode
+      ? [singleShotLabel]
+      : isCampaign
+        ? (isBeautyModel ? SHOT_LABELS_BEAUTY_CAMPAIGN : SHOT_LABELS_CAMPAIGN)
+        : isCampaignAdd
+          ? (isBeautyModel ? SHOT_LABELS_BEAUTY_CAMPAIGN_ADD : SHOT_LABELS_CAMPAIGN_ADD)
+          : SHOT_LABELS_SINGLE;
 
     // Check credits
     const { data: profileData, error: profileErr } = await supabase
