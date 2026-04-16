@@ -179,9 +179,32 @@ async function toVertexPart(imageUrlOrDataUri: string): Promise<any> {
   return { inlineData: { mimeType: ct.split(";")[0], data: btoa(binary) } };
 }
 
-async function describeProduct(productImageUrl: string, token: string, gcpProjectId: string): Promise<string> {
+function createVertexPartLoader() {
+  const cache = new Map<string, Promise<any>>();
+
+  return async (imageUrlOrDataUri: string): Promise<any> => {
+    if (!cache.has(imageUrlOrDataUri)) {
+      cache.set(
+        imageUrlOrDataUri,
+        toVertexPart(imageUrlOrDataUri).catch((error) => {
+          cache.delete(imageUrlOrDataUri);
+          throw error;
+        }),
+      );
+    }
+
+    return await cache.get(imageUrlOrDataUri)!;
+  };
+}
+
+async function describeProduct(
+  productImageUrl: string,
+  token: string,
+  gcpProjectId: string,
+  loadVertexPart: (imageUrlOrDataUri: string) => Promise<any>,
+): Promise<string> {
   try {
-    const imagePart = await toVertexPart(productImageUrl);
+    const imagePart = await loadVertexPart(productImageUrl);
     const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/gemini-2.5-flash:generateContent`;
     const resp = await fetch(url, {
       method: "POST",
@@ -771,6 +794,7 @@ serve(async (req) => {
       });
     }
     const { token: vertexToken, projectId: gcpProjectId } = await getVertexAccessToken(saJson);
+    const loadVertexPart = createVertexPartLoader();
 
     // Service client for storage uploads
     const serviceClient = createClient(
@@ -785,7 +809,7 @@ serve(async (req) => {
 
     if (isProductShootWithTemplate && showcaseType && productImageUrl) {
       console.log(`Showcase mode: ${showcaseType} — extracting product description...`);
-      productDescription = await describeProduct(productImageUrl, vertexToken, gcpProjectId);
+      productDescription = await describeProduct(productImageUrl, vertexToken, gcpProjectId, loadVertexPart);
       console.log(`Product description extracted: ${productDescription.substring(0, 100)}...`);
     }
 
@@ -1102,7 +1126,7 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
             vertexParts.push({ text: item.text });
           } else if (item.type === "image_url") {
             try {
-              vertexParts.push(await toVertexPart(item.image_url.url));
+              vertexParts.push(await loadVertexPart(item.image_url.url));
             } catch (e) {
               console.warn("Failed to convert image for Vertex:", e);
             }
