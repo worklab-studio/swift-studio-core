@@ -263,6 +263,7 @@ function buildBeautyShowcasePrompt(
   // Size-aware scale (use structured field first, fall back to material detection)
   const scaleRule = getScaleRule(productInfo);
   let sizeDesc = scaleRule || "Standard-sized product.";
+  const material = `${productInfo?.material || ""} ${productInfo?.description || ""}`.toLowerCase();
   if (!scaleRule) {
     if (/mini|travel|sample|deluxe sample/.test(material)) {
       sizeDesc = "This is a MINI/TRAVEL size product — fits in a palm, render at exact small real-world scale. Do NOT enlarge.";
@@ -1050,6 +1051,21 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
       return `${shotTypeDesc[label] || label}. ${baseStyle}. Category: ${category}. ${modelDesc}${beautyPosing}${outfitDirective}${scaleDirective} ${consistencyInstruction}${additionalContext ? ` Additional direction: ${additionalContext}` : ""}. ${ratioInstruction} ${QUALITY_BLOCK} Show visible surface texture — material grain, fabric weave, print detail, packaging finish. No text, no watermarks. OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, mosaic, contact sheet, or multiple images combined. ONE image, ONE pose, ONE composition.`;
     });
 
+    const referenceUrlsToWarm = Array.from(new Set([
+      productImageUrl,
+      ...(allProductImages || []),
+      ...((shotType === "model_shot" && modelConfig?.modelReferenceUrls) || []),
+      ...((shotType === "model_shot" && modelConfig?.supportReferenceUrls) || []),
+    ].filter((url): url is string => Boolean(url))));
+
+    for (const referenceUrl of referenceUrlsToWarm) {
+      try {
+        await loadVertexPart(referenceUrl);
+      } catch (error) {
+        console.warn("Failed to prewarm reference image for Vertex:", referenceUrl, error);
+      }
+    }
+
 
 
 
@@ -1203,8 +1219,8 @@ OUTPUT: Generate exactly ONE single photograph. Do NOT create a collage, grid, m
       return asset || null;
     }
 
-    // Process in batches of 3
-    const batchSize = 3;
+    // Process with conservative batching to stay under worker CPU limits
+    const batchSize = shotType === "model_shot" ? 1 : 2;
     for (let i = 0; i < labels.length; i += batchSize) {
       const batchLabels = labels.slice(i, i + batchSize);
       const batchPrompts = shotPrompts.slice(i, i + batchSize);
