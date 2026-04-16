@@ -240,12 +240,11 @@ serve(async (req) => {
     const ext2 = mimeType.includes("jpeg") ? "jpg" : "png";
 
     const serviceClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const ext = base64Match[1] === "jpeg" ? "jpg" : base64Match[1];
-    const binaryData = Uint8Array.from(atob(base64Match[2]), (c) => c.charCodeAt(0));
-    const filePath = `${currentAsset.project_id}/edited-${Date.now()}.${ext}`;
+    const binaryData = Uint8Array.from(atob(rawB64), (c) => c.charCodeAt(0));
+    const filePath = `${currentAsset.project_id}/edited-${Date.now()}.${ext2}`;
 
     const { error: uploadErr } = await serviceClient.storage
-      .from("originals").upload(filePath, binaryData, { contentType: `image/${base64Match[1]}`, upsert: true });
+      .from("originals").upload(filePath, binaryData, { contentType: mimeType, upsert: true });
 
     if (uploadErr) {
       console.error("Upload error:", uploadErr);
