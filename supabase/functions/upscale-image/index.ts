@@ -97,16 +97,28 @@ serve(async (req) => {
       });
     };
 
-    let res = await tryUpscale("imagen-4.0-upscale-preview:predict");
-    if (!res.ok) {
-      console.log("predict failed, trying predictLongRunning...");
-      res = await tryUpscale("imagen-4.0-upscale-preview:predictLongRunning");
+    // Try known upscaler model IDs; availability varies per GCP project
+    const candidates = [
+      "imagegeneration@002:predict",
+      "imagen-3.0-generate-002:predict",
+      "imagen-4.0-upscale-preview:predict",
+      "imagen-4.0-upscale-preview:predictLongRunning",
+    ];
+    let res: Response | null = null;
+    for (const endpoint of candidates) {
+      const attempt = await tryUpscale(endpoint);
+      if (attempt.ok) { res = attempt; break; }
+      const errText = await attempt.text();
+      console.warn(`Upscaler ${endpoint} unavailable (${attempt.status}): ${errText.slice(0, 200)}`);
     }
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error("Upscale API error:", res.status, errText);
-      throw new Error(`Upscale failed: ${res.status}`);
+    if (!res) {
+      // No upscaler available on this project — return original, don't fail the flow
+      console.warn("No upscaler model available; returning original image");
+      return new Response(JSON.stringify({ url: imageUrl, assetId, upscaled: false }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
+
 
     const data = await res.json();
     let upscaledBase64: string | null = null;
