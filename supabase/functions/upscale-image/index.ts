@@ -198,9 +198,11 @@ serve(async (req) => {
     });
   } catch (e) {
     console.error("upscale-image error:", e);
+    // Never break the user flow — fall back to the original image
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ url: null, upscaled: false, skipped: true }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
+
   }
 });
